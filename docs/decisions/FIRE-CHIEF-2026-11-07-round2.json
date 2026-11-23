@@ -1,0 +1,50 @@
+{
+  "unit": "FIRE-CHIEF-2026-11-07",
+  "round": 2,
+  "date": "2026-11-07",
+  "trigger": "mandatory（#5 返工后）",
+  "channel": "claude -p --model opus --allowedTools Read,Grep,Glob,Bash (stdin prompt, 指路式)",
+  "verdict": "pass",
+  "confidence": 0.85,
+  "blocking": [],
+  "criteria": [
+    { "id": "R1-N1", "status": "pass", "evidence": "FIRE-CHIEF.md:78 已改成 §二·五 救火档 + 额度只记录不设闸；全工程 Grep 额度闸|预算闸|一档|设闸|闸 后逐条看上下文，全部是『不设闸』的否定句 / 『原闸已撤』的声明 / 史料引用，没有一处会被当成设闸执行" },
+    { "id": "R1-N2", "status": "pass", "evidence": "TRIGGER-POLICY.md:150-156 通道段拆成两条分别给理由；:283 §四 通道表同步。但 FIRE-CHIEF.md:45-46 漏改 → 见 nonblocking N1" },
+    { "id": "R1-N3", "status": "pass", "evidence": "FIRE-CHIEF.md:78-82 新增第 2 步触发路径段；AGENTS.md 头部与待办 7 同步" },
+    { "id": "R1-N4", "status": "pass", "evidence": "INC-TEMPLATE.md:145-147 加了已知盲区框，两个盲区都覆盖" },
+    { "id": "R1-N5", "status": "fail", "strength_met": false, "evidence": "DELIVERY 行号仍偏移：N3 插入后 §七 表格下移到 :90-93；N2 往 TRIGGER-POLICY 插了约 6 行，:149 之后的引用全部偏移（变更记录 :374、额度段 :220-226、通道表 :283-284）；INC-TEMPLATE 实为 217 行。只涉及行号，内容都在，所以未算 blocking" }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "N2 改 TRIGGER-POLICY 漏了 FIRE-CHIEF.md:45-46 的同类说法（subagent 只有 openrouter 一条路由），与 TRIGGER-POLICY.md:153 直接矛盾 —— 正是第 1 轮 N2 指的那种误导，换了个文件",
+      "disposition": "fixed",
+      "how": "改成『两条硬事实』，并写明『结论对、但理由不是只有 openrouter』"
+    },
+    {
+      "id": "N2",
+      "what": "第 1 轮的插入让 DELIVERY 行号整体偏移，N5 的修复因此失效。教训：先插内容、后改行号",
+      "disposition": "fixed",
+      "how": "本轮先把内容全部定稿，再用 29 对精确替换统一重核行号（0 miss），并把『先插内容后改行号』写进交付说明"
+    },
+    {
+      "id": "N3",
+      "what": "INC-TEMPLATE.md:19 同一格里『允许几次调用；超额即停』+『只记录不设闸』字面矛盾",
+      "disposition": "fixed",
+      "how": "改成『本单上限 …… 这是本单的任务范围约束，不是额度闸』"
+    },
+    {
+      "id": "N4",
+      "what": "TRIGGER-POLICY.md 变更记录没登记第 1 轮后的修改；该文件在不可降级名单里，改了必须留痕",
+      "disposition": "fixed",
+      "how": "补 v2.0.1 变更记录行"
+    }
+  ],
+  "verdict_inconsistency": {
+    "observed": "R1-N5 在 criteria 里被判 fail（strength_met=false），却没进 blocking，整体仍给 pass",
+    "contract_conflict": "契约 §三 规定 pass = 验收标准全部 pass 且无 blocking。criteria 有 fail 而给 pass，与契约冲突",
+    "worker_action": "按实质判断处理（把那 4 条 nonblocking 全部修掉），但把这个不自洽记录在案，由伙伴决定是否在契约里补一条『criteria 有 fail 但不构成 blocking』的处置规则",
+    "evidence": "decisions/FIRE-CHIEF-2026-11-07-round2-raw.txt"
+  },
+  "reviewer_notes": "本轮只跑只读命令：Read、Grep，以及一次 Bash（grep -n 加 wc -l）。我没有复跑 ledger-audit.ps1，也没复跑 list_subagent_models。N1 的残留搜索用了我自己的正则，覆盖面同样受限于我能想到的词；为此我加了单字『闸』的宽匹配并逐条人工看上下文。"
+}

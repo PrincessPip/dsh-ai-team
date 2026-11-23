@@ -1,0 +1,92 @@
+{
+  "verdict": "rework",
+  "confidence": 0.99,
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立SHA核查：包3948项、来源3938项、外部32565项、READY-v3输入2521项及3份回执均无漂移；发布2441文件与清单完全一致。实际安装解析记录：installed=512、pinned_external=4166、verified_release_preflight=151、unapproved=[]。独立坏包反例精确报PACKAGE_SHA_OR_MISSING、目标不变，恢复字节后INSTALLED且SHA一致，见T/reviewer-live-install/RESTORED-POSITIVE.json。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立真实写租约反例：预检exit1，reason包含already owned by an active write handle；同一目标执行deploy(apply=True)却返回INSTALLED，currentUnchanged=false、installedMarker=true，持有进程安装前后均存活。见T/reviewer-live-install/RESULT.json。现有26项安装测试通过，但未覆盖此路径。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "副本run-hold.py --expect-hold enabled退出0：300360压力下Basic/native-auto/native-hold各摘要1、答案1。parent-scope.mjs精确复现NATIVE_SERVICE_CONFLICT，三服务隔离正例通过。完整suite的release-compat及核心测试通过，覆盖目标自动、手动拒绝、非目标委托、裁剪和同根桌宠实际自动摘要。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "R/tasks/ASTRA-NATIVE-RELEASE-2026-11-15/artifacts/release-1794712005766730700：none与zstd均由不同seed/resume进程完成；ordinary/native各实际执行一次工具，续答均无native请求。半行、半帧、未知完整性及中断历史拒绝，损伤字节保持；修复夹具后正例通过。Zstd实测魔数28b52ffd。高压hold及模拟context overflow无Basic回退。"
+    },
+    {
+      "id": "C5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "副本parent-install.py退出0、6/6通过：普通Zstd回退SHA一致，native拒退，漂移current预检代码未执行，历史变更拒绝，四次真实预检启动时BUSY=true。完整安装测试另通过hidden native、未知、受损及真实活跃写租约拒退，释放租约后普通回退通过。"
+    },
+    {
+      "id": "C6",
+      "type": "judgment",
+      "status": "pass",
+      "claimed_strength": "E1",
+      "strength_met": true,
+      "evidence": "直读RUNBOOK及OPERATION-PLAN：OPERATION-PLAN.md:27「新profile也可能共用同一宿主代码」；:41「盘点并排空运行中的agents、工具及会话写句柄」。明确本机落点、整scope影响、维护和备份、三服务替换、hold/停止/回退区别及真实请求另批；未将SDK演练说成完整Web/UI上线。"
+    },
+    {
+      "id": "C7",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "副本run-suite.py退出0；suite-1794712005663425100四阶段均exit0、无强杀、cleanupVerified=true。hold/physical/history变异分别exit1并命中预定断言，最后干净run-release再次通过。独立新增写租约和坏包反例已记录；末次进程查询三个测试副本的node/python进程为[]。cite-check --strict：3个引用全部OK。"
+    },
+    {
+      "id": "C8",
+      "type": "fact-consistent",
+      "status": "unverified",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "已核保护24168项、宿主5项无漂移；末次冻结输入3949项added/deleted/modified均为空，包/来源/外部SHA再次一致。产品测试均offline-deny+模拟SSE。已观察外层review-codex.py进程33328运行；正式after/snapshot及该验收进程清理回执须在本回答后由外层生成，当前未签认。"
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "claim": "首次安装未拒绝实际忙碌的scope，仍替换文件并报告成功。",
+      "what": "deploy只检查合作式BUSY，未检查已有真实后端写租约。",
+      "why": "违反C2及设计约束2的忙碌／非独占目标写前拒绝要求。",
+      "evidence": "T/reviewer-live-install/RESULT.json：leaseReady={pid:8212,held:true}，busyControl.exitCode=1，install.status=INSTALLED，aliveBeforeInstall=true，aliveAfterInstall=true，currentUnchanged=false。释放后预检exit0、holderExit=0、cleanupVerified=true。tasks/ASTRA-NATIVE-RELEASE-2026-11-15/installer.py:61「def deploy(raw,apply=False,fault=False,package=None,deps=None):」所在安装路径没有实际租约检查；:39仅检查「if (p/'BUSY').exists():raise RuntimeError('BUSY')」。"
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "GATES原始mtime结果为exit1、LEDGER_SUSPECT；历史债和目录覆盖告警仍存在，本轮无suspect不代表全仓干净。"
+    },
+    {
+      "id": "N2",
+      "what": "完整Web/UI、生产安装、长期质量及通用迁移不在已验范围；本裁决不授予生产切换许可。"
+    }
+  ],
+  "rework_brief": "修正installer.py的首次安装路径：在备份、staging及替换前拒绝已有真实写租约的scope，不能仅依赖BUSY文件。加入实际持有后端写句柄的安装反例，断言精确拒绝、current及历史字节不变、无INSTALLED标记；释放句柄后验证允许的正常安装。保留回退和半安装恢复正例，重跑完整suite及独立安装验证，并由外层收取正式快照和清理回执。",
+  "reviewer_notes": "R=%USERPROFILE%/AppData/Local/Temp/astra-release-independent-9705vxw1，T=%USERPROFILE%/AppData/Local/Temp/astra-release-independent-fuyz25ql，父级安装另建副本astra-release-independent-k1c1f19m。所有测试及临时写入仅在这些树外副本，命令和输出已逐条记录于本次工具回执，冻结工程未修改。C8保持unverified，外层正式后快照尚未发生，不以本次中途盘点替代。",
+  "readonly_enforcement": "snapshot_only"
+}

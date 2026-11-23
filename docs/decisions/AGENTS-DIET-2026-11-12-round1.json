@@ -1,0 +1,41 @@
+{
+  "unit": "AGENTS-DIET-2026-11-12",
+  "round": 1,
+  "date": "2026-11-12",
+  "channel": "subagent → openrouter/anthropic/claude-opus-5.5（DSH 子代理，全新会话，带工具，只读）",
+  "verdict": "rework",
+  "confidence": 0.8,
+  "confirmed_by_reviewer": [
+    "基线 63,470 + 55,265 = 118,735 B；sha256 前缀 76a22f7b / 6cb2b786",
+    "现行全局 25,324 B（a520d325，与草稿一致）",
+    "selftest 14/14 · mutate 7/7 void=0 · agents-budget RESULT=OK omitted=[] —— 三条都是验收官亲手跑的",
+    "全局 L14-151 / L465-476 / L479-515 在现行文件里逐字节存在",
+    "doc-sync 与 ledger-check 都 OK"
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "what": "全局 AGENTS.md 删掉的内容里有两处「只此一份」，别处找不到副本；MIGRATION 写的「落点已核」不成立。(a) 基线 L167-168 的 launcher 1.0.0→1.0.1 待办（伙伴 2026-10-30 说「之后再做」）；(b) 基线 L178-179 的 Claude API key 撤销方法，且让项目 AGENTS「撤销方式见 SECRETS §3.4 附近说明」变成悬空指针。",
+      "evidence": "<PRIVATE-WORKSPACE>/{AGENTS,HANDOVER,NEXT-STEPS,RELEASE-1.0-HANDOVER}.md 里 grep「没换 1.0.1」「不用重装 7 GB」「1.0.0 的」全 0 命中；SECRETS-AND-LOGIN.md 里 grep「api_keys/」「是 405」「inactive」全 0 命中（L275 的「撤销方式」讲的是 ssh 密钥）。手工隧道完整命令 / ExitOnForwardFailure / netsh excludedportrange 也全工程 0 命中。",
+      "why": "本单元核心声明是「只删已有权威副本的内容」，且改的是记忆权威层（送审 #1）。一条伙伴分派的待办从所有书面记录里消失，会静默污染后面每次会话。"
+    },
+    {
+      "id": "B2",
+      "what": "材料在审查期间没冻结，DELIVERY 与账本的数字至少六处对不上。",
+      "evidence": "审查中 AGENTS.md 在 03:20:12 又改了一次（21,274→21,285）；DELIVERY 写「-72,136」实为 72,126；项目 sha 写 ba657817 实为 db640f78；n=294 与 n=293 并存；「LONE 2」实为 3；§四标题「8 条」实列 9 条；46,598/599/609 三处并存。",
+      "why": "正中简报 §五·1 担心的病：账本是唯一计数依据，现在它和 DELIVERY、现行文件互相矛盾，验收官拿不到固定被测对象。"
+    }
+  ],
+  "nonblocking": [
+    {"id": "N1", "what": "全局「架构锚点」的「按 .git marker 加载」被改成「按路径加载」，未申报，且盖住了 .git marker 那个坑。", "suggest": "改回原文或申报。"},
+    {"id": "N2", "what": "变异台 M3/M4 打坏后仍返回 rc=2（走渲染失败那条路），只因报错文字变了才被抓到。", "suggest": "改复合变异；断言要断言「rc≠0 且不是 RESULT=OK」。"},
+    {"id": "N3", "what": "read_profile_budget 取全文最后一个 maxBytes，未限定段内。", "suggest": "限定插件块，或多处不同值直接失败。"},
+    {"id": "N4", "what": "本验收子会话是新会话，两份 AGENTS 完整注入、无 omitted —— 这是新会话注入的 E2 证据。", "suggest": "记进 DELIVERY §四·1，关掉「没开新会话验证」。"}
+  ],
+  "impossible": [
+    "Hindsight 在本工作区 disabled，「已 ingest」无法核实",
+    "没有重跑 ledger-audit.ps1 与 cite-check.py，只读了证据文件",
+    "build-drafts.py both 没有重跑（避免写文件）"
+  ],
+  "summary": "守卫本身可靠（真实渲染函数、台子全绿、正式运行 omitted=[]），人格区/写协议/硬约束逐字节保留也成立；但删掉的内容里至少两条没有副本，且材料在审查期间还在改、数字互相矛盾。修好两处、冻结后重新送审即可。"
+}

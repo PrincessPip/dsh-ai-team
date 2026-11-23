@@ -1,0 +1,26 @@
+{
+  "_comment": "C5（F3 + F9a）：先发两条工具调用再睡 30 秒 —— runner 用 --timeout 2 杀它。超时后必须①留住这两条调用②不跑 cmd（cmd 会写 PATCH-A.md，盘上不该出现这个文件）。",
+  "nodes": {
+    "w_slow": {
+      "tool_calls": [
+        {
+          "name": "read",
+          "args": {
+            "file_path": "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+          }
+        },
+        {
+          "name": "read",
+          "args": {
+            "file_path": "tasks/DAG-2026-11-06/fixtures/sandbox/OFF-LIMITS.md"
+          }
+        }
+      ],
+      "sleep_s": 30,
+      "result": {
+        "changed": [],
+        "summary": "睡太久了"
+      }
+    }
+  }
+}

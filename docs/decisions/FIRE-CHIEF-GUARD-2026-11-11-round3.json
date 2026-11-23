@@ -1,0 +1,31 @@
+{
+  "verdict": "pass",
+  "confidence": 0.88,
+  "criteria": [
+    { "id": "B1", "type": "executable", "status": "pass", "claimed_strength": "E3", "strength_met": true,
+      "evidence": "`ls` shows that tasks/FIRE-CHIEF-GUARD-2026-11-11/LEDGER-AUDIT.txt exists (2717 B, 10:00). Line 2 reads `# decoder=utf-8  ps_rc=0  bytes=2589`, line 33 `[suspect] none` and line 34 `RESULT=LEDGER_OK`. make-ledger-audit.py has the `powershell -NoProfile -ExecutionPolicy Bypass -File` call plus a utf-8/gbk decode step. I re-ran `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ledger-audit.ps1` myself and got rc=0, `[suspect] none` and `RESULT=LEDGER_OK`. The [ledger] 128 line(s) and [scan] 12675 counts match the file exactly." },
+    { "id": "N1", "type": "fact-consistent", "status": "pass", "claimed_strength": "E2", "strength_met": true,
+      "evidence": "scripts/fire-chief.py:351 has the anchor 「这是**输入卫生**，不是「防绕过」」. scripts/fire-chief.py:354 has the anchor 「⚠️ 别把它吹成安全边界 —— 第 1 轮验收官 N5 就是按「夸大了它保护的东西」否的」. The old line 「换个写法就绕过去了」 no longer appears, and the scope is now written as the `runs/fire/` prefix check." },
+    { "id": "N2", "type": "executable", "status": "pass", "claimed_strength": "E3", "strength_met": true,
+      "evidence": "I made the M26 mutant myself in a copy at %TEMP%\\rev3-m26\\fire-chief.py: the anchor `normalized_path(f).startswith(prod_prefix + \"/\")` occurs exactly once, I removed the `+ \"/\"`, and diff shows only line 342 changed. Running `selftest.py --fire <copy>` gave RESULT=HAS_FAILURE with 49 PASS / 1 FAIL, and the only red case is `T50 同前缀兄弟目录不算本单（N2）` (rc 6, expected 2). The unmutated original gives 50/50 ALL_PASS. The T50 definition is at selftest.py:586–588 (extra_rows=runs/fire/INC-20261111-99-run1/x.md, expect=2). The worker's MUTATE.txt also records M26 CAUGHT with 26/26 and void=0." },
+    { "id": "N3", "type": "fact-consistent", "status": "pass", "claimed_strength": "E2", "strength_met": true,
+      "evidence": "`wc -c AGENTS.md` = 47069, which is ≤ 65536. DELIVERY.md:13 and :84 both say 47069. A grep for 46708 now finds nothing except the history line at DELIVERY.md:157. DELIVERY.md:97 says **4** `.md` files, and CITE-CHECK.txt has files=4. Leftover stale wording is listed as nonblocking N1." },
+    { "id": "N4", "type": "fact-consistent", "status": "pass", "claimed_strength": "E2", "strength_met": true,
+      "evidence": "TRIGGER-POLICY.md:224–225 has the anchor 「就看它的 `escalate_red_line`（缺省才退回看 `escalate_question`」. Line 227 says that hitting red line 4–6 or both fields empty is a normal dispatch, which matches REVIEW-CONTRACT.md:197 「没写编号 = 未声明 = 按 4–6 处理」." },
+    { "id": "R3-SELFTEST", "type": "executable", "status": "pass", "claimed_strength": "E3", "strength_met": true,
+      "evidence": "`python -X utf8 tasks/FIRE-CHIEF-FIX-2026-11-11/selftest.py --out %TEMP%\\my-selftest3.txt` gave rc=0, RESULT=ALL_PASS, and 50 PASS / 0 FAIL in the summary. It has 53 `### ` sections because T37 has 3 template-slot sub-sections, so the case count is still 50." },
+    { "id": "R3-CITE", "type": "executable", "status": "pass", "claimed_strength": "E3", "strength_met": true,
+      "evidence": "cite-check --strict on TASK, DELIVERY, REVIEW-BRIEF-round2 and REVIEW-BRIEF-round3 gave files=4, refs=6, [OK] 6, rc=0. A separate run on REVIEW-BRIEF.md gave refs=0, rc=0." },
+    { "id": "R3-LEDGER-ROWS", "type": "fact-consistent", "status": "pass", "claimed_strength": "E2", "strength_met": true,
+      "evidence": "decisions/self/ledger.md lines 275–278 are the 4 rows for this unit. Line 278 records make-ledger-audit.py, REVIEW-BRIEF-round3.md and REVIEW-round3-{raw,stdout}.txt, which matches DELIVERY §六 「追加了四行」." }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    { "id": "N1", "what": "DELIVERY.md §三 is internally inconsistent. Line 97 says the 4 `.md` files are 「TASK / DELIVERY / REVIEW-BRIEF / BRIEF-round2」, but REVIEW-BRIEF-round3.md:46 gives a command for TASK / DELIVERY / BRIEF-round2 / BRIEF-round3. CITE-CHECK.txt has no file list, so you can't tell which 4 were checked (both sets pass when I ran them). The note at line 100–101 still says 「已在上表写清是哪三个」. Suggested fix: pass the file list into CITE-CHECK.txt, and change the table and the note to a single consistent version." },
+    { "id": "N2", "what": "Weak point §四·7 (prefix vs directory boundary, no shared helper) and §四·3 (`runs/fireX/`, UNC and similar shapes have no regression cases) remain open. This unit only pinned the `-run1` sibling-directory case. Out of scope for this round, recorded as is." }
+  ],
+  "rework_brief": "",
+  "escalate_question": "",
+  "escalate_red_line": "",
+  "reviewer_notes": "Everything I ran was read-only or happened inside %TEMP%: ls/grep/wc, cite-check, ledger-audit.ps1, selftest.py twice (output and selftest scratch directories under %TEMP%), and the M26 mutant (copy and edit only in %TEMP%\\rev3-m26). I made no changes to project files. I did not run claude-egress-check.ps1 because the PowerShell tool rejected the `& \"$env:...\"` dynamic call, so that pre-flight check is the caller's responsibility. I did not run the full 26-case mutation suite. I only reproduced M26, and the other 25 cases rest on the worker's MUTATE.txt. Per the brief I did not re-review items that passed in earlier rounds, and I did not sample the AGENTS.md trimming."
+}

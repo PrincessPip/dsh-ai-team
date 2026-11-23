@@ -1,0 +1,57 @@
+{
+  "v": 1,
+  "plan_id": "plan-a2-join-any",
+  "budget": { "max_calls": 8 },
+  "nodes": [
+    {
+      "id": "s_gate",
+      "kind": "scout",
+      "do": "只读侦察：verdict 给 stop。不写任何文件。",
+      "after": [],
+      "out": ["verdict", "summary"],
+      "accept": [
+        { "type": "assert", "rule": "verdict 只能是 go 或 stop" }
+      ],
+      "on_fail": { "retry": 0, "then": "abort" }
+    },
+    {
+      "id": "w_skip",
+      "kind": "work",
+      "do": "往 tasks/DAG-2026-11-06/fixtures/sandbox/SKIP-ONLY.md 追加一行 '- 本应被 when 跳过'。",
+      "after": ["s_gate"],
+      "when": { "ref": "s_gate.verdict", "op": "eq", "val": "go" },
+      "writes": ["tasks/DAG-2026-11-06/fixtures/sandbox/SKIP-ONLY.md"],
+      "out": ["changed", "summary"],
+      "accept": [
+        { "type": "scope", "rule": "只许改 SKIP-ONLY.md" },
+        { "type": "assert", "rule": "changed 恰好是 SKIP-ONLY.md" }
+      ],
+      "on_fail": { "retry": 0, "then": "skip" }
+    },
+    {
+      "id": "w_ok",
+      "kind": "work",
+      "do": "往 tasks/DAG-2026-11-06/fixtures/sandbox/notes.md 末尾追加一行 '- join any'。",
+      "after": ["s_gate"],
+      "writes": ["tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"],
+      "out": ["changed", "summary"],
+      "accept": [
+        { "type": "scope", "rule": "只许改 notes.md" },
+        { "type": "assert", "rule": "changed 恰好是 notes.md" }
+      ],
+      "on_fail": { "retry": 0, "then": "replan" }
+    },
+    {
+      "id": "integ",
+      "kind": "integrate",
+      "do": "汇总上游：说明 w_skip 是否真的跑了、w_ok 改了什么。",
+      "after": ["w_skip", "w_ok"],
+      "join": "any",
+      "out": ["changed", "summary"],
+      "accept": [
+        { "type": "assert", "rule": "summary 里要点名 w_skip 的状态" }
+      ],
+      "on_fail": { "retry": 0, "then": "skip" }
+    }
+  ]
+}

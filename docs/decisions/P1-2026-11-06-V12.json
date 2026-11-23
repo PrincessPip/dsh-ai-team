@@ -1,0 +1,27 @@
+{
+  "verdict": "pass",
+  "confidence": 0.84,
+  "criteria": [
+    {"id": "C1", "status": "pass", "evidence": "scripts/ledger-audit.ps1:28-108 只用 Test-Path/Get-Item/Get-Content/Get-ChildItem 和 Write-Output，没有任何写文件的调用。退出码分支：无账本 → `exit 2`（:32-35），suspect 为 0 → `exit 0`（:99-103），其他 → `exit 1`（:105-108），和 0/1/2 的定义一致。我没法执行它，「能跑通」只能靠 DELIVERY 的运行输出和代码审查佐证，没有我自己的运行证据。"},
+    {"id": "C2", "status": "pass", "evidence": "窗口起点是 :39 `$ledgerItem.CreationTime.AddMinutes(-30)`，过滤在 :69 `LastWriteTime -ge $ledgerStart`，所以账本建立前的历史不会进入审计。已知弱点见 N2：重建账本会让窗口漂移。"},
+    {"id": "C3", "status": "pass", "evidence": "目录 token 以 `/` 结尾时进 dirTokens（:57-58），匹配逻辑是 `$rel -eq $t -or $rel.StartsWith($t + '/')`（:83）。账本第 12 行的 `tasks/P1-2026-11-06-TRIGGER/` 因此能覆盖该目录下的 TASK.md 和 DELIVERY.md。无 `/` 的 token 只当单文件（:60），不再有 DELIVERY 里说的模糊子串漏报。"},
+    {"id": "C4", "status": "pass", "evidence": "DELIVERY:35-46 的输出格式和脚本打印逻辑对得上：`[ledger] N line(s); dates: …; audited since …`（:95-96）、`[scan] N file(s) total; M changed inside the audit window`（:97）、`[suspect]` 加 `  - rel  (mtime d) -- never mentioned in ledger`（:88、:105-106）、`RESULT=LEDGER_SUSPECT`/`LEDGER_OK` 与退出码 1/0（:99-108）。字段名、顺序、退出码分支都一致。输出里的具体数字（19/9）我没法复现。误报面和漏报面见 C9。"},
+    {"id": "C5", "status": "pass", "evidence": "TRIGGER-POLICY.md:3 题头 v1.2，:168 变更记录 v1.2。:53-69 是「mtime 对账」小节，:65-67 明说验收官只有 Read/Grep/Glob、拿不到 mtime，保证是「脚本输出 + 核源码」，性质仍是工人侧证据。"},
+    {"id": "C6", "status": "pass", "evidence": "TRIGGER-POLICY.md:85 清单 #3 含「按交付单元累计」；:103-104 硬规矩 2 的优先级写明「不能覆盖送审清单」；:117 和 :119-120 写明「抽哪一行，由验收官自己挑」。"},
+    {"id": "C7", "status": "pass", "evidence": "REVIEW-CONTRACT.md:17 的 sampling 行写了「抽哪一行由你挑」和「核对 DELIVERY 里 scripts/ledger-audit.ps1 的 mtime 对账输出，出现 suspect 而未解释也 = blocking」，与 TRIGGER-POLICY.md:135-136 同一结论。"},
+    {"id": "C8", "status": "pass", "evidence": "grep `v1\\.[0-9]` AGENTS.md 只命中 :9 和 :90，都是 v1.2，没有 v1.1 残留。顶部状态（:9）、文件地图（:76-77 含脚本）、待办（:90）三处都已同步。"},
+    {"id": "C9", "status": "pass", "evidence": "没有致命缺陷。机制能把整条漏记变成需要主动造假，但覆盖面和保证强度都比文档看上去的弱，见 nonblocking N1-N6。"}
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {"id": "N1", "what": "绕过面（回答 C9-1）：① mtime 可以直接改，`(Get-Item f).LastWriteTime = …` 就行；② ledger.md 被 `-ne 'ledger.md'` 排除（:67），改写或重建账本不可见，CreationTime 一重置窗口起点就跟着移；③ 扫描只含 md/ps1/json/yml/yaml（:66），改 .bat/.py/.psd1/.txt 完全看不见；④ 只扫工程根目录，而送审 #2 的主要对象（~/.dsh 配置、profile、插件）在根目录之外，对账根本覆盖不到；⑤ 脚本本身可改，且已被账本里 `scripts/ledger-audit.ps1` 这个文件 token 放行。"},
+    {"id": "N2", "what": "误报与漏报精度（回答 C9-2）：误报面窄。重命名文件、账本重建后历史文件重新进入窗口、30 分钟宽限里碰巧落入的账前改动，都会被误报。漏报面更大：① 文件 token 用 `$f.Name -eq $t`（:79），任意子目录里的同名文件会互相掩护；② 只要某天账本有任意一行，当天所有「已提及」文件的改动就都过关（:90），粒度只到日期；③ `decisions/` 作目录 token（DELIVERY 已自承），其下改动全部不审计。"},
+    {"id": "N3", "what": "保证强度（回答 C9-3）：「仍是工人侧证据，只是把漏记从无声无息变成需要主动造假」这句话方向对，但仍偏高估。造假的成本很低（一行改 mtime，或改账本窗口），而且脚本漏掉的是 N1 ④ 里的根目录外部分，那恰恰是最高风险区。建议补一句：覆盖范围仅限工程根目录下的文档与脚本，防的是疏忽，不防故意。"},
+    {"id": "N4", "what": "账本第 13 行把清单号写成 `#5 返工后（落实上一轮 nonblocking）`。上一轮是 pass，本轮不是返工，#5 的引用牵强。#2 已经足以命中送审，结论不变，但清单号不够准确。"},
+    {"id": "N5", "what": "DELIVERY:66-68 自承的未测场景（同文件跨两个单元、重命名、账本重建）仍没测。"},
+    {"id": "N6", "what": "我用 Glob 的 mtime 排序做了弱旁证：最近改动的文件依次是 REVIEW-CONTRACT.md、AGENTS.md、V12 的 TASK.md、ledger-audit.ps1、ledger.md、DELIVERY.md，都在账本第 12、13 行里。这不是 mtime 对账本身，只能算旁证。"}
+  ],
+  "rework_brief": "",
+  "escalate_question": "",
+  "reviewer_notes": "我没法执行脚本，也拿不到 mtime，C1「能跑通」和 C4 的具体数字只能靠代码审查加输出格式比对，不是我亲手复现。C9 的结论是机制可用但保证偏弱，没有致命缺陷，所以不算 blocking。N3 的措辞补充是建议，不是通过条件。"
+}

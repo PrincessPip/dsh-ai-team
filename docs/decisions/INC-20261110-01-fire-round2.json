@@ -1,0 +1,26 @@
+{"unit":"INC-20261110-01","round":2,"verdict":"pass","confidence":0.86,
+ "blocking":[],
+ "nonblocking":[
+  {"id":"N1","what":"第 4 条（M1 的 nodeSchema 修法）：类型终裁为【可执行类】，不是工人申报的 [判断类] E1。DELIVERY §六·3「假 agent 绕过 schema，所以 harness 看不出……要验它得跑一次真引擎」与事实不符：harness.mjs 的 run() 里 agentImpl 收到 opts（含 opts.schema），并把 opts 透传给 plan(id, nth, opts)，零成本就能断言。我的 %TEMP% 探针：现版本 patch 节点（out=[patch,patch_targets]，未声明 changed）的 schema.properties 含 changed（HAS_CHANGED=true）；删掉 scripts/dag.workflow.mjs:764「want.indexOf('changed') < 0) want.push('changed');」后 HAS_CHANGED=false，而 harness 仍 checks=259 failed=0（存活）。所以：修法本身成立（我补到 E3：D2 退出/输出 + D3 字段 + 反证），但工作树里没有守住它的回归断言。判 nonblocking 的理由：本条是 rework_brief 里的「可选」项、工人主动摊开请裁、没有说满；但这不是「结构上测不了」。下一次碰 nodeSchema 或 harness 之前补一条：在 plan 里记下 opts.schema，断言 patch 节点 schema.properties.changed 存在，并用删 :764 那行的变异证明会红；同时把 DELIVERY §六·3 的「要真引擎才能验」改掉。"},
+  {"id":"N2","what":"第 3 条 VERIFY.md 正文未被改：只能到 E2，到不了 E3。SNAPSHOT.txt 记的 18778 字节（01:05:52）是救火队长第 [34] 步追加「快照对比」节之前的大小；现在「## 返工补充」之前的前缀是 20683 字节，差值对应 :111「## 快照对比」一节。前缀里没有任何救火队长当时不可能知道的内容（grep 第 1 轮 / rework / X8 / 259 / fire-round1 都是 0 命中），账本草案行仍是「验收官 （待填）」。但救火队长收尾时的最终版本没有哈希，所以「一个字节未改」无法逐字节证明。建议固化 fire-chief.py 时在救火队长退出那一刻给产物目录存 sha256（DELIVERY §六·1 已自认）。"},
+  {"id":"N3","what":"申报 c（Get-FileHash 大写 vs Python 小写）是真的（HASH-BEFORE.txt 全是大写十六进制，sha-delta.py 现在用 .upper() 统一），但 DELIVERY §四·二 那句「如果我没发现它，结论就会正好反过来」说重了：这个 bug 是会大声报错的那种（398/398 全部判变化，一眼就不对），不是悄悄出错。不算凑分，算夸大。"},
+  {"id":"N4","what":"DELTA-sha256.txt 是 01:39 的快照。我现在重跑 sha-delta.py 得到 changed=8 / added=43：多出来的 AGENTS.md（10:27）由账本第 233 行覆盖；新增的 32 个文件来自之后的 CODEX-TRACE / CODEX 单元和本单元 01:39 之后写的 DELIVERY/HANDOVER/BRIEF-round2 等。01:39 那次的 7/11/0 与当时状态一致，白名单外 4 条逐条解释得通（见 ran）。DELIVERY 里的数字以后要标「截至 01:39」。"},
+  {"id":"N5","what":"mutate-c1c2.py 直接覆写主树上的 scripts/dag.workflow.mjs，跑完再还原（restored=True）。当天同一棵树上还有别的单元在跑（CODEX-TRACE），并发时有撞车风险。以后改成在 %TEMP% 镜像里变异（我这轮就是这么做的，与主树结果一致）。"}
+ ],
+ "missed_failures":[
+  {"id":"M1","what":"同 N1：第 1 轮 M1 的修法没有守护断言，删掉它 harness 仍然全绿。第 1 轮 B2 那种「修法回归了也没人知道」的风险，在这一处还在。"}
+ ],
+ "ran":[
+  {"cmd":"node tasks/DAG-2026-11-06/verify-findings.mjs","result":"rc=0, RESULT=ALL_OK"},
+  {"cmd":"读 verify-findings.mjs ⑤ 段（:108-110）+ python 读 runs/plan-20261107-000746/GRAPH.json","result":"hot_files 只 filter 掉 scripts/review-index.ps1；夹具原 hot_files=[review-index.ps1, decisions/INDEX.md]，所以 decisions/INDEX.md 仍是热文件；w_docs.writes 和假 agent 的 patch_targets 都是 tasks/DAG-2026-11-06/PROGRESS.md，与 w_docs.accept[0].rule（不碰 review-index.ps1 和 decisions/）不冲突，也是 planF1 里 s_code.allow_paths 给的 DOC"},
+  {"cmd":"diff <(grep check( %TEMP%/ai-team-e2e-20261109-205040/.../verify-findings.mjs) <(grep check( 当前版本)","result":"只有 2 处差：E2EFIX 加的 PATCH_WITHOUT_TARGETS×2（第 1 轮已认定）和标签「三条→四条」；所有 check() 的期望值，包括 allowlist=3，都没改"},
+  {"cmd":"node tasks/DAG-2026-11-06/harness.mjs --all","result":"rc=0, checks=259 failed=0"},
+  {"cmd":"%TEMP%/acc-r2-mirror（只复制 scripts/dag.workflow.mjs + harness.mjs + fixtures）+ 自写变异脚本（python -I）","result":"X8 → failed=4，红的正好是 4 条 C1/跨 attempt 累积.*；X6 → failed=4，红的正好是 C2/上游 skipped 也拦 的 status / b 没被调用 / 原因点名 / need_info_blocked（「a 确实是 skipped」不红，符合预期）；我自加的 Y1（用 !=fail&&!=need_info 放行 skipped）→ 同样 4 条红；Y2（harm 只在 st0==ok&&k==0 时累积）→ 7 条红（3 条旧 + 4 条新）；不变异 → 0 红。没有红在别处。镜像源 sha256 与主树一致（e4f54989…）"},
+  {"cmd":"node %TEMP%/acc-schema-probe.mjs（单节点 patch 图，用假 agent 记 opts.schema）主树 vs 删 :764 的镜像，然后在镜像上跑 harness","result":"主树：props 含 changed（HAS_CHANGED=true）；删除后 HAS_CHANGED=false；删除后的 harness 仍是 259/0 → N1"},
+  {"cmd":"python -I %TEMP%/acc-inc.py：把 INC-20261110-01.md 里的新锚串换回候选原文，与 HASH-BEFORE.txt 的 sha256 比","result":"候选 `dag.workflow.mjs:160-574` 差 61 字节，sha256 = 46F20D2B…9A82，与基线一致（E3）：改动只有这一处。新写法的终点 function declares( 在 orig/当前版本里都在 :575，起点 :160，所以 160-574 的区间语义没变。工人改这一处正当：§4.3 约束的是救火队长，而且这处只补了锚串"},
+  {"cmd":"python -I tasks/FIRE-CHIEF-2026-11-10/sha-delta.py %TEMP%/acc-delta.txt","result":"rc=0; changed=8 (白名单内 3 / 外 5: AGENTS.md, ledger.md, runner.pyc, verify-findings.mjs, INC.md) added=43 deleted=0；runner.py 不在 changed 里（内容没变）→ N4"},
+  {"cmd":"grep INC-20261110-01 decisions/self/ledger.md + powershell -File scripts/ledger-audit.ps1","result":"本单元有账本行 :231 :232 :233（:230 是建事故单那一行），token 覆盖了 dag.workflow.mjs / harness.mjs / verify-findings.mjs / INC.md / runs/fire/INC-20261110-01/ / GRAPH.json；RESULT=LEDGER_OK rc=0（只有那几条老的 broad DIR [warn]）"},
+  {"cmd":"python -I scripts/cite-check.py --files DELIVERY.md REVIEW-BRIEF-fire-round2.md runs/fire/INC-20261110-01/VERIFY.md --strict","result":"rc=0, OK 9 / LONE 9"},
+  {"cmd":"rm -rf %TEMP%/acc-*","result":"夹具都删了，剩余 0 个；主树三个被审文件在审查前后 sha256 一样"}
+ ],
+ "rework_brief":"不需要返工。下一次碰 nodeSchema 或 harness 时顺手做（N1/M1）：harness 的 plan 收得到 opts.schema，加一条「patch 节点 schema.properties.changed 存在」的断言，用删掉 dag.workflow.mjs:764 那行的变异证明它会红；同时把 DELIVERY §六·3 的「要真引擎才能验」改掉。另外：fire-chief.py 固化时，救火队长退出时给产物目录存哈希（N2）；变异台改在 %TEMP% 镜像里跑（N5）。"}

@@ -1,0 +1,43 @@
+{
+  "v": 1,
+  "plan_id": "plan-a2-when",
+  "budget": { "max_calls": 8 },
+  "nodes": [
+    {
+      "id": "s_gate",
+      "kind": "scout",
+      "do": "只读侦察：给出 verdict（go 或 stop）。不写任何文件。",
+      "after": [],
+      "out": ["verdict", "summary"],
+      "accept": [
+        { "type": "assert", "rule": "verdict 只能是 go 或 stop" }
+      ],
+      "on_fail": { "retry": 0, "then": "abort" }
+    },
+    {
+      "id": "w_maybe",
+      "kind": "work",
+      "do": "往 tasks/DAG-2026-11-06/fixtures/sandbox/notes.md 末尾追加一行 '- when 通过'。",
+      "after": ["s_gate"],
+      "when": { "ref": "s_gate.verdict", "op": "eq", "val": "go" },
+      "writes": ["tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"],
+      "out": ["changed", "summary"],
+      "accept": [
+        { "type": "scope", "rule": "只许改 notes.md" },
+        { "type": "assert", "rule": "changed 恰好是 notes.md" }
+      ],
+      "on_fail": { "retry": 0, "then": "replan" }
+    },
+    {
+      "id": "k_check",
+      "kind": "check",
+      "do": "只读核对 notes.md 的最后一行。",
+      "after": ["w_maybe"],
+      "out": ["verdict"],
+      "accept": [
+        { "type": "assert", "rule": "verdict 只能是 pass 或 fail" }
+      ],
+      "on_fail": { "retry": 0, "then": "skip" }
+    }
+  ]
+}

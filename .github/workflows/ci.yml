@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  syntax:
+    name: 语法与单元断言
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: 全部 JS 语法检查
+        run: |
+          fail=0
+          while IFS= read -r f; do
+            echo "check $f"
+            node --check "$f" || fail=1
+          done < <(find src -name '*.js' -o -name '*.mjs')
+          exit $fail
+      - name: 裁决解析器断言机
+        run: node src/lib/verdict.test.mjs
+      - name: 插件导出形状
+        run: |
+          node -e "
+          import('./src/index.js').then(m => {
+            const need = ['name','inject','Config','apply'];
+            const miss = need.filter(k => !(k in m));
+            if (miss.length) { console.error('missing exports:', miss); process.exit(1); }
+            console.log('exports ok:', need.join(', '));
+          }).catch(e => { console.error(e); process.exit(1); });
+          "
+
+  redaction:
+    name: 脱敏闸门（本项目的自身纪律）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 禁止绝对用户路径 / 私网 IP / 凭据字样入库
+        run: |
+          # 只按「模式」判，不写任何真实敏感值 —— 否则检查规则本身就成了泄露。
+          set +e
+          fail=0
+          # 1) Windows/macOS/Linux 绝对用户目录路径
+          if grep -rInE '(C:\\\\?[Uu]sers\\\\?[A-Za-z0-9._-]+|/home/[A-Za-z0-9._-]+/|/Users/[A-Za-z0-9._-]+/)' \
+               --include='*.md' --include='*.js' --include='*.mjs' --include='*.py' --include='*.ps1' --include='*.yml' . \
+               | grep -vE '\.github/|README.*示例|/path/to/|%USERPROFILE%|<USER'; then
+            echo "::error::发现绝对用户路径"; fail=1
+          fi
+          # 2) 私网 / 保留网段 IP（含 .json —— 上一版只扫 md/js/mjs/py 导致已公开的裁决 JSON 漏网）
+          if grep -rInoE '\b(10\.[0-9]{1,3}|172\.(1[6-9]|2[0-9]|3[01])|192\.168)\.[0-9]{1,3}\.[0-9]{1,3}\b' \
+               --include='*.md' --include='*.js' --include='*.mjs' --include='*.py' --include='*.ps1' --include='*.json' --include='*.yml' .; then
+            echo "::error::发现私网 IP"; fail=1
+          fi
+          # 3) 凭据字样
+          if grep -rInoE '(gh[pousr]_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16})' \
+               --include='*' . ; then
+            echo "::error::发现疑似凭据"; fail=1
+          fi
+          # 4) 本机代理端口约定（写成模式，避免暴露具体值）
+          if grep -rInoE '127\.0\.0\.1:(1[0-9]{4}|2[0-9]{4})' --include='*.md' --include='*.js' --include='*.py' . \
+               | grep -vE ':3080|:9881|:9882|:9880|:18765'; then
+            echo "::warning::发现本机端口引用，请确认是否为示例"
+          fi
+          exit $fail
+
+  docs:
+    name: 文档一致性
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 五个工具名必须与契约一致
+        run: |
+          set -e
+          for t in ai_team_init ai_team_review ai_team_plan ai_team_gate ai_team_run; do
+            grep -rq "$t" src/ || { echo "::error::src 里找不到工具 $t"; exit 1; }
+            grep -rq "$t" README.md || { echo "::error::README 里找不到工具 $t"; exit 1; }
+          done
+          echo "五个工具名在 src 与 README 中对齐"
+      - name: patch 与 package.json 互相指向
+        run: |
+          set -e
+          test -f cordis.patch.yml || { echo "::error::缺 cordis.patch.yml"; exit 1; }
+          grep -q 'cordis.patch.yml' package.json || { echo "::error::package.json 未声明 patch"; exit 1; }
+          grep -q 'dsh-ai-team' cordis.patch.yml || { echo "::error::patch 里没挂载 dsh-ai-team"; exit 1; }
+          echo "patch 装配一致"

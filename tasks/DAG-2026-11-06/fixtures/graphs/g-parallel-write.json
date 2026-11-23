@@ -1,0 +1,47 @@
+{
+  "v": 1,
+  "plan_id": "plan-b1-parallel-write",
+  "budget": { "max_calls": 8 },
+  "nodes": [
+    {
+      "id": "w_a",
+      "kind": "work",
+      "do": "往 fixtures/sandbox/notes.md 末尾追加一行 '- parallel-write A'。",
+      "after": [],
+      "ctx": { "read": ["tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"] },
+      "writes": ["tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"],
+      "out": ["changed", "summary"],
+      "accept": [
+        { "type": "scope", "rule": "只许改 notes.md" },
+        { "type": "assert", "rule": "changed 恰好是 notes.md" }
+      ],
+      "on_fail": { "retry": 0, "then": "replan" }
+    },
+    {
+      "id": "w_b",
+      "kind": "work",
+      "do": "往 fixtures/sandbox/BUDGET.md 末尾追加一行 '- parallel-write B'。",
+      "after": [],
+      "ctx": { "read": ["tasks/DAG-2026-11-06/fixtures/sandbox/BUDGET.md"] },
+      "writes": ["tasks/DAG-2026-11-06/fixtures/sandbox/BUDGET.md"],
+      "out": ["changed", "summary"],
+      "accept": [
+        { "type": "scope", "rule": "只许改 BUDGET.md" },
+        { "type": "assert", "rule": "changed 恰好是 BUDGET.md" }
+      ],
+      "on_fail": { "retry": 0, "then": "replan" }
+    },
+    {
+      "id": "k_both",
+      "kind": "check",
+      "do": "读两个文件，报它们都改过了。",
+      "after": ["w_a", "w_b"],
+      "ctx": { "from": ["w_a.changed", "w_b.changed"] },
+      "out": ["summary"],
+      "accept": [
+        { "type": "assert", "rule": "summary 点名 w_a 与 w_b" }
+      ],
+      "on_fail": { "retry": 0, "then": "replan" }
+    }
+  ]
+}

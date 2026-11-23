@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "plan_id": "plan-b1-parallel-budget",
+  "budget": { "max_calls": 3 },
+  "nodes": [
+    {
+      "id": "s1",
+      "kind": "scout",
+      "do": "侦察 1：读 notes.md。第一次会失败，重试才成功。",
+      "after": [],
+      "out": ["facts", "summary"],
+      "accept": [{ "type": "assert", "rule": "facts 非空" }],
+      "on_fail": { "retry": 1, "then": "replan" }
+    },
+    {
+      "id": "s2",
+      "kind": "scout",
+      "do": "侦察 2：读 OFF-LIMITS.md。第一次会失败，重试才成功。",
+      "after": [],
+      "out": ["facts", "summary"],
+      "accept": [{ "type": "assert", "rule": "facts 非空" }],
+      "on_fail": { "retry": 1, "then": "replan" }
+    }
+  ]
+}

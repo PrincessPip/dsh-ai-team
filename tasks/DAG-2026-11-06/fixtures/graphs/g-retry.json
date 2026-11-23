@@ -1,0 +1,31 @@
+{
+  "v": 1,
+  "plan_id": "plan-a2-retry",
+  "budget": { "max_calls": 6 },
+  "nodes": [
+    {
+      "id": "w_try",
+      "kind": "work",
+      "do": "往 tasks/DAG-2026-11-06/fixtures/sandbox/notes.md 末尾追加一行 '- retry 成功'。",
+      "after": [],
+      "writes": ["tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"],
+      "out": ["changed", "summary"],
+      "accept": [
+        { "type": "scope", "rule": "只许改 notes.md" },
+        { "type": "assert", "rule": "changed 恰好是 notes.md" }
+      ],
+      "on_fail": { "retry": 1, "then": "replan" }
+    },
+    {
+      "id": "k_after",
+      "kind": "check",
+      "do": "只读核对 notes.md 的最后一行。",
+      "after": ["w_try"],
+      "out": ["verdict"],
+      "accept": [
+        { "type": "assert", "rule": "verdict 只能是 pass 或 fail" }
+      ],
+      "on_fail": { "retry": 0, "then": "skip" }
+    }
+  ]
+}

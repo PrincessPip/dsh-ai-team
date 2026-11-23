@@ -1,0 +1,62 @@
+{
+  "verdict": "pass",
+  "confidence": 0.85,
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "selfcheck.workflow.mjs:64-130 — schema 校验对象含 check_id/ok/issues，顶层 return（:124-130）含 checks_run/checks_missing/failed_checks/issues，字段齐全。checks_missing 的计算（:126-127）依赖 flat（已按位置强制回填 check_id，:121-123），源码逻辑自证「掉线可见」：② 跑时 check_id 被 agent 回显成单元名，正是靠这套机制才显出 checks_missing=['claims']。DELIVERY §二/§九 给出反证对照：④ 与 ① 输入相同、唯一变量是脚本版本、结论一致（failed_checks 都是 2，7 条 issue）；② 与 ③ 输入不同 → failed_checks 1→0。结构成立，唯真实调用结果（数字本身）我跑不了，只能核源码逻辑与自称的反证结构是否自洽——是。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "逐条打开 fixture/DELIVERY.md 核对 DELIVERY §三 表格 7 行坐标，全部属实：:16『5 组』、:18/:27/:35/:43 为四组实验标题（⑨⑩⑪⑫，只有 4 组）、:61『跑了 4 组』（与 :16 直接矛盾，坐标1/3成立）、:53『全仓 0 命中』、:55『decisions/ 里...3 处旧措辞命中』（与 :53 直接矛盾，坐标4/5成立）、:63『两处文档一致』无坐标（坐标6成立）、:68『无。』对应 fixture/TASK.md:20『说明这轮改动还剩哪些洞』（坐标7成立）。埋的 ①②④ 确实被 numbers/claims 两条 check 对应的 issue 覆盖，③ 按任务书允许的『strength 本次没开』未抓，口径与 TASK.md C2 要求一致。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "fixture/DELIVERY-MINIMAL.md 内容核对：无『已验证/全部通过/0命中』类断言，只有『改了什么 + 带真实输出的证据 + 两条如实弱点』，对照 claims check 定义（selfcheck.workflow.mjs:26-30，找无证据支撑的断言）与 numbers check 定义（:21-25，核对计数与枚举）均无命中对象，逻辑上支持 issues=[]/failed_checks=0 的自称结果。该次调用的实际返回值是工人侧证据，我跑不了，但源码控制流与样本内容不矛盾。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "selfcheck.workflow.mjs:119-127 直接验证：`results.map((r,i)=>...check_id: picked[i])` 丢弃 agent 回显值、按数组位置强制回填，`checks_missing` 基于回填后的 `flat` 计算——与 DELIVERY §六描述（旧版无回填导致 claims 被误判 missing，新版 :112 + :119-123 修复）逐字对得上。这条是我自己读源码直接确认的，非转述工人证据。"
+    },
+    {
+      "id": "C5",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "位置独立核实：『不是验收官』在真实 TASK.md:6（『它**不是验收官**』）与 DELIVERY.md:4（『它是预处理，不是验收官』）两个独立中文位置一致出现；selfcheck.workflow.mjs:8-10 用英文 'it is not the reviewer / its output is PRE-processing, never a pass' 表达同一含义。LESSONS.md §三『SELFCHECK 轮』第 3 条独立记录了工人『grep -i 验收官 三处命中』曾是假的、脚本头部实为英文，与 DELIVERY §九 C5 行的自我降级（E2 非 E3，因中英文不是同一字符串）完全一致——交叉文件确认，E2 达标，E3 确实够不到（工人自己也这么判，未虚标）。"
+    },
+    {
+      "id": "C6",
+      "type": "judgment",
+      "status": "pass",
+      "claimed_strength": "E1",
+      "strength_met": true,
+      "evidence": "DELIVERY §九/§十：C6 行标了 `[判断类]`，三问回答具体可反驳——①举实例『能抓文案与源码不符，抓不到四组实验前提错』②引用真实反例『DELIVERY-CLEAN.md 自以为干净却报出 5 条』③给出『三层不许合并』的结构化理由。未写『我认为没问题』式空话，达到判断类上限 E1 的要求。"
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    { "id": "N1", "what": "DELIVERY §七 dogfood 表格的 4 条 blocking 中，第 1/2 条引用的是已被改写、不再存在的旧版章节编号（『§四指向§六』『§八下方空白』），我手上只有改写后的现版，无法对旧版原文做逐字核对；第 3/4 条（伪单变量对照、grep 三处命中不成立）因在现版中被直接自引（§二的更正段、§九 C5 行）且被独立文件 decisions/LESSONS.md §三『SELFCHECK 轮』交叉印证，可信度明显更高。整体结构不矛盾，但第 1/2 条属于『工人侧历史叙述，我核不到原始证据』。" },
+    { "id": "N2", "what": "工人在 §十一如实披露：7 条 check 里 crossfile/strength/verifiable/honesty 四条从未真实调用过，仅有定义；C1/C3 的『失败则怎样』实际只在 numbers+claims 两条 check 上验证过。这是已知且被承认的覆盖缺口，不构成本轮验收标准的 fail，但后续若送审时默认『七条全验证过』会是虚标。" }
+  ],
+  "rework_brief": "",
+  "escalate_question": "",
+  "reviewer_notes": "依序读了 REVIEW-CONTRACT.md、TASK.md、scripts/selfcheck.workflow.mjs 全文、fixture/TASK.md + fixture/DELIVERY.md + fixture/DELIVERY-CLEAN.md + fixture/DELIVERY-MINIMAL.md、真实 DELIVERY.md，并额外读了 decisions/LESSONS.md（用于交叉核 C5 与 §七 dogfood 的『4 条 blocking』叙述）和 scripts/ledger-audit.ps1:165-179（核 DELIVERY §四引用的 :170/:173/:176 是否真实存在——存在且文案匹配）。判不了的：workflow 工具的真实调用结果（无 shell/工具，只能核源码逻辑是否支持自称的 D 类别与反证结构）；§七 dogfood 表格第 1/2 条引用的『旧版』原始文本（已被覆盖，只能靠 LESSONS.md 这个独立文件做二次位置印证，不是我直接读到的原文）。全程只读，未执行任何命令或改动文件。"
+}

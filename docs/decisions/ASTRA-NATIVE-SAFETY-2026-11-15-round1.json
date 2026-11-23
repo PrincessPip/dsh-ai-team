@@ -1,0 +1,113 @@
+{
+  "verdict": "rework",
+  "confidence": 0.98,
+  "readonly_enforcement": "snapshot_only",
+  "evidence_root": "%USERPROFILE%/AppData/Local/Temp/astra-independent-20261115-zbav84fu",
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "预检普通放行、native/损坏/未知版本/链接/空scope拒绝均实测成立，字节恢复通过；但简报要求的ACL恢复检查失败，见B1及COUNTEREXAMPLES-RESULT.json。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "parent-none-console.json、parent-zstd-console.json：普通/native各执行1个工具，恢复后无新compaction；unknown/torn拒绝，工具和请求均为0，损伤前后SHA相同。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "suite-console.json：faults-none、faults-zstd各16个worker退出0；8个边界的物理记录符合预期。end-flush-unlanded只留下start并拒绝；landed包含start/summary/checkpoint/end，可恢复执行工具。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "suite-console.json及两个parent控制台记录：写入与恢复PID不同；不完整事务拒绝且句柄可重取，完整提交正常续答。已核fault-worker实际调用engine、SessionStore和JSONL，不把主动退出解释为断电保证。"
+    },
+    {
+      "id": "C5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "COUNTEREXAMPLES-RESULT.json：普通scope exit0、完整native exit1/NATIVE_HISTORY；HIDDEN-NATIVE-V3-RESULT.json：当前surface的native数量1→0后仍拒绝历史native。核心Basic及生命周期回归通过。"
+    },
+    {
+      "id": "C6",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "suite-console.json：两类变异分别精确失败3项和1项，恢复通过，异常组pass/completed=false。独立COUNTEREXAMPLES-RESULT.json确认移除守卫误放行、恢复后拒绝且原字节恢复；KILL-RESULT.json确认中途终止后pass/completed/cleanup_verified均为false。"
+    },
+    {
+      "id": "C7",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "核心10项含strict types全部exit0；types-console.json正常读取exit0，seq/header/integrity写入各exit2且唯一TS2540。NESTED-RESULT.json：data.turn读取exit0、写入唯一TS2540、真实迁移回调TypeError；8组修改前后源码哈希匹配。"
+    },
+    {
+      "id": "C8",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "完整套件11组、53个worker符合预期并退出，缺件/漂移测试正确拒绝；但正式ACL入口exit1，独立复现未全部通过。FINAL-HASH-CHECK.json显示5326个输入文件无新增/删除/修改，5324个sourceInputs、8144个external及15191+33保护文件无漂移；外层正式后快照和cleanup回执尚未取得，未预签通过。"
+    }
+  ],
+  "policy_review": {
+    "type": "judgment",
+    "claimed_strength": "E1",
+    "strength_met": true,
+    "status": "pass",
+    "evidence": "tasks/ASTRA-NATIVE-SAFETY-2026-11-15/INTERFACES-v2.md:11「部署另需停写和独占清点，CLI 不证明全机安全。」；同文件:7明确保留守卫、不支持自动卸载opaque。candidate-v2/native-engine.mjs:83「NATIVE_EXPLICIT_RANGE_REQUIRED_2A」保留目标compactNow拒绝。"
+  },
+  "blocking": [
+    {
+      "id": "B1",
+      "claim": "必跑ACL台在新TEMP副本中无法满足原ACL恢复判据。",
+      "what": "aclRestored=false，正式入口exit1。",
+      "why": "违反REVIEW-BRIEF第7项及C8可复现交付要求；不能用历史通过覆盖本次失败。",
+      "evidence": "acl-console.json及tree/tasks/ASTRA-NATIVE-SAFETY-AUDIT-2026-11-15/artifacts/acl-1794692412314745000/stdout.log：0→1(EPERM)→0，但aclRestored=false。另一个新scope诊断再次exit1；acl-diagnostic/before-sddl.txt与after-sddl.txt显示D:变为D:AI，ACE条目相同。日志字节独立核对未变。acl-probe.ps1:30「$aclRestored=(Get-Acl -LiteralPath $scopePath).Sddl -eq $beforeSddl」据此失败；这不是已证明的生产权限扩大。"
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "cite-check严格模式exit0，但只有4个LONE、0个named引用，不能据此声称全部源码引用已锚定。"
+    },
+    {
+      "id": "N2",
+      "what": "历史MTIME账本嫌疑仍保留；本次保护哈希无漂移，不将旧账归因为本次越界。"
+    },
+    {
+      "id": "N3",
+      "what": "验收官自建隐藏native夹具前两次因系统节点范围和新增事件序列错误失败，原记录保留；第三版使用完整公开事件序列通过，未修改产品代码。"
+    }
+  ],
+  "executed_commands": [
+    "python -B tasks/ASTRA-NATIVE-SAFETY-AUDIT-2026-11-15/run-suite.py → exit0",
+    "python -B tasks/ASTRA-NATIVE-SAFETY-AUDIT-2026-11-15/run-parent.py --source tasks/ASTRA-NATIVE-SAFETY-2026-11-15/candidate-v2 → exit0",
+    "上述run-parent命令加 --compression zstd → exit0",
+    "上述run-parent命令加 --modes cancel-migration migration-readonly → exit0",
+    "python -B tasks/ASTRA-NATIVE-SAFETY-AUDIT-2026-11-15/test-migration-types.py → exit0",
+    "python -B tasks/ASTRA-NATIVE-SAFETY-AUDIT-2026-11-15/test-acl.py --journal-root %USERPROFILE%/AppData/Local/Temp/astra-independent-20261115-zbav84fu/tree/tasks/ASTRA-NATIVE-SAFETY-AUDIT-2026-11-15/artifacts/parent-1794692306094820200/probe/ordinary → exit1",
+    "python -B tasks/ASTRA-NATIVE-SAFETY-2026-11-15/package-proofs-v2.py → exit0"
+  ],
+  "rework_brief": "修正acl-probe.ps1对新建TEMP scope初始DACL控制位的处理或恢复逻辑，记录前后SDDL，保留严格恢复检查；不得直接把aclRestored改为true。保留本次失败，在全新TEMP副本用新生成的ordinary日志复跑原test-acl入口，必须得到exit0、0→1(EPERM)→0、aclRestored=true及字节不变，再收取正式快照与cleanup回执。",
+  "reviewer_notes": "原工程未修改，所有测试、变异和ACL操作均在另建TEMP副本；最终查询未发现该副本的存活Node/Python测试进程。补充哈希核对不替代外层正式前后快照，也不证明写后还原或全盘无写入。未验证真实上游、生产发布、断电/fsync、任意历史迁移、完整HMR/多模态及Zstd五类语义重编码矩阵。"
+}

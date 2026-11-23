@@ -1,0 +1,80 @@
+{
+  "verdict": "pass",
+  "confidence": 0.84,
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "源码 ledger-audit.ps1:169-177：三个分支文案逐字匹配 DELIVERY ⑨⑩⑪ 的输出（'has NO usable entry'/:170、'do not exist'/:173、'NOT FOUND'/:176）。exit 码逻辑只在 :233-242 依据 $suspect.Count 决定，与 $warn 无关——我从源码控制流直接证明三种情形都不可能动退出码，这点不依赖工人侧证据。反证结构：⑨(清单存在空) vs ⑪(清单缺失) 只差'文件在不在'，走源码里两条不同分支、文案不同，与源码分支划分一致。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "源码 :215 `if ($dirHits[$t] -ge 3)` 精确对应任务书'≥3'阈值，非工人自称。DELIVERY ⑭A(2 文件无 warn)/⑭B(3 文件出 warn，点名 tasks/P1-2026-11-06-WARN/) 是唯一变量翻转对照，与源码阈值完全吻合。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "源码 :119 剥全角括号、:120 剥 ASCII 括号为两条独立 -replace 语句。DELIVERY ⑫(剥，OK/0) vs ⑬(仅删掉全角剥除那一行，241 行 vs 242 行) 唯一变量=剥不剥。我验证了当前 ledger-audit.ps1 确实是 242 行（Read 工具 offset=230 核对到 EOF），与⑬所称'original_lines=242'精确一致——这是我能独立核实的硬事实，不是工人单方面断言。证据自含，未引用上一轮材料，补上了 round2 N3 的缺口。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "⑮(未记账，exit=1) → ⑯(记账后，exit=0) 唯一变量=账本多一行，反证成立。我独立核对 decisions/self/ledger.md 当前确有 20 行数据（第23-42行），与⑯'[ledger] 20 line(s)'精确对上，且第42行正是 WARN 本轮自己那条——这是我自己数出来的，不是抄工人的话。NO_LEDGER(exit=2) 分支本轮未重测，工人在正文已承认（见 nonblocking），但源码 :66-69 的该分支本轮 diff 未触及，从控制流看不可能被破坏，可支撑'语义不变'。"
+    },
+    {
+      "id": "C5",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "四处独立读取均一致：TRIGGER-POLICY.md:75-97（含 v1.8 目录token/退化告警/退出码不变）、AGENTS.md:85（14组·warn行为·退出码0/1/2不变·清单.txt不在白名单）、decisions/self/ledger.md:6-15（头部 warn 说明）、ledger-audit.ps1:46-55 头部 WARN LINES 注释——四处对'扫哪/不扫哪/退化表现/退出码'的表述互相对得上，也和源码实际行为对得上。独立 Grep 核实 TRIGGER-POLICY.md 现行正文不含'静默退回'字面（含的是'退回'+另起'[warn]'的分段表述），与⑰声明的0命中一致。"
+    },
+    {
+      "id": "C6",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "AGENTS.md:85 写'14 组（上一轮8+本轮6）'。核对 tasks/P1-2026-11-06-MTIME/DELIVERY.md 标题自称'8组对照实验'（①-⑧，清理检查与最终基线不计入），本轮 DELIVERY.md 标题自称'本轮6组对照实验'（⑨-⑭，⑮⑯⑰另记为'收尾'不计入6组）。8+6=14，口径内部自洽，且两份 DELIVERY 的编号顺序衔接（①-⑧接⑨-⑭）。独立 Grep 核实现行 live docs（AGENTS.md/TRIGGER-POLICY.md/ledger.md/ledger-audit.ps1）不含'反证6组'字样，仅 ledger-audit.ps1 含一处'v3.1'版本号注释（与本条无关）。"
+    },
+    {
+      "id": "C7",
+      "type": "judgment",
+      "status": "pass",
+      "claimed_strength": "E1",
+      "strength_met": true,
+      "evidence": "[判断类] 三问均给出可被反驳的具体答案：①指出 cron/CI 只看退出码场景，并给出'需伙伴判'的 -StrictWarn 建议而非空话；②指出拆成两个各覆盖2文件的目录token可绕开阈值，并点出'阈值3是降噪不是防御'的边界；③指出两种退化在 warn 文案上有区分（源码:170/:176 行号引用准确，我已核对这两行确实是对应文案）、但[scope] external 行都是(none)。答案具体到源码行号和场景，符合判断类≥E1且可被反驳的要求。"
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "本轮所有实测输出（⑨-⑰，含 SHA256 复原证明）仍是纯工人侧证据，我没有 shell 复现不了——这是任务书自己承认的结构性限制，不是本轮能解决的，但强度声明不应被误读为'验收官已验证'。"
+    },
+    {
+      "id": "N2",
+      "what": "exit=2（NO_LEDGER）分支本轮未重测，依赖源码未改动的推理成立，但严格说 C4 的三态证据里有一态是引用而非本轮实测，工人已自报（DELIVERY §六脚注、§七第2条）。"
+    },
+    {
+      "id": "N3",
+      "what": "⑮→⑯之间项目文件数从44变45只差1（新增DELIVERY.md自身），但⑭B→⑮之间项目文件数从46降到44，中间的清理步骤未在正文逐笔列出，只能从旁证推断合理，无法排除是工人笔误——不影响结论，但建议下轮如涉及类似连续实验链条时逐步贴出清理检查点。"
+    }
+  ],
+  "rework_brief": "",
+  "escalate_question": "",
+  "reviewer_notes": "读取顺序：REVIEW-CONTRACT.md → TASK.md → ledger-audit.ps1(全文,242行) → TRIGGER-POLICY.md(全文) → AGENTS.md:85 → decisions/self/ledger.md(全文,20行数据) → scripts/ledger-external.txt(全文) → decisions/P1-2026-11-06-MTIME-round2.json(背景) → tasks/P1-2026-11-06-MTIME/DELIVERY.md(核C6的'8组'来源) → 最后读 tasks/P1-2026-11-06-WARN/DELIVERY.md。能自己核到源码级别的：三种warn分支的文案与退出码无关(直接读控制流证明)、目录token阈值≥3的精确匹配、全角括号剥除行的存在与行号、当前ledger.md的20行数据与DELIVERY声明的最终状态精确吻合、ledger-external.txt当前内容确为'未改'状态、独立Grep验证'反证6组'/'静默退回'在live docs里0命中。判不了的：所有带mtime/文件计数/exit码的具体实测数字本身（无shell，只能看结构是否自洽、是否与源码控制流矛盾），以及SHA256复原过程中'中途没做过别的事'这类无法用静态证据排除的可能性——这点工人在DELIVERY §七第3条已如实承认。C5的type归类（fact-consistent而非executable）我按'跨文件'字面定性终裁，TASK.md原句'C1-C5、C7里凡关于脚本行为的按executable'表述本身有歧义，已在此说明。"
+}

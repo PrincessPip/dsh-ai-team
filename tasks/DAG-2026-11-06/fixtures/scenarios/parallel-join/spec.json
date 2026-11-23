@@ -1,0 +1,13 @@
+{
+  "_comment": "验收官 B1 的反例图。wave0 是 s_bad + s_ok 两个只读兄弟并发；wave1 四个 check 也是并发段，但它们的闸门各不相同：k_j1/k_j2 靠 join=all（上游 s_bad 失败 → skipped），k_w1/k_w2 靠 when（s_ok.verdict=stop ≠ go → skipped）。**并行与串行必须给出完全一样的四个 skipped + agent_calls=2**。s_bad 报 fail、s_ok 报 verdict=stop；四个 check 没有 spec —— 真起跑了就会 FAKE_WORKER_NO_SPEC_FOR_NODE（exit 8），从而被抓。",
+  "nodes": {
+    "s_bad": {
+      "expect_prompt_contains": ["id: s_bad"],
+      "result": { "status": "fail", "summary": "故意失败" }
+    },
+    "s_ok": {
+      "expect_prompt_contains": ["id: s_ok"],
+      "result": { "facts": ["OFF-LIMITS.md 有 3 行"], "verdict": "stop", "summary": "停" }
+    }
+  }
+}

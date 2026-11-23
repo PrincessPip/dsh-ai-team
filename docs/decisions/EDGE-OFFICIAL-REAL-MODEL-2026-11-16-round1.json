@@ -1,0 +1,73 @@
+{
+  "verdict": "pass",
+  "confidence": 0.94,
+  "readonly_enforcement": "snapshot_only",
+  "evidence_root": "%USERPROFILE%/AppData/Local/Temp/edge-independent-ull0rfcp",
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "亲跑 python -B official-real-model/audit-parent.py official-real-model/artifacts/1794803732050/RESULT.json：16次响应、10次工具调用、5对审批、117条JSONL事件一致，4项证据变异全部检出；另做33项独立关联核查全部通过，包含responseId、usage、工具结果回流和票据快照绑定。报告：AUDIT.json、EVENT-CROSSCHECK.json。实模为继承核验，本轮未重新请求模型。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "最终RESULT中的随机标记、中文字段、勾选状态、单次trusted提交、唯一服务器回执及模型回读相符；TEMP中提取实际提交前置钩子，使用真实票据类及模拟DOM验证5项：正确状态放行，错误姓名、未勾选、缺页、异源页均拒绝签票。报告：EVENT-CROSSCHECK.json、SUBMIT-STATE.json。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "真实请求均为9工具目录，页面注入文字确已回流模型；亲跑标准MCP接线15项通过，独立扩展接线36项通过，其中evaluate、unsafe、upload、network、resource及shell均拒绝且未进入调度，filename空串与非空串均拒绝。报告：candidate/artifacts/wiring-1794804371672/RESULT.json、candidate/artifacts/wiring-1794804414866/RESULT.json。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "本地fixture导航正控成功；独立真实MCP探针拒绝3080、18765、localhost别名、HTTPS及带凭据URL，tabs变更拒绝而list通过。报告：candidate/artifacts/wiring-1794804414866/RESULT.json；结论仅覆盖本地fixture，不扩张为浏览器网络防火墙。"
+    },
+    {
+      "id": "C5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "亲跑offline-test.mjs 26项、approval-test.mjs 6项均通过，覆盖票据一次性、精确参数、Agent/Session/run身份、取消及迟到授权；继承实模的dispatch→trusted busy-start→stop请求→observer断连→stop确认时间顺序已独立核对，自有树和端口清零，源码及事件支持其后6.5秒无busy-end/late/pending。报告：candidate/evidence/OFFLINE.json、APPROVAL.json、EVENT-CROSSCHECK.json；未验证长跑或停止时延上界。"
+    },
+    {
+      "id": "C6",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "重算14635项执行源码及依赖、50项保护清单、旧宿主17项及冻结31项均一致；新收尾核查保留2个日常根PID/创建时间及3080 PID25820，历史8个CDP端口无监听；独立TEMP测试自有进程与2个CDP端口也清零。原输入树前后16448项路径/类型/内容采样无增删改。报告：AUDIT.json、FROZEN50.json、CLOSEOUT.json、TEMP-CLEANUP.json、INPUT-DIFF.json；漂移和泄漏反证见亲跑30项全部通过的candidate/evidence/DETECTOR.json。"
+    },
+    {
+      "id": "C7",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "逐份核对历史RESULT：5轮实模请求数为3/3/15/16/16，共53次，前三轮失败、后两轮通过，与DELIVERY一致；离线26/30/6项分列，合成检测器未充作实模证据。亲跑cite-check --strict检查3份交付文档，exit0、refs=0，不作为行号覆盖证明；未运行CP2或旧56/65全套。"
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "强停止时上游返回内部TypeError，错误语义仍可改进；本次通过依据独立断连、进程/端口及页面事件交叉证据，并非单凭isError。"
+    }
+  ],
+  "rework_brief": "",
+  "reviewer_notes": "所有新增探针和报告均在evidence_root，亲跑命令包括三套离线测试、node supervise.mjs --wiring、node reviewer-supervise.mjs --wiring、node reviewer-submit.mjs及独立审计/收尾脚本；扩展接线36项包含原15项，不累计为独立功能数。提交状态探针首次因PowerShell管道中文编码损坏而未完成，失败源码已保留为candidate/reviewer-submit-encoding-failed.txt，改用Unicode转义后5项通过，未改产品源码。本轮外部模型请求为0，未验证GUI人审、任意网站、启动停止竞争或外层强杀分支；snapshot_only不能发现写后还原或树外写入，也不是全机器只读证明。"
+}

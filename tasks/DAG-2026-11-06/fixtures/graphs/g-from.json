@@ -1,0 +1,128 @@
+{
+  "v": 1,
+  "plan_id": "plan-e2efix-from",
+  "budget": {
+    "max_calls": 10
+  },
+  "nodes": [
+    {
+      "id": "s_ok",
+      "kind": "scout",
+      "do": "读 notes.md，数条目数写进 facts。不写任何文件。",
+      "after": [],
+      "ctx": {
+        "read": [
+          "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+        ]
+      },
+      "out": [
+        "facts",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "facts 里必须写清条目数"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "abort"
+      }
+    },
+    {
+      "id": "w_bad",
+      "kind": "work",
+      "do": "只交 patch，但这次交不出来（自报 fail）。",
+      "after": [
+        "s_ok"
+      ],
+      "ctx": {
+        "from": [
+          "s_ok.facts"
+        ]
+      },
+      "writes": [
+        "tasks/DAG-2026-11-06/fixtures/sandbox/PATCH-A.md"
+      ],
+      "out": [
+        "patch", "patch_targets",
+        "changed",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "patch 非空"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "replan"
+      }
+    },
+    {
+      "id": "down",
+      "kind": "work",
+      "do": "拿 w_bad 的 patch 落地 —— 上游没交付时**不许自己发挥**。",
+      "after": [
+        "w_bad",
+        "s_ok"
+      ],
+      "join": "any",
+      "ctx": {
+        "from": [
+          "w_bad.patch",
+          "s_ok.facts"
+        ]
+      },
+      "writes": [
+        "tasks/DAG-2026-11-06/fixtures/sandbox/PATCH-B.md"
+      ],
+      "out": [
+        "changed",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "必须基于上游给的 patch"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "skip"
+      }
+    },
+    {
+      "id": "down_ok",
+      "kind": "work",
+      "do": "对照：只引用**成功**上游的字段，必须能正常跑。",
+      "after": [
+        "s_ok"
+      ],
+      "ctx": {
+        "from": [
+          "s_ok.facts"
+        ]
+      },
+      "writes": [
+        "tasks/DAG-2026-11-06/fixtures/sandbox/PATCH-C.md"
+      ],
+      "out": [
+        "changed",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "facts 非空"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "skip"
+      }
+    }
+  ]
+}

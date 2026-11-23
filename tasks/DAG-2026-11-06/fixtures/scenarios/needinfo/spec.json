@@ -1,0 +1,22 @@
+{
+  "_comment": "第 1 次报 need_info（缺信息就不猜），第 2 次在升档后完成。on_fail 同时配了 retry=1：如果走同档重试会是 3 次（work/work/strong），跳过同档重试直接升档才是 2 次 —— 这个差值就是判据。",
+  "nodes": {
+    "w_try": {
+      "expect_prompt_contains": ["id: w_try"],
+      "attempts": [
+        {
+          "result": { "status": "need_info", "missing": ["没有说明要追加在哪一行"] }
+        },
+        {
+          "write_files": {
+            "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md": "# A1 fixture 基线\n\n- 第一行\n- 第二行\n- 第三行\n- needinfo 升档后写入\n"
+          },
+          "result": {
+            "changed": ["tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"],
+            "summary": "升档后补上了"
+          }
+        }
+      ]
+    }
+  }
+}

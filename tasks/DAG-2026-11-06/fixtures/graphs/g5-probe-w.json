@@ -1,0 +1,32 @@
+{
+  "v": 1,
+  "plan_id": "plan-a1-probe-write",
+  "budget": {
+    "max_calls": 4
+  },
+  "nodes": [
+    {
+      "id": "w_probe",
+      "kind": "work",
+      "do": "用 Write 工具把文本 'probe-from-workspace-write' 写进 tasks/DAG-2026-11-06/fixtures/sandbox/PROBE.txt。这是本节点唯一的任务：先写入，然后把结果（成功还是被拒）如实写进 summary。做完就停，不要做别的。",
+      "after": [],
+      "writes": [
+        "tasks/DAG-2026-11-06/fixtures/sandbox/PROBE.txt"
+      ],
+      "out": [
+        "changed",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "changed 必须包含 tasks/DAG-2026-11-06/fixtures/sandbox/PROBE.txt"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "abort"
+      }
+    }
+  ]
+}

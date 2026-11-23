@@ -1,0 +1,29 @@
+{
+  "_comment": "N2（K5）：check 返回一个**读不懂的词**（不是 pass / fail / rework / escalate）—— fail-safe 判 protocol_error。这条与 check-protocol 分开，是因为两种病不同：一个是没交，一个是交了但看不懂。",
+  "nodes": {
+    "w_write": {
+      "expect_prompt_contains": ["id: w_write", "允许改动的文件"],
+      "tool_calls": [
+        {"name": "Write", "args": {"path": "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"}}
+      ],
+      "write_files": {
+        "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md": "# A1 fixture 基线\n\n- 第一行\n- 第二行\n- 第三行\n- A1 fixture 写入行\n"
+      },
+      "result": {"changed": ["tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"], "summary": "末尾追加一行"}
+    },
+    "k_verdict": {
+      "expect_prompt_contains": ["id: k_verdict", "只读"],
+      "tool_calls": [
+        {"name": "Read", "args": {"path": "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"}}
+      ],
+      "result": {"verdict": "maybe", "notes": "夹具：未知词（既不是 pass 也不是 fail/rework/escalate）"}
+    },
+    "k_down": {
+      "expect_prompt_contains": ["id: k_down", "只读"],
+      "tool_calls": [
+        {"name": "Read", "args": {"path": "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"}}
+      ],
+      "result": {"verdict": "pass", "notes": "这条不该被起跑"}
+    }
+  }
+}

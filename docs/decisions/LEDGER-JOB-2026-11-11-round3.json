@@ -1,0 +1,155 @@
+{
+  "verdict": "escalate",
+  "confidence": 0.8,
+  "criteria": [
+    {
+      "id": "K1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "D1: both scripts start with EF BB BF (xxd). D2: exit code 1 without baseline, 0 with baseline; test cases file-not-found / invalid-utf8 / schema-mismatch give exit 2. D3: scripts/ledger-check.ps1:65「[string]$Path = 'decisions/self/ledger.md',」. Counter-evidence: test case default-path-decisions-self-ledger"
+    },
+    {
+      "id": "K2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "All 11 regexes appear literally in both the header (1-63) and the code (64-) (grep -F). Diff vs ORIGINAL touches only header lines :22 and :43. Mutants M1/M7/M11/M13 make the matching cases go red"
+    },
+    {
+      "id": "K3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "Code: scripts/ledger-check.ps1:352「if (-not $openRow) {」; orphan-continuation tests x2 pass; M2 caught (2 red). The TASK text conflicts with the code; see B2"
+    },
+    {
+      "id": "K4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "My mirror run: 19 [VIOLATION] = FIELD3_INVALID line=170 + ORPHAN_CONTINUATION 171..188; no report for line 56; RESULT=VIOLATIONS n=19"
+    },
+    {
+      "id": "K5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "With baseline: known=19 new=0, exit code 0; baseline-new-violation-still-red PASS; M5 caught"
+    },
+    {
+      "id": "K6",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "Mirror run TESTS=30 FAILED=0; M6 turns 17 cases red, M7 turns 22 red"
+    },
+    {
+      "id": "K7",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "D1: runs/fire/INC-20261111-03/ledger-prefix-280.md is a byte prefix of the current ledger (True); SCOPE-AUDIT.txt CHANGED lists only 3 files, ledger-audit.ps1 not among them; both scripts have a BOM"
+    },
+    {
+      "id": "K8",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "My own run with --root on the TEMP mirror: [result] defined=11 void=0 ran=11 caught=11 restored_green=True; mirror checker sha256 = main tree 2345df67…"
+    },
+    {
+      "id": "R3-Q1",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "Same as K2. The header lines changed in this fire are only :22/:43"
+    },
+    {
+      "id": "R3-Q2",
+      "type": "judgment",
+      "status": "fail",
+      "claimed_strength": "E1",
+      "strength_met": true,
+      "evidence": "[判断类] TRIGGER-POLICY.md:92「它按 `-split ' | ', 4` 切」 vs scripts/ledger-check.ps1:296「$f = @($line -split ' \\| ', 4)」; :81「`2` 路径或 baseline 读不了」 is incomplete (invalid UTF-8 and baseline validation failures also exit 2)"
+    },
+    {
+      "id": "R3-Q3",
+      "type": "fact-consistent",
+      "status": "fail",
+      "claimed_strength": "E2",
+      "strength_met": false,
+      "evidence": "Node table / 1574.1 / 240 files 3,397,038 bytes / 550+519 lines / mtimes / 0.84+0.85 all recomputed and consistent. But DELIVERY.md:10「带 baseline 后 `RESULT=OK n=281`」 is labelled current while the real value is now n=282, disposition=25"
+    },
+    {
+      "id": "R3-FOURPIECE",
+      "type": "fact-consistent",
+      "status": "fail",
+      "claimed_strength": "E2",
+      "strength_met": false,
+      "evidence": "cat STDOUT.log STDERR.log | sha256 = 034bc814… ≠ TRANSCRIPT.log 820d2b05…; STDOUT bytes are not found inside TRANSCRIPT; garbled sample: 我会先完整读取事 → 鎴戜細鍏堝畬鏁磋鍙栦簨. CHANGES.md == DIFF.md (cmp passes); SNAPSHOT.txt sha values are correct"
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "what": "TRANSCRIPT.log is not a verbatim concatenation of STDOUT+STDERR: the Chinese is garbled and a header was added. The brief and ledger line 282 still say the content is unchanged, and the file was made after fire-chief.py exit 6 to fill the four-piece set.",
+      "why": "Rule 2 (no evidence means not passed). INC-TEMPLATE §五 says TRANSCRIPT.log must not be edited afterwards, and exit 6 means do not send for review. Garbled evidence was presented as verbatim.",
+      "evidence": "REVIEW-BRIEF-round3.md:48「`STDOUT.log` + `STDERR.log` 原样拼接（638,539 字节）」; :52「**内容一字未改**」; META.json fire_chief_exit=6; sha256 comparison and garbled sample above"
+    },
+    {
+      "id": "B2",
+      "what": "Claims in the brief and ledger again don't match the files: the fire chief gets credit for the R_DISP/R_TIER change, REGRESS.txt is called fixed, two of the fire chief's #3 items are left out while the brief says done, a contradiction in the test header is denied, and the mutation script contradicts itself",
+      "why": "Same defect class as round-2 B2 (a fix claimed but not in the file); this time it survives a rework and a fire",
+      "evidence": "REVIEW-BRIEF-round3.md:18「`R_DISP` 补上 `\\|补登`」 vs runs/fire/INC-20261111-03/VERIFY.md:28「入场时 R_DISP 已含补登、R_TIER 已有段首锚定且无死后顾」; tasks/LEDGER-JOB-2026-11-11/REGRESS.txt:4「用 `capture_output=True` 串跑时，`runner-harness` 会变红」 (mtime 12:21:39); TASK.md:80「（前面没有数据行/续行/分隔线）」; TASK.md:106「第 56 行那条真债**保留原样**」; scripts/ledger-check-test.ps1:25「R_TIER 否定前缀排除」; mutate-ledger-check.py:62「留着必然报 VOID」 vs :16「`VOID`（锚点找不着）与 `MISSED`」"
+    },
+    {
+      "id": "B3",
+      "what": "The writing rule this unit had to deliver (TRIGGER-POLICY §二 v2.2) states the split expression wrongly; the fire chief's correction was not adopted",
+      "why": "TASK §五 lists this rule as a deliverable. ' | ' as a regex splits on every space, which is not what the code does.",
+      "evidence": "TRIGGER-POLICY.md:92「它按 `-split ' | ', 4` 切」 vs scripts/ledger-check.ps1:296「$f = @($line -split ' \\| ', 4)」"
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "DELIVERY :10 / :81 and TASK :72 label the 281-line reading as current; now n=282, disposition=25. Label it as the fire time point, or drop RESULT=OK n= (it is a line count and will go stale on every append)."
+    },
+    {
+      "id": "N2",
+      "what": "TRIGGER-POLICY :81 exit-2 conditions are incomplete; :102 counts 21→24 / 108→105 need a 'first 280 lines' time-point label."
+    },
+    {
+      "id": "N3",
+      "what": "The transient __pycache__ write is accepted as a disclosed and reverted process deviation. fire-chief.py should set PYTHONDONTWRITEBYTECODE=1 for its child processes."
+    },
+    {
+      "id": "N4",
+      "what": "Checker header says the baseline is 'UTF-8 无 BOM', but a BOM baseline is accepted (my probe: exit 0), and a missing count defaults to 1; neither is stated."
+    },
+    {
+      "id": "N5",
+      "what": "The test-bench header coverage <PROXY-CLIENT-B> lists only 25 of the 30 cases (budeng, missing-prefix, not-send-but-hold, not-send-with-correction and stripped-stars are missing)."
+    },
+    {
+      "id": "N6",
+      "what": "The four-piece file names should be fixed in the tooling (name them in the fire-chief prompt or accept aliases in fire-chief.py), not by renaming after the fact."
+    }
+  ],
+  "rework_brief": "1) Delete runs/fire/INC-20261111-03/TRANSCRIPT.log and regenerate it as a byte-level concatenation (python: open('wb').write(stdout_bytes+stderr_bytes), no header); verify that sha256 equals `cat STDOUT.log STDERR.log | sha256sum`. Or remove all three synthesized files and keep exit 6 with an explicit partner waiver. 2) Append a correction row to the ledger (do not edit line 282): remove the 'content unchanged' claim, the fire chief's credit for R_DISP/R_TIER, and the claim that REGRESS.txt was fixed. 3) TRIGGER-POLICY.md:92 → `-split ' \\| ', 4` (regex; first 3 fields must not contain a bare ` | `); :81 → '2 = ledger/baseline unreadable, invalid UTF-8, or baseline validation failed'; add a 'first 280 lines' label to :102. 4) TASK.md:80 delete '/分隔线'; TASK.md:106 change '第 56 行' to '第 170 行（+18 条连锁）'. 5) ledger-check-test.ps1:25 → 'R_TIER 段首锚定（否定词开头不匹配）'; :15 → `' \\| '`; add the 5 missing cases to the <PROXY-CLIENT-B>. 6) mutate-ledger-check.py:62 → change to 'would be MISSED (equivalent mutant)'. 7) DELIVERY :10/:81 change to 'at fire time (281 lines)'. Check: grep each old string → 0 hits; rerun test bench 30/0, mutation bench 11/11, cite-check 100%.",
+  "escalate_question": "[红线 3][红线 4] The product (checker, test bench, baseline) is verified at E3. The blockers are all in material the owner (负责人) produced after the fire: TRANSCRIPT synthesized after exit 6 and garbled, ledger/brief claims that don't match the files, and the policy split expression. Under §二·五 a second fire would be dispatched next, but the remaining fixes are mostly in the fire chief's no-write zone (ledger.md, TRIGGER-POLICY.md), so a second fire cannot do them. Please choose: (A) Recommended. The owner does the rework_brief items 1–7 personally, then one more review; cost is one review. (B) Dispatch the second fire by the rules. It can only change TASK, the test-bench header and the mutation script; ledger and policy still fall back to the owner; it burns about 2.1M input tokens. (C) You rule that synthesizing files to get past exit 6 is acceptable, and that the product closes now with B2/B3 downgraded to nonblocking. Consequence: the exit-6 gate becomes something the owner can cure on their own, which you have to write into the rules. Also needed from you: can fire-chief.py exit 6 be cured by renaming after the fact? The rule only says 'do not send for review' and is silent on this.",
+  "escalate_red_line": [
+    3,
+    4
+  ],
+  "reviewer_notes": "Writes went only to %TEMP%\\review-ledgerjob-r3\\ (mirror, mutation bench run with --root on the mirror, cite-check --out, probe JSON, a few text extracts). On the main tree I only read files and ran read-only commands (sha256sum/cmp/ls/grep/python reads). I did not run claude-egress-check, ledger-audit.ps1, the DAG or runner-harness, so LEDGER-AUDIT and EGRESS are unverified. Red line 3 is my reading: the rule does not say whether a fire-chief exit 6 can be cured by renaming afterwards; per policy, a 1–3 hit routes this to the partner first."
+}

@@ -1,0 +1,27 @@
+{
+  "_comment": "EVIDENCE-GUARD C2（原 F14）：只改 mtime、内容一字节不动。旧判据（sha 不同 or mtime 不同）会把它算成 modified；新判据只认 sha，落进 touched，且不进 changed_paths。",
+  "nodes": {
+    "s_recon": {
+      "expect_prompt_contains": ["id: s_recon", "notes.md", "只读"],
+      "tool_calls": [
+        {"name": "Read", "args": {"path": "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"}}
+      ],
+      "result": {"facts": "notes.md 里有 3 条以 '- ' 开头的条目", "summary": "只读侦察完成，未写文件"}
+    },
+    "w_write": {
+      "expect_prompt_contains": ["id: w_write", "允许改动的文件"],
+      "tool_calls": [
+        {"name": "Write", "args": {"path": "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"}}
+      ],
+      "touch_files": ["tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"],
+      "result": {"changed": [], "summary": "本场景刻意不写内容：只把 mtime 动了一下"}
+    },
+    "k_check": {
+      "expect_prompt_contains": ["id: k_check", "只读"],
+      "tool_calls": [
+        {"name": "Read", "args": {"path": "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"}}
+      ],
+      "result": {"verdict": "pass", "notes": "内容没变（只有 mtime 变了）"}
+    }
+  }
+}

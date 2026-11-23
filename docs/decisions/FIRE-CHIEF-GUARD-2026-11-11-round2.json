@@ -1,0 +1,41 @@
+{
+  "verdict": "rework",
+  "confidence": 0.82,
+  "criteria": [
+    { "id": "B1-fix (K2 quota_signal 结构化两条入口)", "type": "executable", "status": "pass", "claimed_strength": "E3", "strength_met": true,
+      "evidence": "我在 %TEMP%\\rev2-guard 复制了 scripts/fire-chief.py（两份 sha256 都是 41858aa5…）。手工造了 M24：在 fire-chief.py:673 处把 `if event.get(\"type\") in (\"error\", \"turn.failed\"):` 改成 `if False:`；又造了 M25：在 :676 处把 `if isinstance(item, dict) and item.get(\"type\") == \"error\":` 改成 `if False:`。两处锚串各只出现 1 次。用 selftest.py --fire <副本> 跑：原件 49/49；M24 48/49，只红 T47（quota hit=False matches=[]）；M25 48/49，只红 T48（hit=False）。每次红的都正好是该格点名的用例。另外 T43 hit=True、T44 hit=False、T49 hit=True，在三次跑里都符合预期。我还加了自己的变异 X2：把 key 元组里的 \"message\"/\"error\" 删掉 → T47 和 T48 同时红。D2 退出码 + D3 断言行 + 反证（变异）= E3" },
+    { "id": "B2-fix / K5 ledger-audit", "type": "executable", "status": "pass", "claimed_strength": "E2", "strength_met": true,
+      "evidence": "我自己跑了 powershell -File scripts/ledger-audit.ps1：输出 `[suspect] none`，`RESULT=LEDGER_OK`，exit=0（只有 broad-DIR 的 [warn]，不影响退出码）。decisions/self/ledger.md:276 的「更正」行确实存在，写明了根因（先记账、后加文件）。不过它声称的落盘证据文件不存在，见 blocking B1" },
+    { "id": "K1 N2 写面边界", "type": "executable", "status": "pass", "claimed_strength": "E3", "strength_met": true,
+      "evidence": "fire-chief.py:343「if stray:」和 :354「if abs_like:」我都读过。T45、T46 在我这轮跑出 exit 2。我造的变异 X3（fire_root 改成 \"runs/\"）只红 T39，这复现了 DELIVERY §二·K1 写的那条教训。parse_whitelist 会先把 `\\` 换成 `/`，所以 UNC 路径也落进 startswith(\"/\") 分支" },
+    { "id": "K2 其余（T40/T41/T42/M20-M23）", "type": "executable", "status": "pass", "claimed_strength": "E2", "strength_met": true,
+      "evidence": "我跑的原件那轮里 T40–T46 全部 PASS。MUTATE.txt 写 `defined=25 void=0 ran=25 caught=25 restored_green=True`，这是工人侧证据。M20–M23 我没有自己打（brief 允许不跑全量）" },
+    { "id": "N1 TRIGGER-POLICY 判定顺序", "type": "fact-consistent", "status": "pass", "claimed_strength": "E2", "strength_met": true,
+      "evidence": "TRIGGER-POLICY.md:236「1. **先读结构字段** `escalate_red_line`」；:241「4. **数组跨组怎么算**（例如 `[2, 5]`」；:231 的引导句已改成「契约 v0.7 已落字段」，不再写「schema 目前没有这个字段」" },
+    { "id": "N2 / K3 契约 v0.7", "type": "fact-consistent", "status": "pass", "claimed_strength": "E2", "strength_met": true,
+      "evidence": "REVIEW-CONTRACT.md:1「# 验收契约 · v0.7」；§三:194「**填表要求（v0.7）**」；§四:216 有 escalate_red_line 字段；§七:255 有 v0.7 行。grep escalate_red_line 计数 = 3" },
+    { "id": "N3 / N4 / K4 AGENTS.md", "type": "fact-consistent", "status": "pass", "claimed_strength": "E2", "strength_met": true,
+      "evidence": "stat 得 AGENTS.md = 47069 字节，≤ 65536。grep -F 计数：「同一时刻只能跑一个 runner」=1；「GPT-6 Astra / ChatGPT 订阅，`--engine claude` 即 Opus 5.5 备用」=1；「零脚本 / 脚本未固化 / 下一步 = 固化 / 模板 v1.1 / 已实战 2 次」都是 0。抽读了文件地图 FIRE-CHIEF.md 行，以及待办 6「证据链收口」、待办 7" },
+    { "id": "N5 口径", "type": "judgment", "status": "pass", "claimed_strength": "E1", "strength_met": true,
+      "evidence": "[判断类] DELIVERY.md §二·K1 的提示框已经把 abs_like 改口为「输入卫生」，§三 写明了是哪 3 个 .md。代码注释残留了旧口径，见 N2" },
+    { "id": "N6 T43 改名 + T49", "type": "executable", "status": "pass", "claimed_strength": "E2", "strength_met": true,
+      "evidence": "selftest.py:565 的 T43 现名「stderr 纯文本 429 → hit」。T49 在我三次跑里都是 hit=True，matches 为 ['429','quota','too many requests']。§四·2 写明了这是有意取舍" },
+    { "id": "cite-check", "type": "executable", "status": "pass", "claimed_strength": "E1", "strength_met": true,
+      "evidence": "我按 brief 的命令跑 3 个 .md --strict：refs=6，OK=6，exit 0" }
+  ],
+  "blocking": [
+    { "id": "B1", "what": "B2 处置行声称「重跑至 LEDGER_OK 并存 LEDGER-AUDIT.txt」，但这个文件不存在。账本第 275 行还把它当作已交付文件登记了",
+      "why": "brief §五明确把「处置表里的话与代码/文档对不上」列为 blocking。第 1 轮 rework_brief 原文要求「save the output to LEDGER-AUDIT.txt」。DELIVERY §三 把它标成「命令直接写入」的证据，实际是 E0。这和 B2 的根因是同一类问题：先写结论，后做（或没做）那一步。它也说明 ledger-audit 只查「记没记过」，查不出账本登记了一个不存在的文件",
+      "evidence": "`ls tasks/FIRE-CHIEF-GUARD-2026-11-11/` 共 14 项，没有 LEDGER-AUDIT.txt。`find . -iname 'LEDGER-AUDIT*' -newer TASK.md` 0 命中。DELIVERY.md:135「重跑至 `LEDGER_OK` 并存 `LEDGER-AUDIT.txt`」；DELIVERY.md:98「见 `LEDGER-AUDIT.txt`」；ledger.md:275 的文件列表里有 tasks/FIRE-CHIEF-GUARD-2026-11-11/LEDGER-AUDIT.txt。另外，LEDGER_OK 这件事本身我已独立复现，成立" }
+  ],
+  "nonblocking": [
+    { "id": "N1", "what": "fire-chief.py:350-352 的注释仍写「绝对路径会让 `runs/` 判据失效 … 换个写法就绕过去了」，和 DELIVERY §二·K1 改过的「输入卫生」口径矛盾，范围也写成了 runs/ 而不是 runs/fire/。TASK.md K1 第 2 条也是同样的说法" },
+    { "id": "N2", "what": "前缀边界没有守护：我造的变异 X4 把 :342 的 `startswith(prod_prefix + \"/\")` 改成 `startswith(prod_prefix)`，台子仍 49/49 全绿。可这正好放行 `runs/fire/INC-20261111-01-run1/…`（真实存在的同前缀归档目录）。建议加 T50：本单 INC-20261111-99，白名单写 `runs/fire/INC-20261111-99-run1/x.md`，期望 exit 2，再配一格变异" },
+    { "id": "N3", "what": "数字过时：DELIVERY §一、§二·K4 写 AGENTS.md「46708 字节」，实测 47069（N3 补回内容后变大了）。§三 写 cite-check「3 个 .md」，但单元里的 CITE-CHECK.txt 记的是 files=4" },
+    { "id": "N4", "what": "TRIGGER-POLICY.md:224-226 仍写「就看它的 `escalate_question`」，和下面 :236「先读结构字段」不完全一致。建议把 :224 改成「看 escalate_red_line（缺省才看 escalate_question）」" }
+  ],
+  "rework_brief": "① 跑 `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ledger-audit.ps1`，输出要由命令直接写入 tasks/FIRE-CHIEF-GUARD-2026-11-11/LEDGER-AUDIT.txt（用 *> 或 Tee-Object -Encoding utf8，不要手抄）。确认文件里有 `RESULT=LEDGER_OK` 和 `[suspect] none`，而且这一步要放在编制流程的最后。也可以选另一种做法：把 DELIVERY.md:98/:135 和 ledger.md:275 里对这个文件的声称删掉，再在账本追加一行更正。② 顺手（可选）：fire-chief.py:350-352 的注释改成「输入卫生」口径；DELIVERY 的 46708 改成实测值；加 T50（同前缀兄弟目录 `-run1`，期望 exit 2）。改完重跑 selftest 应为 50/50。",
+  "escalate_question": "",
+  "escalate_red_line": "",
+  "reviewer_notes": "我执行的只读命令：在 %TEMP%\\rev2-guard（即 /tmp/rev2-guard）放了副本和 6 个变异（M24、M25、X2–X4）；从原位置跑 selftest.py，用 --out 指到 TEMP，-B 关掉字节码缓存；跑了 cite-check（没加 --out）、ledger-audit，以及 stat/grep/ls。工程文件一个没改。按契约 §六，第 2 轮 rework 本应自动升级为 escalate，但六条红线没有一条适用：唯一的 blocking 是一条命令就能补的证据文件，实质结论（LEDGER_OK）我已复现。所以我判 rework，交给 TRIGGER-POLICY §二·五·一·二「两次都是 rework → 自动 B」去处置，派不派救火请伙伴斟酌比例。M20–M23 是否抓得住，我没有自己打变异，那部分仍是工人侧证据。"
+}

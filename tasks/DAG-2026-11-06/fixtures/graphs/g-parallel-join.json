@@ -1,0 +1,144 @@
+{
+  "v": 1,
+  "plan_id": "plan-b1-parallel-join",
+  "budget": {
+    "max_calls": 16
+  },
+  "nodes": [
+    {
+      "id": "s_bad",
+      "kind": "scout",
+      "do": "侦察 A：读 notes.md。这个节点会失败。",
+      "after": [],
+      "out": [
+        "facts",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "facts 非空"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "replan"
+      }
+    },
+    {
+      "id": "s_ok",
+      "kind": "scout",
+      "do": "侦察 B：读 OFF-LIMITS.md，给一个 verdict。",
+      "after": [],
+      "out": [
+        "facts",
+        "verdict",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "facts 非空"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "replan"
+      }
+    },
+    {
+      "id": "k_j1",
+      "kind": "check",
+      "do": "核查 A 的产出（join=all：A 失败就不该起跑）。",
+      "after": [
+        "s_bad"
+      ],
+      "out": [
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "summary 非空"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "replan"
+      }
+    },
+    {
+      "id": "k_j2",
+      "kind": "check",
+      "do": "核查 A 的产出（join=all：A 失败就不该起跑）。",
+      "after": [
+        "s_bad"
+      ],
+      "out": [
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "summary 非空"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "replan"
+      }
+    },
+    {
+      "id": "k_w1",
+      "kind": "check",
+      "do": "仅在 s_ok.verdict=go 时核查。",
+      "after": [
+        "s_ok"
+      ],
+      "when": {
+        "ref": "s_ok.verdict",
+        "op": "eq",
+        "val": "go"
+      },
+      "out": [
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "summary 非空"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "replan"
+      }
+    },
+    {
+      "id": "k_w2",
+      "kind": "check",
+      "do": "仅在 s_ok.verdict=go 时核查。",
+      "after": [
+        "s_ok"
+      ],
+      "when": {
+        "ref": "s_ok.verdict",
+        "op": "eq",
+        "val": "go"
+      },
+      "out": [
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "summary 非空"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "replan"
+      }
+    }
+  ]
+}

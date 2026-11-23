@@ -1,0 +1,23 @@
+{
+  "_comment": "harm 与 escalate 同时配置：第 1 次越界写 → harm 非空 → **必须当场判死**，既不重试也不升档。第 2 次故意准备成诚实版本：如果 runner 错误地继续 retry/escalate，节点会变 ok。",
+  "nodes": {
+    "w_bad": {
+      "expect_prompt_contains": ["id: w_bad"],
+      "attempts": [
+        {
+          "tool_calls": [{ "name": "Write", "args": { "path": "tasks/DAG-2026-11-06/fixtures/sandbox/OFF-LIMITS.md" } }],
+          "write_files": {
+            "tasks/DAG-2026-11-06/fixtures/sandbox/OFF-LIMITS.md": "# 这个文件不在任何节点的 writes 里\n\n被越权改过一次\n"
+          },
+          "result": { "changed": ["tasks/DAG-2026-11-06/fixtures/sandbox/OFF-LIMITS.md"], "summary": "改错了文件" }
+        },
+        {
+          "write_files": {
+            "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md": "# A1 fixture 基线\n\n- 第一行\n- 第二行\n- 第三行\n- 只许改这里\n"
+          },
+          "result": { "changed": ["tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"], "summary": "这次改对了" }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "verdict": "escalate",
+  "confidence": 0.85,
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "B1 is really fixed. I built my own fixture outside the repo (/tmp/.../b1) and ran --fix. `a11.md:11` became `a11.md:20`, so the filename was left alone. In `target.md:3-5` and `a11.md:11` on the same line, both were fixed: the range became 20-22 and kept its width. `target.md:2,105-107` became `20,105-107`, so the extra segments survived. The anchors are byte-for-byte unchanged (diff shows only the number segments changed). On rerun all four are OK, and the `[after-fix]` line gives the post-fix counts (N5 fixed). B2 is only partly fixed. When I copy the real `scripts/ledger-external.txt` into a temp root, `profiles/web/cordis.patch.yml:3193`「allowedModels:」 now resolves to `~\\.dsh\\profiles\\web\\cordis.patch.yml` and is judged OK. A bare `cordis.patch.yml` gives UNRESOLVED, so it no longer guesses. That much works. But `scripts/cite-check.py:144`「if len(hits) > 1:」 means the path-suffix check only runs when there are 2 or more in-project candidates. With exactly 1 in-project candidate it is returned directly, the directory part is never checked, and the external roots are never consulted. Real repro: I cited a declared external root, `~/.dsh/AGENTS.md:3`, and also `.dsh/AGENTS.md:3`, each with an anchor copied verbatim from line 3 of that file. `--json` shows target_path = `ai-team\\AGENTS.md` (the project file) and verdict GONE, exit 1. That is the same failure as round-1 B2, a false GONE from a same-named file, just on a different external root. Also, `scripts/cite-check.py:49`「NAMED = re.compile(r\"`?([A-Za-z0-9_./\\\\-]*\\.(?:%s)):」 has no `~` in its character class, so `~/.dsh/X` is captured as `/.dsh/X`. That leading `/` can never satisfy the target_ok suffix match, so `~/.dsh/profiles/web/cordis.patch.yml:3193` and `~/.dsh/cordis.patch.yml:1` both come out UNRESOLVED. The repo already has 6 citations written this way (AGENTS-PATCH-2026-11-06 is one of 3 files using it). Harness case 24 only builds a directory-type external root with no same-named file in the project, so it does not cover either of these cases."
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "I ran both myself. `python scripts/cite-check-harness.py` gives `checks=49 failed=0`. `python scripts/cite-check-mutate.py` gives `mutants=10 caught=10`, but its output contains `[VOID] M6 --fix 连锚串一起写: 锚点出现 0 次（需要恰好 1 次），跳过`. The mutant table defines 11 entries. M6's anchor is `scripts/cite-check-mutate.py:35`「new_token = it[\"token\"].replace(m.group(2), new_spec, 1)」, and that line was deleted when B1 was fixed. So M6 has not been mutated at all. Yet `tasks/LINENO-2026-11-07/DELIVERY.md:52`「| M6 | `--fix` 连锚串一起写 | 抓住 |」 marks it as caught. TASK §四.2 says plainly that any [VOID] line has to be looked at. That leaves the C1 core property '--fix does not touch the anchor' (the anchor half, not the filename half) without a single working mutant. M10 only covers the filename-digit case. The harness assertion in case 12 compares in text mode, so it cannot see line-ending changes either (see N1)."
+    },
+    {
+      "id": "C3",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "Location 1: `REVIEW-CONTRACT.md:139`「### 引用锚定（v0.6 新增 · 2026-11-07）」. The verdict table now has 10 rows including the LONE row (`REVIEW-CONTRACT.md:166`「| `LONE` | 孤立 `:N`（没写文件名）」) and the HIST row, so round-1 N4 is fixed. The two boundaries are at :171「**锚 OK ≠ 论断成立**」 and :173「**锚串是逐字快照**」. Location 2: the v0.6 change-log row at :248 says the same thing. The cite-check.py docstring now includes HIST."
+    },
+    {
+      "id": "C4",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "`TRIGGER-POLICY.md:257`「### 送审前置：引用自检 `cite-check`（v2.1 新增 · 2026-11-07）」, and the v2.1 change-log row at :405 matches it. The file header `TRIGGER-POLICY.md:3`「> v2.1 · 2026-11-07 · 加**送审前置：引用自检 `cite-check`**（§三）」 has been added, so round-1 N2 is fixed. The five categories in `decisions/LESSONS.md` item 8 now match the policy, and its heading at :30「## 二、八条自检」 is fixed (N1)."
+    },
+    {
+      "id": "C5",
+      "type": "fact-consistent",
+      "status": "fail",
+      "claimed_strength": "E2",
+      "strength_met": false,
+      "evidence": "The contract header v0.6 matches the change log. LESSONS has 8 checks, which matches the 'eight' in the AGENTS.md file map. Those parts agree. But AGENTS.md was not updated after round 1. Its mtime is 08:44:14, earlier than REVIEW-round1-raw.txt at 08:48:07. As a result: `AGENTS.md:36`「`--fix` 只改行号数字；断言 42 条 + 变异 9/9」, :132「断言台（**42 条**」, :133「变异台（**9 个**变异，全被抓住）」 and :223「断言台 **42 条全绿** + 变异台 **9/9 全抓住**」 contradict the ledger row `decisions/self/ledger.md:166`「`checks=49 failed=0`」 / `mutants=10 caught=10`. The ledger-vs-AGENTS.md-item-8 contradiction that was half of round-1 B3 is still there, with the sides swapped (the ledger is now newer and AGENTS is stale). On top of that, `DELIVERY.md:81`「`ledger.md` 本单元行（标「**尚未收工**」） | ✅」: I grepped the ledger, and the string '尚未收工' is no longer in this unit's row, so the ✅ in this table is stale too."
+    },
+    {
+      "id": "C6",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "I ran `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ledger-audit.ps1`. Output: `[scan] 571 file(s) total (506 project + 65 external)`, `[suspect] none`, `RESULT=LEDGER_OK`, exit code 0 (D3+D2). Counter-evidence: in round 1 the same command gave LEDGER_SUSPECT, exit 1, because the files were not all listed. After the fix the file column `decisions/self/ledger.md:164` lists 15 paths one by one, and the result flipped. Round-1 B3's audit part is fixed. Its consistency part is in C5."
+    },
+    {
+      "id": "C7",
+      "type": "judgment",
+      "status": "pass",
+      "claimed_strength": "E1",
+      "strength_met": true,
+      "evidence": "[判断类] I checked that all five gaps are named in DELIVERY §二 C7 (lines 95-100) and AGENTS.md item 8. DELIVERY also says plainly that it cannot claim the drift is fully cured. That meets the criterion. Counterexample, recorded in B3: `DELIVERY.md:152`「`AGENTS.md` 顶部改成「**新增引用可核、存量未动**」，不再用「大半」」 claims N6 is fixed, but `AGENTS.md:33`「**行号漂移已根治大半（2026-11-07，`LINENO-2026-11-07`）**」 and :219「已单独立项并做掉大半」 are still there unchanged. That is not a 'fully cured' claim, so it does not fail C7. But the claim that the fix was made is false."
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B2",
+      "what": "(Carried over from round 1, partly fixed) The path-suffix check for external roots only runs when there are 2 or more in-project candidates. If the project has exactly one file with the same name, that file wins outright. And `~/` is not in the NAMED character class, so `~/.dsh/...` citations can never be resolved.",
+      "why": "C1 lists external roots as specified behavior. `~/.dsh/AGENTS.md` is one of the 4 roots declared in ledger-external.txt, and the project root has a file with the same name. Every citation of it gives a false GONE that blocks the gate. If the anchor happens to exist in both files, it gives a false OK. That is exactly the failure B2 was about. `~/.dsh/` is the most common way this repo writes external paths.",
+      "evidence": "I wrote a temp doc outside the repo with `~/.dsh/AGENTS.md:3` and `.dsh/AGENTS.md:3`, each with the verbatim text of line 3 of `~/.dsh/AGENTS.md` as the anchor. `cite-check.py --json` gives target_path=`...\\ai-team\\AGENTS.md`, verdict=GONE, exit 1. In a temp root, `~/.dsh/profiles/web/cordis.patch.yml:3193`「allowedModels:」 gives UNRESOLVED (the token is captured as `/.dsh/...`). Code: `scripts/cite-check.py:144`「if len(hits) > 1:」 and :49 NAMED has no `~`."
+    },
+    {
+      "id": "B3",
+      "what": "(Carried over from round 1, partly fixed) The audit is now LEDGER_OK, but AGENTS.md has not been touched since round 1. The test counts still read 42/9, which contradicts the ledger's 49/10. DELIVERY §五 N6 claims the '根治大半' (largely cured) wording was changed, but it was not.",
+      "why": "C5 requires that AGENTS.md item 8 does not contradict the ledger row. That is the same pair of facts round 1 flagged. DELIVERY reports a fix that did not happen (N6) and marks C5 ✅ based on a stale ledger status ('尚未收工'). That is an evidence misstatement.",
+      "evidence": "`AGENTS.md:36`「断言 42 条 + 变异 9/9」 / :223 vs `decisions/self/ledger.md:166`「`checks=49 failed=0`」. AGENTS.md mtime is 08:44:14, earlier than round 1 at 08:48. `AGENTS.md:33` still says '已根治大半' and :219 still says '做掉大半'. `DELIVERY.md:81` still says the ledger row is labeled '尚未收工', but grep finds no such string in this unit's ledger row."
+    },
+    {
+      "id": "B4",
+      "what": "(New) Mutant M6 is [VOID] (its anchor was deleted by the B1 fix), but DELIVERY's table says it was 抓住 (caught). The tally `mutants=10` silently drops 1 of the 11 defined mutants.",
+      "why": "C2 requires that the mutants are actually caught, and TASK §四.2 says a [VOID] has to be looked at. As a result, '--fix does not touch the anchor', a core C1 property, has no working counter-evidence. This repeats the lesson the worker wrote down themselves: a mutation that never happens looks exactly the same in the output as a test that can't catch it.",
+      "evidence": "`python scripts/cite-check-mutate.py` output: `[VOID] M6 --fix 连锚串一起写: 锚点出现 0 次`. `scripts/cite-check-mutate.py:35` still uses the deleted `new_token = it[\"token\"].replace(...)` as its anchor. `tasks/LINENO-2026-11-07/DELIVERY.md:52`「| M6 | `--fix` 连锚串一起写 | 抓住 |」."
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "`apply_fix` uses `Path.write_text(...)` without passing `newline=`. On Windows this converts an LF file to CRLF wholesale. My fixture went from 364 to 371 bytes and `file` reports 'with CRLF line terminators'. All the current target files in the repo are already CRLF, so there is no real impact yet, but this contradicts '一个字节都不动' (not one byte touched). Harness case 12 reads the file back in text mode, so it cannot see this. Fix: `open(..., 'w', newline='')`, and compare bytes in the assertion."
+    },
+    {
+      "id": "N2",
+      "what": "`--fix` on a range assumes the anchor is on the first line of the range. Fixture: `t.md:10-14`, anchor originally on line 12 and now on line 22. After --fix it became `22-26`, but it should be `20-24`. The contract does not tell writers that a range anchor must come from the first line. Either add that to the contract or say it in DELIVERY §三."
+    },
+    {
+      "id": "N3",
+      "what": "The ledger row at :166 records the gate result as `OK=5 / HIST=1`. CITE-CHECK.txt and my own rerun both give `OK=6 / HIST=2`, exit 0. The numbers were not updated after the second write."
+    },
+    {
+      "id": "N4",
+      "what": "I checked the two HIST entries one by one. `decisions/LESSONS.md:70` is new in this unit and describes the event of 'the line number at that time'. `:176` is the historical line number that round 1 already accepted. Both are reasonable uses of HIST, not new citations hidden from the check. But :176 says '现为第 140 行' (now line 140) by hand, with no anchor, so it is still a citation that will drift."
+    },
+    {
+      "id": "N5",
+      "what": "The DELIVERY §二 C2 table lists only M1–M9 and leaves out M10/M11. The ledger row :170 says the incident script is `tasks/LINENO-2026-11-07/_dedupe.py`, but that file is no longer in the directory, and the directory has a stray `__pycache__/`. The incident note itself (§六) is consistent with the ledger."
+    },
+    {
+      "id": "N6",
+      "what": "N7 (basename fallback) is explicitly listed as not fixed. But it is the direct cause of B2 not being fully fixed. DELIVERY §三·7 describes it only as an in-project weakness and does not say it also blocks external roots."
+    }
+  ],
+  "rework_brief": "1) In `resolve_target`, add `~` to the NAMED character class and strip a leading `~/` or `/` before matching. When the citation has a directory part, run every in-project hit through `target_ok` even if there is only one. Then merge the in-project and external candidates, and resolve only if exactly one remains; otherwise return UNRESOLVED. Add two harness cases. (a) The temp root has a same-named `AGENTS.md`, and the external root has `AGENTS.md` too: `ext/AGENTS.md:N` must resolve to the external file. (b) `~/`-prefixed citations resolve to the right file (HOME can be redirected with `USERPROFILE`). Add a mutant that turns `len(hits) > 1` back into a precondition and confirm it goes red. 2) Give M6 a new anchor that exists in the current code. For example, change `line[e2:]` so the anchor bytes get altered, and confirm `[CAUGHT]` with `mutants=11 caught=11` and no [VOID]. Fix the DELIVERY C2 table (add M10/M11). 3) Change AGENTS.md :36/:132/:133/:223 to the numbers you actually ran, or point to the command instead of writing the numbers. Remove '根治大半' (:33) and '做掉大半' (:219). Fix DELIVERY.md:81 and the ledger gate numbers at :166 (OK=6/HIST=2). 4) Run all three commands again after every file has been written: harness, mutate, and `cite-check.py --files <6 files> --strict --out`. Then run ledger-audit and record the output.",
+  "escalate_question": "Contract §六 says a second consecutive rework escalates automatically. All three remaining blockings are at the execution level (one code path, one dead mutant, one stale document), and none requires changing the design. Please choose one. (A) Allow a third round under the rework_brief above: the cost is one more review; the risk is that it triggers TRIGGER-POLICY's 'automatic B' (same unit, 3 or more review rounds without passing) and the fire chief has to take over. (B) Accept now with conditions: write external-root resolution into DELIVERY §三 as a known limitation ('the `~/` form and external files that share a name with a project file cannot be cited yet'), and fix only B3/B4 (documents and the mutant) before closing. The risk is that any later delivery citing `~/.dsh/AGENTS.md` will be blocked by a false GONE. (C) Send it to the fire chief now (by your naming it). This would be its first real run, and the failure history is real: 3 blockings in round 1, 2 of them carried over half-fixed into round 2.",
+  "reviewer_notes": "Commands I ran: harness, mutate, ledger-audit.ps1, cite-check.py --files on the 6 unit files (no --fix, no --out), and grep/sed/wc/ls/file. I ran --fix only on my own fixtures under /tmp (/tmp/tmp.* and %TEMP%\\realdoc*.md), outside the repo, and changed no repo files. I did not check the 15-row deletion in the incident against any backup (there is no backup to check against), and I did not compare the full AGENTS.md text line by line.",
+  "unit": "LINENO-2026-11-07",
+  "round": 2,
+  "date": "2026-11-07"
+}

@@ -1,0 +1,113 @@
+{
+  "verdict": "escalate",
+  "confidence": 0.94,
+  "readonly_enforcement": "snapshot_only",
+  "blocking": [
+    {
+      "id": "B1",
+      "claim": "逐项声明已补齐，但 C9、C10 仍未达到返工后的 E3 门槛。",
+      "evidence": [
+        "REVIEW-CONTRACT.md:117「被返工的那条 ≥ **E3**」。",
+        "tasks/ASTRA-NATIVE-2B1-AUDIT-2026-11-14/REVIEW-round2-raw.txt：C9、C10 分别在第105、113行被判 fail。",
+        "tasks/ASTRA-NATIVE-2B1-2026-11-14/DELIVERY.md:98「C9 请求数、预算、response ID及进程证据记载一致」及第99行「C10 生产与旧证据保护面未改，送审副本等同原件」均声明 E2；所列证据支持一致性，未提供针对这些一致性核验的反证。",
+        "DELIVERY.md:101「C9/C10基础事实仍按事实一致类E2声明」明确保留上述门槛缺口；另将补表行为声明为 E3，不能替代两项验收标准自身的强度。",
+        "REVIEW-CONTRACT.md:251「第 2 轮仍 `rework`：自动升级为 `escalate`」。"
+      ]
+    }
+  ],
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "核读真实服务调用代码、SSE 与严格接收器反例；实现哈希未变，继承上轮43项独立复跑。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "核读投影实现及73项重算断言；repeat-corrupt-boundary 记录 requests=0，与正向投影证据对应。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "核读双source、唯一active的重建断言；七项事务损坏记录全部拒绝，baselineValid=true。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "直接解析真实工具执行记录及修正轮两个 executions=0；核读工具配对拒绝与恢复后新工具可执行的对照证据。"
+    },
+    {
+      "id": "C5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "直接读取 PID13228→27740，两者exit0、forcedKill=false且先退出后启动；八项坏journal恢复均零请求、零工具执行。"
+    },
+    {
+      "id": "C6",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "本轮Python直接解析SSE：初轮missing=[recent_marker]、wrong=[]；修正轮两份回答missing=[]、unexpected=[]、wrong=[]，与九字段fixture一致。"
+    },
+    {
+      "id": "C7",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "核读journal-safety及真实反例构造代码；九项边界反例和七项事务反例与声明对应，继承上轮独立执行事实。"
+    },
+    {
+      "id": "C8",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "核读developer白名单、旧journal续接及错角色/不支持块反例；实现和测试与上轮快照一致，继承43+9、16+7结果。"
+    },
+    {
+      "id": "C9",
+      "type": "fact-consistent",
+      "status": "fail",
+      "claimed_strength": "E2",
+      "strength_met": false,
+      "evidence": "本轮解析确认六个不同response ID、两轮各3次请求及进程记录一致；事实成立，但返工后仍仅提供E2，见B1。"
+    },
+    {
+      "id": "C10",
+      "type": "fact-consistent",
+      "status": "fail",
+      "claimed_strength": "E2",
+      "strength_met": false,
+      "evidence": "本轮哈希核验：清单2071项全部匹配，冻结1643项无漂移；上轮独立4226文件保护核验记录成立，但本项返工后仍仅提供E2，见B1。"
+    }
+  ],
+  "nonblocking": [],
+  "verification": {
+    "declarations": "DECLARATION_COVERAGE：C1–C10齐全，type_mismatch=[]，missing=[]。",
+    "implementation": "与上轮快照相比，原有文件仅SOURCE-MANIFEST.json、DELIVERY.md、REVIEW-BRIEF.md变化；无缺失。",
+    "citations": "新TEMP副本运行cite-check.py --strict：exit0，files=3，refs=0；不将零引用视为论断证明。",
+    "readonly": "前后均2075文件、2450路径条目，无重解析点；树SHA256均为d88b6cb51be3f1440131b9d27d6f5a5f1ddef2b10f6ced5e255f86ca17c28f52。"
+  },
+  "rework_brief": "补足C9、C10各自达到E3的证据与声明；可在TEMP副本对请求记录和哈希清单核验引入错误计数、错误摘要等反例，证明核验确实拒绝，再映射回对应条目。无需新增模型请求或改动生产文件，不能只把E2标签改为E3。",
+  "escalate_red_line": [
+    4
+  ],
+  "escalate_question": "[红线 4] 同一声明问题返工后仍未满足门槛：是否继续按现行契约补足C9/C10的E3证据，或明确修订契约，使仅缺声明的返工允许原事实保持E2？前者保留现行标准，后者需要变更验收规则。",
+  "reviewer_notes": "按简报继承上轮已独立执行的功能验证，本轮未重跑完整测试或73项检查器；未发现新的具体功能漏洞。只执行读取、解析和哈希核验，引用检查及其产物仅位于新TEMP副本，未修改送审工程、发送模型请求或启动服务。阻断针对返工后的证据门槛，不表示已核功能失败。"
+}

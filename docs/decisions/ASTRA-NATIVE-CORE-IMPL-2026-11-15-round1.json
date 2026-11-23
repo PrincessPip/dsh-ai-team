@@ -1,0 +1,95 @@
+{
+  "verdict": "rework",
+  "confidence": 0.97,
+  "readonly_enforcement": "snapshot_only",
+  "evidence_root": "%USERPROFILE%/AppData/Local/Temp/astra-independent-bw6hkhwi",
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "本轮 run-parent.py：10/10，exitCode=0，sourceUnchanged=true；动态 assembly、最终预算、pending 消费及 payload 替换拒绝均通过。parent-native.mjs 的 registration/profiles 换代反例均为 requests=0。源码核读确认准入在模型输入提交前。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "本轮 parent-native.mjs：默认压力触发一次压缩，随后请求含新 checkpoint、合法 tail、无旧 prefix；完整 run.py 中 retained 篡改、重复及错误 route 拒绝测试通过。核读宿主 buildRequest 在提交后重新 deriveMessages。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "本轮 run.py exitCode=0；test-2b2.mjs 输出 arbitrary open turn rejected、cancelled automatic zero requests、automatic error/huge blocks ordinary dispatch no retry。父级 hook 实测拒绝后保留 step/end、turn/end，显式重提恰好一次。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "本轮两个父级探针通过真实 JSONL 字节不变、拒绝/取消后 handle 重取、普通 closers 恢复及正常 native 恢复后执行新工具。核读 agent-loop/lib/index.js:2014「const persisted = audit.events;」，确认消费同一 write handle 审计视图。"
+    },
+    {
+      "id": "C5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "本轮 parent-native.mjs：未修改 Basic 与插件巨型消息对照均 summaries=0、requests=2；完整消息正例均 summaries=1、requests=2。普通历史恢复、Basic→native 过渡及完整 suite 的 direct LLM、late middleware 拒绝用例通过。"
+    },
+    {
+      "id": "C6",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "本轮 test-core.mjs 16项通过，包含重复冲突、部分挂载失败清理、运行中卸载及再安装；test-rework.mjs 5项通过，包含低压力准入后卸载拒绝。核读 native-plugin.mjs:31「const fiber=ctx.plugin(plugin,c);children.push(fiber);await fiber.await();」及 tools.guard 注册和释放代码。"
+    },
+    {
+      "id": "C7",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "现有 strict 编译及配置测试通过，但新增 audit-types.ts 无类型断言即可写入 e.events[0].seq 和 e.prepared.context.contextWindow，tsc -p tsconfig.audit.json 返回0；相同赋值在真实 hook 中均抛 TypeError。公开声明与运行时只读契约不一致，详见 B1。"
+    },
+    {
+      "id": "C8",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "verify-pack.py：17592项通过；独立来源核验17591项无差异，原样脚本/契约匹配。完整 run.py 的13个 worker 全exit0、无强杀；历史 verify-live 53/53，proof 9/9，离线 rehearsal 被默认核验以唯一模式错误拒绝。保护10534项前后无变化，保护反例6/6，干净副本 READY 反例4/4，异常0→1→0及缺件/SHA反例通过。"
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "claim": "两个公开 hook 的部分嵌套字段仍被声明为可写，与运行时深冻结不一致。",
+      "what": "resume-audit.events 元素及 request-admission.prepared.context 未完整声明只读。",
+      "why": "违反 C7 的公开声明与运行时一致要求；通过 strict 编译的插件代码会在请求准入或恢复审计时抛 TypeError。",
+      "evidence": [
+        "tasks/ASTRA-NATIVE-CORE-IMPL-2026-11-15/isolated/node_modules/@deepseek-ai/dsh-agent/lib/types/runtime-types.d.ts:220「readonly prepared: Readonly<Partial<Pick<」仅施加浅层 Readonly。",
+        "同文件:224「readonly events: readonly import('@deepseek-ai/dsh-session').SessionEvent[];」仅限制数组，元素字段仍可写。",
+        "evidence_root/work/tasks/ASTRA-NATIVE-CORE-AUDIT-2026-11-15/artifacts/parent-1794684162722676600/implementation/TYPE-PROBE.json：strict tsc exitCode=0；探针包含 e.events[0].seq = e.events[0].seq 和 e.prepared.context.contextWindow = 1。",
+        "evidence_root/type-probe-exact/RUNTIME-PROBE.json：真实宿主、禁网夹具运行 exitCode=0；observations 为 contextMutation=TypeError、eventMutation=TypeError。"
+      ]
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "引用检查器覆盖存在限制。",
+      "evidence": "本轮 cite-check.py --strict exit0，named=1、OK=1、LONE=4；已另行直读源码核对，未将 exit0 当作全部引用均被识别。"
+    }
+  ],
+  "rework_brief": "仅修正 runtime-types.d.ts 中上述 hook 数据的递归只读声明，并检查同类嵌套元数据；保留现有运行时冻结行为。在 type-test.ts 加入事件元素字段及 prepared.context.contextWindow 写入的 @ts-expect-error 负例。验证去掉指令时两处写入均编译失败、正常读取仍可编译，再复跑 strict 类型测试和两个父级探针。",
+  "reviewer_notes": "所有测试、镜像和新增探针均写入独占 TEMP，未修改正式工程；SOURCE-AFTER.json 显示17594文件前后相同，changed/missing/added/links均为空。两个父级探针均10/10且sourceUnchanged=true，全部本轮 runner 无强杀，CLEANUP.json 未检出命令行关联本轮目录的残留测试进程。结论限于本次离线矩阵及历史证据重算，snapshot_only 不证明树外写入或写后还原。"
+}

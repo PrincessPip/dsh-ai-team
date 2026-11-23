@@ -1,0 +1,104 @@
+{
+  "verdict": "escalate",
+  "confidence": 0.86,
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "**--fix: passes.** I built my own fixture under %TEMP%, outside the repo, written as UTF-8 with LF line endings. It contains five citations: `t9.md:9`, `t9.md:3-5`, an unquoted `t9.md:7`, `t9.md:20` (already OK), and one into a CRLF target file. --fix output was `rewrote 4` and `[after-fix] OK=5`, exit 0. The `diff` shows only the digit segments changed (9→20, 3-5→20-22, 7→20, 2→31). After stripping all digits, the two files are identical (`non-digit identical`). The file is 286 B → 291 B, and the +5 exactly equals the digits added. `file` reports `UTF-8 text` with no CRLF. The filename `t9` was not touched. Rerunning gives OK=5, exit 0. So B1 and N1 are really fixed. **External roots, `.dsh/` form: fixed.** In the real environment (`--root` is this repo, the doc is under %TEMP%), `.dsh/AGENTS.md:3` with a verbatim anchor from line 3 resolves to target_path=`%USERPROFILE%\\.dsh\\AGENTS.md` and is judged OK. In round 2 the same case went to the in-project AGENTS.md and gave a false GONE. Code: `scripts/cite-check.py:147`「if \"/\" in name or \"\\\\\" in name:」 now runs the suffix check regardless of how many candidates there are. I also wrote my own regression mutant that puts the filter back behind `len(hits) > 1`. Harness case 25 goes red (`checks=52 failed=1`), so this fix is guarded. **External roots, `~/` form: not fixed.** `scripts/cite-check.py:49`「NAMED = re.compile(r\"`?([A-Za-z0-9_./\\\\-]*\\.(?:%s)):」 still has no `~` in its character class. Real environment: `~/.dsh/AGENTS.md:3` is captured as `/.dsh/AGENTS.md:3`` and judged UNRESOLVED. In my own fixture (fake HOME via USERPROFILE, ledger-external declaring three `~/.dsh/...` entries), `~/.dsh/AGENTS.md:3`, `~/.dsh/profiles/web/cordis.patch.yml:2`, and the unquoted `~/.dsh/AGENTS.md:3` all came out UNRESOLVED, while the forms without `~` came out OK. This was the second half of round-2 B2 (its 'what' says explicitly '`~/` is not in the NAMED character class'), and item (b) of the rework_brief asked for a harness case. Neither the code nor the harness has it. DELIVERY §七 B2 row reports B2 as fixed without mentioning `~`, and §三 does not list it as a limitation either. **Basename fallback:** bare `AGENTS.md:3` still resolves to the project file and gives GONE. This is disclosed in §三·7 and is not blocking."
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "I ran both myself. `python scripts/cite-check-harness.py` gives `checks=52 failed=0`. `python scripts/cite-check-mutate.py` gives 11 `[CAUGHT]` lines and `defined=11 void=0 ran=11 caught=11`. **B4 is really fixed.** (1) M6 now has a live anchor: `scripts/cite-check-mutate.py:35`「(\"M6 --fix 把整个 token 而不是 spec 段写回\", 'lines[idx] = line[:s2] + new_spec + line[e2:]',」, which appears exactly once in the tool. (2) I checked the void gate with my own test. I made a tool copy whose M4 anchor no longer matches (`if len(a) < 8:` → `if len(a)<8:`) and pointed `cite-check-mutate.py --tool` at it. Output was `[VOID] M4 ...`, `defined=11 void=1 ran=10 caught=10`, `[error] ... 分母不干净，结论不成立`, exit **1**. A dead mutant can no longer slip through as a pass. (3) M6 now targets backticks and the token's form, not the anchor. So I wrote my own mutant that alters the anchor: `line[e2:].replace(\"「\",\"『\",1)`. The harness goes red on 4 checks, including `[FAIL] --fix: 锚串一字未改` and `[FAIL] --fix: 整行只差那一位数字`. That gives the property '--fix does not touch the anchor' working counter-evidence."
+    },
+    {
+      "id": "C3",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "REVIEW-CONTRACT.md mtime is 08:50:55, earlier than round 2 (REVIEW-round2-raw.txt at 08:58), so it has not changed since round 2 passed it. I rechecked: `REVIEW-CONTRACT.md:139`「### 引用锚定（v0.6 新增 · 2026-11-07）」, the boundary items `:171`「**锚 OK ≠ 论断成立**」 and `:173`「**锚串是逐字快照**」, and the change-log row `:248`「| v0.6 | 2026-11-07 | **§二·五 新增「引用锚定」**」 all match."
+    },
+    {
+      "id": "C4",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "TRIGGER-POLICY.md mtime is 08:50:24, also unchanged since round 2. `TRIGGER-POLICY.md:257`「### 送审前置：引用自检 `cite-check`（v2.1 新增 · 2026-11-07）」, the header `:3`「> v2.1 · 2026-11-07 · 加**送审前置：引用自检 `cite-check`**（§三）」 and the change-log row `:405`「| v2.1 | 2026-11-07 |」 all match. I ran the gate on the 6 files myself: `OK=6 LONE=11 HIST=2`, with no NOANCHOR/GONE/UNRESOLVED, exit 0. That matches the ledger's `OK=6 / LONE=11 / HIST=2` (round-2 N3 fixed)."
+    },
+    {
+      "id": "C5",
+      "type": "fact-consistent",
+      "status": "fail",
+      "claimed_strength": "E2",
+      "strength_met": false,
+      "evidence": "**Numbers now agree:** `AGENTS.md:36`「断言 52 条 + 变异 11/11」, `:132`「断言台（**52 条**」 and `:223`「断言台 **52 条全绿** + 变异台 **11/11 全抓住**」 match ledger `decisions/self/ledger.md:166`「`checks=52 failed=0`」 and my own runs. The contract version and the LESSONS count of eight also agree. **What round-2 B3 asked for that was not done:** (1) `AGENTS.md:33`「**行号漂移已根治大半（2026-11-07，`LINENO-2026-11-07`）**」 and `:219`「已单独立项并做掉大半」 are still there. Item 3 of the rework_brief explicitly asked to remove them. (2) `tasks/LINENO-2026-11-07/DELIVERY.md:154`「`AGENTS.md` 顶部改成「**新增引用可核、存量未动**」，不再用「大半」」 still claims this was done. I grepped AGENTS.md for '新增引用可核': 0 hits. This is the **third round in a row** with this false fix claim. (3) `DELIVERY.md:83`「`ledger.md` 本单元行（标「**尚未收工**」） | ✅」 was flagged in round 2 (then :81) and is unchanged. The ledger row has no '尚未收工', so the ✅ evidence for C5's third fact is false. (4) DELIVERY §四 `:132`「# 期望 checks=49 failed=0」 / `:133`「# 期望 mutants=10 caught=10」 is stale. (5) The tier column of ledger row 164 still says '第 1 轮 `rework` 0.86 / 3 blocking 已修，待第 2 轮'. **Remaining:** the §七 B3 row reports only 'synced to 52/11 in four places' and silently drops the rest of round-2 B3. That is the same 'claiming the fix is complete' pattern as in FIRE-CHIEF."
+    },
+    {
+      "id": "C6",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "I ran `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ledger-audit.ps1`. Output: `[scan] 572 file(s) total (507 project + 65 external)`, `[suspect] none`, `RESULT=LEDGER_OK`, exit 0. The `[warn]` lines are all broad DIR tokens from historical units, not this one. Counter-evidence from round 1, when the files were not all listed, was `LEDGER_SUSPECT`, and it has now flipped. One stale item, the tier column, is covered under C5."
+    },
+    {
+      "id": "C7",
+      "type": "judgment",
+      "status": "pass",
+      "claimed_strength": "E1",
+      "strength_met": true,
+      "evidence": "[判断类] DELIVERY §二 C7 `:97-102` names all five gaps. §三 adds :124 (basename fallback) and :125 (the range --fix assumption, round-2 N2, explicitly marked not fixed). DELIVERY:105 states plainly that it cannot claim the drift is fully cured. That meets the criterion. The remaining '根治大半' wording in AGENTS.md is a stale claim I count under C5. I agree with round 2 that it is not a 'fully cured' claim. The new omission is that '`~/` citations cannot be resolved' is not written into §三 (see C1)."
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B2'",
+      "what": "(Carried over from round 2's B2, second half never fixed) The NAMED regex still has no `~`, so every `~/.dsh/...` citation is captured as `/.dsh/...` and always judged UNRESOLVED. DELIVERY §七 reports B2 as fixed without mentioning this half, and §三 does not list it as a limitation.",
+      "why": "C1 lists external roots as specified behavior. All 4 roots in ledger-external.txt are written as `~/.dsh/...`, which is the most common way this repo writes external paths. It fails safe (UNRESOLVED, no false OK). But any later delivery that cites a file that way will be stuck at the gate with exit 1. Round 2 named this half in B2's 'what', and item (b) of the rework_brief asked for a harness case. This round it was neither fixed nor disclosed.",
+      "evidence": "Real environment: `~/.dsh/AGENTS.md:3` gives `[UNRESOLVED] ... /.dsh/AGENTS.md:3`` -> /.dsh/AGENTS.md`, and the same anchor with `.dsh/AGENTS.md:3` gives OK. My fixture (fake USERPROFILE): `~/.dsh/profiles/web/cordis.patch.yml:2` gives UNRESOLVED and `profiles/web/cordis.patch.yml:2` gives OK. Code: `scripts/cite-check.py:49`「NAMED = re.compile(r\"`?([A-Za-z0-9_./\\\\-]*\\.(?:%s)):」. The harness has no case that uses `~`."
+    },
+    {
+      "id": "B3'",
+      "what": "(Carried over from round 2's B3, document half never fixed) The '大半' wording in AGENTS.md is still there. DELIVERY §五 N6 still claims it was changed. The '尚未收工' ✅ in DELIVERY C5 is still stale. §四 still says 49/10.",
+      "why": "C5 is fact-consistency at E2, and its evidence table cannot contain false rows. Claiming a fix that was not made is an evidence misstatement under iron rule 2. This is the third round in a row, and the §七 row reports the B3 fix as if it were complete.",
+      "evidence": "`AGENTS.md:33`「**行号漂移已根治大半（2026-11-07，`LINENO-2026-11-07`）**」 · `AGENTS.md:219`「已单独立项并做掉大半」 · `DELIVERY.md:154`「`AGENTS.md` 顶部改成「**新增引用可核、存量未动**」，不再用「大半」」 (AGENTS.md has 0 hits for '新增引用可核') · `DELIVERY.md:83`「标「**尚未收工**」） | ✅」 · `DELIVERY.md:132`「# 期望 checks=49 failed=0」"
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "The mutant table has no mutant for 'put the suffix check back behind len(hits)>1' (the rework_brief asked for one). My own mutant shows harness case 25 does go red on it (1 red), so the guard exists, but it is not in the reproducible mutant table. Suggest adding it as M12."
+    },
+    {
+      "id": "N2",
+      "what": "M6 has been changed from 'writes the anchor too' to 'writes the whole token back', so the table has no mutant that alters the anchor. My mutant `line[e2:].replace(\"「\",\"『\",1)` is caught by case 12 (4 red), so the property is guarded. Suggest adding it to the table so the claim does not depend on what the reviewer happens to build."
+    },
+    {
+      "id": "N3",
+      "what": "The ledger files column (row 164) does not list `tasks/LINENO-2026-11-07/REVIEW-round2-raw.txt` or `decisions/LINENO-2026-11-07-round2.json`. The audit is OK, probably because a broad DIR token like `decisions/` covers them, so this is not an audit failure, but it does not meet the rule that the files column lists paths one by one. The tier column still says 'waiting for round 2'."
+    },
+    {
+      "id": "N4",
+      "what": "DELIVERY §一 `:14` still says '9 个变异' (9 mutants), against 11 actually defined. §七 has no anchors or code-line citations for any of the fixes (only harness case numbers), so the reviewer has to locate them by hand."
+    },
+    {
+      "id": "N5",
+      "what": "The `tasks/LINENO-2026-11-07/__pycache__/` directory left over from round 2 is still there."
+    }
+  ],
+  "rework_brief": "1) Add `~` to the NAMED character class, and in `resolve_target`, when the name starts with `~/`, apply `os.path.expanduser` first and treat the result as an absolute path (otherwise strip `~/` and match only against the external roots). Add a harness case that uses a fake USERPROFILE and has a same-named AGENTS.md in the project: `~/.dsh/AGENTS.md:N` must resolve to the external file. Add a mutant that removes `~`. Keep the token's column positions correct so that --fix does not misplace the number in `~` citations. 2) In AGENTS.md, replace '根治大半' at :33 and '做掉大半' at :219 with wording backed by evidence, such as '新增引用可核、存量 204 条未动'. Fix DELIVERY :83 (ledger status), :132-133 (52 / defined=11 void=0), :14 (11 mutants), and the ledger row 164 tier column and files column. 3) Before sending for review, grep every 'I changed X' claim in DELIVERY §五/§七 one by one (search for the old wording: 0 hits; search for the new wording: ≥1 hit) and write the commands and output to a file. This round failed exactly on claims without that grep.",
+  "escalate_question": "Third round on the same unit and still not passed. This meets the TRIGGER-POLICY §二·五 'automatic B' condition (same unit, 3 or more review rounds without passing). The trigger fact is recorded here. Both remaining blockings are leftovers that round 2 had explicitly named and that were skipped this round: one is a code path (the `~` character class, about 10 lines to change), the other is three lines of documentation. Neither touches the design. Please choose one. (A) Let the worker go a fourth round under the rework_brief above. The cost is one more review round. The risk is a repeat of the same 'claim more than was fixed' pattern. (B) Accept with conditions: write 'the `~/` form is not supported yet; external citations must be written as `.dsh/...`' into DELIVERY §三 and the contract's citation-anchoring section, fix only the documentation half of B3', then close. The risk is that existing and future `~/.dsh` citations will all be stuck at UNRESOLVED. (C) Name the fire chief to take over B2' (the failure history is real: 3 rounds, half-fixed twice in a row). Note that the fire chief rules exclude pure documentation and cross-file sync work, so B3' should stay with the worker.",
+  "reviewer_notes": "Commands I ran: cite-check-harness.py, cite-check-mutate.py (including one run with --tool pointing to my VOID copy), cite-check-harness.py --tool pointing to my two mutants (anchor tampering, suffix check behind len>1), ledger-audit.ps1, cite-check.py --strict on the 6 unit files (no --fix, no --out), plus --fix/--json runs on my own fixtures under %TEMP%, and grep/sed/ls/diff/file/wc. All writes went to %TEMP% (tmp.*). I wrote no repo files. My first fixture attempt was written in GBK because Python's open() defaults to cp936, so its results were invalid and were discarded; the conclusions above all come from the UTF-8 rerun. I did not compare the full AGENTS.md text line by line, and I did not reread DESIGN.md.",
+  "unit": "LINENO-2026-11-07",
+  "round": 3,
+  "date": "2026-11-07"
+}

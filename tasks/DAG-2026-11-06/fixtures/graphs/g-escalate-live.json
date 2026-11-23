@@ -1,0 +1,18 @@
+{
+  "v": 1,
+  "plan_id": "plan-a2-escalate-live",
+  "budget": { "max_calls": 4 },
+  "nodes": [
+    {
+      "id": "w_live",
+      "kind": "work",
+      "do": "只读回答：读出 tasks/DAG-2026-11-06/fixtures/sandbox/notes.md 里以 '- ' 开头的条目数，写进 facts 字段。**不要写任何文件**，只输出 <RESULT> 块。",
+      "after": [],
+      "out": ["facts", "summary"],
+      "accept": [
+        { "type": "cmd", "run": "node -e \"process.exit(1)\"", "expect": "exit0" }
+      ],
+      "on_fail": { "retry": 1, "escalate": "integrate", "then": "replan" }
+    }
+  ]
+}

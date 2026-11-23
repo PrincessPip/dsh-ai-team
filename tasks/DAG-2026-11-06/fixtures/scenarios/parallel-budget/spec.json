@@ -1,0 +1,19 @@
+{
+  "_comment": "验收官 B2 的反例：max_calls=3、两个 scout 各 retry=1、首次都失败。串行结果是 3 次调用（s1 首发/重试 + s2 首发），s2 的重试被预算拒；并行必须给出同样的 3 次与同样的 denied。并行要是多批一次就成了 4 次 —— 这就是 B2 原来的样子。",
+  "nodes": {
+    "s1": {
+      "expect_prompt_contains": ["id: s1"],
+      "attempts": [
+        { "result": { "status": "fail", "summary": "第 1 次故意失败" } },
+        { "result": { "facts": ["notes.md 有 3 行"], "summary": "重试成功" } }
+      ]
+    },
+    "s2": {
+      "expect_prompt_contains": ["id: s2"],
+      "attempts": [
+        { "result": { "status": "fail", "summary": "第 1 次故意失败" } },
+        { "result": { "facts": ["OFF-LIMITS.md 有 3 行"], "summary": "重试成功" } }
+      ]
+    }
+  }
+}

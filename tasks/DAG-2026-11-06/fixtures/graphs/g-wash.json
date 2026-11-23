@@ -1,0 +1,39 @@
+{
+  "v": 1,
+  "plan_id": "plan-e2efix-wash",
+  "budget": {
+    "max_calls": 6
+  },
+  "nodes": [
+    {
+      "id": "w_wash",
+      "kind": "work",
+      "do": "第一次直接写主树（违规），第二次只交 patch —— 违规必须洗不掉。",
+      "after": [],
+      "ctx": {
+        "read": [
+          "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+        ]
+      },
+      "writes": [
+        "tasks/DAG-2026-11-06/fixtures/sandbox/PATCH-A.md"
+      ],
+      "out": [
+        "patch",
+        "patch_targets",
+        "changed",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "patch 非空且 changed 只写实际落盘"
+        }
+      ],
+      "on_fail": {
+        "retry": 1,
+        "then": "replan"
+      }
+    }
+  ]
+}

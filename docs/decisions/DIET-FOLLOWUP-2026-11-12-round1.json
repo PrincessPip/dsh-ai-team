@@ -1,0 +1,168 @@
+{
+  "unit": "DIET-FOLLOWUP-2026-11-12",
+  "round": 1,
+  "date": "2026-11-12",
+  "channel": "subagent → openrouter/anthropic/claude-opus-5.5（DSH 子代理、全新会话、带工具；本轮为第 1 轮）",
+  "verdict": "rework",
+  "confidence": 0.8,
+  "confirmed_by_reviewer": [
+    {
+      "id": "C0",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E1",
+      "strength_met": true,
+      "evidence": "FREEZE-2026-11-12.json 11/11 sha256+bytes 复算 MATCH"
+    },
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "自跑四种模式：--changed scripts/runner.py→SKIP rc=0 且无 renderedBytes；--changed AGENTS.md→REQUIRED+OK；--changed→rc=2；无参→mode=always。反证：is_injection_surface 恒 False 的副本使 AGENTS.md 变 SKIP，同时断言台 T16/T19/T20 红 → 绕法被守住"
+    },
+    {
+      "id": "C2",
+      "type": "judgment",
+      "status": "pass",
+      "claimed_strength": "E1",
+      "strength_met": true,
+      "evidence": "[判断类] 理由已写明；但前提可被反驳（注入面会在单元外被改、渲染函数路径与 '--changed .' 均 SKIP）→ N2"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "副本复现 mutate-agents-budget defined=11 void=0 ran=11 caught=11；M11 期望改 ['T16'] 仍 caught=11（⊆ 语义）；T20 断言改弱后原期望 M11 MISSED"
+    },
+    {
+      "id": "C4",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "grep PLAN.md：零脚本/仍未加入只剩历史说明，另两个口径 0 命中；§2.5 在 :96；第五处残留 → N3"
+    },
+    {
+      "id": "C5",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "OPS-before.json fake-true count=49 + 现状只剩 codex-inproc；runs/fire 6 个 INC 均在"
+    },
+    {
+      "id": "C6",
+      "type": "fact-consistent",
+      "status": "FAIL",
+      "claimed_strength": "E0",
+      "strength_met": false,
+      "evidence": "DELIVERY.md:71 称 tmp「无文档引用」；实测 PRODUCT-SHA256.txt 8401/8451 与 8689/8752 指向已删 tmp/ → B1"
+    },
+    {
+      "id": "C7",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "runner-harness.py:1514 先删再建 + codex-inproc 全部 mtime 04:45:01–04:45:04 = 基线写入时刻"
+    },
+    {
+      "id": "C8",
+      "type": "executable",
+      "status": "unverified",
+      "claimed_strength": "E1",
+      "strength_met": false,
+      "evidence": "ledger-audit / ledger-check 未自跑，只读工人侧证据"
+    },
+    {
+      "id": "C9",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "副本复现 mutate-landing 12/12；verify-landing OK blocks=12；--selftest failed_blocks=[0]；删文件探测 → N1"
+    },
+    {
+      "id": "C10",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "自跑 cite-check --strict rc=0；doc-sync OK checks=2"
+    },
+    {
+      "id": "C11",
+      "type": "executable",
+      "status": "unverified",
+      "claimed_strength": "E1",
+      "strength_met": false,
+      "evidence": "§九 只有一份完整现场 + 一次 mtime 观察，无可控反证 → 仅 E1，不到 E2/E3；runner-harness 按 BRIEF 禁跑 = impossible"
+    },
+    {
+      "id": "C12",
+      "type": "executable",
+      "status": "unverified",
+      "claimed_strength": "E1",
+      "strength_met": false,
+      "evidence": "impossible：fire-chief 四件体检只在实跑事故时执行；静态替代见 N8"
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "what": "K3 声称 runs/fire/*/tmp「无文档引用」，实际两个 INC 的 PRODUCT-SHA256.txt 有 >99% 条目指向已删 tmp/，删除不可逆且未披露",
+      "why": "删前安全论断证据不实；事故包防篡改清单从此无法复核，日后无法区分篡改与清理",
+      "evidence": "runs/fire/INC-20261111-01/PRODUCT-SHA256.txt 8401/8451、INC-20261111-01-run1/PRODUCT-SHA256.txt 8689/8752 行匹配 ^[0-9a-f]{64}\\s+tmp[\\\\/]；DELIVERY.md:71"
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "verify-landing 删一份多落点文件时 RESULT=OK failed_blocks=[] 但 rc=1；缺文件不计入 failed_blocks（删 NEXT-STEPS.md 时块 5 不报）"
+    },
+    {
+      "id": "N2",
+      "what": "「条件进」的前提可被反驳：注入面会在单元外被改；渲染函数路径与 '--changed .' 都 SKIP"
+    },
+    {
+      "id": "N3",
+      "what": "PLAN.md 第五处：:170 漏救火队长写权例外；:142「（现有约定）」是旧口径；§6 表无状态列；§1 验收官只写 Claude"
+    },
+    {
+      "id": "N4",
+      "what": "§九 只到 E1，AGENTS「根因已定位」说过头；「不能有任何并发写」可能过宽"
+    },
+    {
+      "id": "N5",
+      "what": "make-evidence 覆盖了上一单元已收口的 tasks/AGENTS-DIET-2026-11-12/MUTATE.txt（04:49:21），未披露"
+    },
+    {
+      "id": "N6",
+      "what": "时间线：TASK.md 冻结后被改且仍写「未开工」；DELIVERY「收口 05:4x」与 mtime 04:48 不符；OPS-after 显示第二次删除未披露"
+    },
+    {
+      "id": "N7",
+      "what": "mutate-agents-budget 判 ⊆ 不判 ==；codex-inproc 是假 codex 产物，「真跑产物」措辞过重"
+    },
+    {
+      "id": "N8",
+      "what": "INC-20261111-03 缺 TRANSCRIPT/CHANGES/SNAPSHOT 三件，大概率老问题；删前无逐目录清单，归因核不了"
+    }
+  ],
+  "impossible": [
+    {
+      "what": "runner-harness 全量复跑",
+      "why": "BRIEF 明令禁跑（19 分钟且会重写 runs/_harness，且它在跑时对全树做快照）"
+    },
+    {
+      "what": "fire-chief 四件体检",
+      "why": "只在实跑事故时执行（要引擎并会写 runs/fire）；只能静态核文件齐不齐"
+    }
+  ],
+  "reviewer_notes": "只读：所有变异都在 %TEMP%\\rv-dietfu 副本里跑，跑完扫树确认 04:51 后工程内 0 文件被改；runner-harness 禁跑，ledger-audit/ledger-check 没重跑，均标 unverified/impossible。判 rework 不判 escalate 的假设：tmp 删除是伙伴授权过的（TASK §二 K3 + DELIVERY 拍板记录），所以修披露、不撤销删除。",
+  "summary": "材料没被改过（FREEZE 11/11 对上）。K1 是一道真门（四模式全对；把判定函数改恒 False 会被断言台 T16/T19/T20 抓住）；K1 变异台 11/11、K4 变异台 12/12 复现；K2 四个旧口径清零。唯一 blocking 是 K3 的「runs/fire tmp 无文档引用」——两份 PRODUCT-SHA256.txt 有 99% 条目指向已删 tmp/，删了回不来且未披露。修法只改文字补披露，不动 runs/fire。"
+}

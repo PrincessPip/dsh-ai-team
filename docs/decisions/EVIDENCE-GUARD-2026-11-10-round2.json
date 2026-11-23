@@ -1,0 +1,35 @@
+{
+  "unit": "EVIDENCE-GUARD-2026-11-10",
+  "round": 2,
+  "at": "2026-11-10T14:4x+08:00",
+  "reviewer": "claude -p --model opus（带 shell，订阅通道）",
+  "channel": "CLI（--allowedTools Read,Grep,Glob,Bash）",
+  "egress": "READY（<VPS-IP>，<PROXY-PORT-TUNNEL>）",
+  "verdict": "pass",
+  "confidence": 0.84,
+  "raw_report": "tasks/EVIDENCE-GUARD-2026-11-10/REVIEW-raw.txt",
+  "reviewer_notes": "All runs were in a %TEMP% copy of the project (runner-mutate, mutate-exec, its own re-tamper fixture, two temporary source mutations), deleted afterwards; repo hashes unchanged (runner 335910815420161f, gate ecc05c03120bef27); in the repo itself it only ran cite-check (--out to %TEMP%) and dag-gate on throwaway graphs. First mutation run hit its 10-minute background limit with output lost to buffering; files had been restored to baseline and the rerun completed. Everything fixture-only.",
+  "reproduced": {
+    "runner_harness": "378/0",
+    "gate_harness": "284/0",
+    "manager_harness": "190/0",
+    "verify_findings": "ALL_OK",
+    "runner_mutate": "41/41 caught, restored_green=True, end hashes match MUTATE.txt",
+    "mutate_exec_prev_unit": "6/6 ALL_CAUGHT after this round's edits",
+    "cite_check_strict": "16 OK / 3 LONE / rc 0"
+  },
+  "blocking": [],
+  "round1_fixes_verified": [
+    {"id": "B1", "verdict": "closed in code", "evidence": "excludedTopOf 逐段匹配；探针 a/runs.ts、lib/runs.d/x → OK；lib/runs/x、bin/runs → REJECTED；两格变异都被抓住；验收官自己禁用了 allow_under 调用点 → scope-excluded-allow-under 变红"},
+    {"id": "B2", "verdict": "closed", "evidence": "第二次篡改复现：s_indep 判 ok、checks 全空、EVIDENCE-TAMPERED.json 只有一条（这正是 N1 的来源）；RUN.result=fail 成立"},
+    {"id": "B3", "verdict": "sufficient", "evidence": "RUN.parallel.groups 只在并发代码真跑时才记录；删掉轮后复核后 exit code 变 0、s_a/s_b 不再被判中"},
+    {"id": "B4", "verdict": "closed", "evidence": "41 格逐格核过锚点都在真代码上；Gate 两格只覆盖 writes 调用点，验收官自己禁用 allow_under 调用点后案例变红"}
+  ],
+  "nonblocking": [
+    {"id": "N1", "what": "永久跳过的 known_bad 让第二次篡改无痕；建议失配时更新登记哈希", "disposition": "已采纳并实现（bad_log 追加记录）+ 新场景 evidence-retamper + 变异格", "status": "fixed_after_pass"},
+    {"id": "N2", "what": "两处起跑前复核零覆盖，且会把上一个窗口的改动栽给下一个节点", "disposition": "已删除（串行 + 并发），新场景 no-precheck 用代码事实守护", "status": "fixed_after_pass"},
+    {"id": "N3", "what": "§三 数字过期（365/282/186 vs 378/284/190），场景数 5 实为 7；与第 1 轮 N3 同一条没改净", "disposition": "已按本轮实测重写（385/284/190、九个场景）；worker 认账", "status": "fixed_after_pass"},
+    {"id": "N4", "what": "EVIDENCE-MANIFEST / EVIDENCE-TAMPERED 自身不在登记范围，同 size + 复原 mtime 的改动盘上不可见", "disposition": "披露不修（运行期判定用内存副本，只弱化事后审计痕迹），写进 DELIVERY §六·10", "status": "disclosed"}
+  ],
+  "worker_disposition": "四条 non-blocking 处理完，复跑全绿（runner 385/0 · gate 284/0 · manager 190/0 · mutate 41/41 · cite-check 16/16 · ledger LEDGER_OK）。这 4 处**未再送审**，单列在 DELIVERY.md §十。"
+}

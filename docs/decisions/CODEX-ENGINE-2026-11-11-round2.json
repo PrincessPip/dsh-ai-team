@@ -1,0 +1,76 @@
+{
+  "verdict": "rework",
+  "confidence": 0.88,
+  "criteria": [
+    {
+      "id": "B1-fix",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "runner.py:501「if READONLY_ENFORCEMENT.get(engine) != \"sandbox\":」+ :2405 demoted_reason(nodes[nid], args.engine) + :2703/:2746 查表；inproc 19/0×2；变异台『RUN.json 顶层不记 readonly_enforcement』『并发资格不看引擎』均 ✓ 被抓住"
+    },
+    {
+      "id": "B2-fix",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "grep 两串 0 命中；runner.py:1416-1417 codex argv 不依赖 kind，只读/写逐字相同"
+    },
+    {
+      "id": "B3-fix",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "smoke-1 result=pass / s_look tool_calls=0 / items_started=0；cite-check --strict anchored=10 OK 10 rc=0；10 锚 grep -F 各 1 命中、行号与上下文逐条核对"
+    },
+    {
+      "id": "B4-fix",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "runner-mutate.py → mutations=59 caught=58，『codex·代理不注入子进程』checks=19 failed=0；镜像单变量：宿主带 HTTPS_PROXY=<PROXY-PORT-TUNNEL> 时删注入行 19/0，去掉宿主代理变量后 19/1"
+    },
+    {
+      "id": "REGRESS",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "全量 522/0、unit 167/0、codex-inproc 19/0 两遍；restored_green=True，runner.py sha 前后一致 2b0643bb…"
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "what": "B4 的『代理真注入子进程』断言与宿主环境耦合：宿主已带 HTTPS_PROXY=http://127.0.0.1:<PROXY-PORT-TUNNEL>（AGENTS.md 验收前置条件 3 恰恰要求验收官环境有它），假 egress 也报 <PROXY-PORT-TUNNEL>，子进程继承即满足断言；删掉 `env[k] = proxy_url` 后在验收官环境里仍全绿。",
+      "why": "第 1 轮 B4 的要求就是『删掉注入行台子必须红』；现在这件事只在工人环境成立，交付声称的 mutations=59 caught=59 在验收官环境复现为 58/59。K6 是出口硬规则（走错出口留风控痕迹），守卫不能依赖跑台子的人的环境。",
+      "evidence": "%TEMP%\\rv2\\mut.txt:505-509『✗ 变异没被抓住』；镜像对照 ambient→19/0、env -u HTTPS_PROXY HTTP_PROXY https_proxy http_proxy→19/1"
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "『端口不写死』无守卫：proxy_url_for 单测与 inproc 都只用 <PROXY-PORT-TUNNEL>；把 return 改成写死 \"http://127.0.0.1:<PROXY-PORT-TUNNEL>\" 全量 522/0。harness:1514 断言名『不是写死 <PROXY-PORT-TUNNEL>』言过其实。与 B1 同一个修法即可顺手解决。"
+    },
+    {
+      "id": "N2",
+      "what": "DELIVERY §十 B1 行『RUN.json 里 readonly_enforcement 现在 2 处可见』指的是 inproc 证据包；runs/codex-smoke-2/RUN.json 是返工前产物，顶层没有该字段、demoted=[]。建议写明出处，免得复核者去 smoke-2 里找。"
+    },
+    {
+      "id": "N3",
+      "what": "残留口径：runner.py:1440 注释『K1：只读节点的硬保证在沙箱层』未加 codex 限定（:1441 对 codex 也设 DSH_PERMISSION_MODE，无实际作用）；TASK.md:85 K11 ①『-s read-only → workspace-write』仍是旧设计口径。"
+    },
+    {
+      "id": "N4",
+      "what": "DELIVERY 写『unparsed=0』，证据包里的字段实名是 event_lines_unparsed；照字段名 grep 会 0 命中。"
+    }
+  ],
+  "rework_brief": "只改台子，不动 runner.py：① tasks/DAG-2026-11-06/fixtures/fake-codex/egress-ready.ps1 的 port 改成一个与 <PROXY-PORT-TUNNEL> 不同、且不会是宿主真实代理的值（如 18081）；harness:1514 期望值、harness:1544 的期望串同步改成 http://127.0.0.1:18081。② run_codex_inproc() 在调 main() 前把 os.environ 的 HTTP_PROXY/HTTPS_PROXY/http_proxy/https_proxy 先设成一个哨兵值（如 http://127.0.0.1:1/ 或直接 pop），finally 里还原 —— 两手都做，任一就能让断言不依赖宿主。③ proxy_url_for 单测加一条非 <PROXY-PORT-TUNNEL> 端口（如 {\"port\": 23456} → http://127.0.0.1:23456）。验法：在**带** HTTPS_PROXY=http://127.0.0.1:<PROXY-PORT-TUNNEL> 的 shell 里跑 runner-mutate.py 必须 59/59，并新增一格变异『proxy_url_for 写死 <PROXY-PORT-TUNNEL>』也须被抓住（→60/60）；把这次运行的 shell 环境里代理变量的值一并落进证据。",
+  "escalate_question": "",
+  "reviewer_notes": "只读之外动过的：在 %TEMP%\\rv2-mirror（工程树外镜像）里对 runner.py 做了两次单变量改写并跑台子；主树上跑台子/变异台写了 runs/_harness/**（允许范围），变异台自己改写后还原了 scripts/runner.py（sha 前后一致）。未重审 K1–K12 主体；未跑 probe-readonly.py 与真 codex。B1 结论依赖『验收官环境带 <PROXY-PORT-TUNNEL> 代理』这一事实，我已用 env 输出与 env -u 对照证实。",
+  "_provenance": "验收官自己写入 `tasks/CODEX-ENGINE-2026-11-11/REVIEW-round2-raw.txt`；JSON 块逐字未改。"
+}

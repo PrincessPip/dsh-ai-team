@@ -1,0 +1,122 @@
+{
+  "verdict": "escalate",
+  "confidence": 0.97,
+  "readonly_enforcement": "snapshot_only",
+  "evidence_root": "%USERPROFILE%/AppData/Local/Temp/constraints-independent-r2-vpj0na5k",
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "运行 evidence_root/independent-probes.py：上一轮三个反例均返回 exit 1，纯 E/I 返回 exit 0；但 product_context「对于产品，禁止复制任何文件」被判 I、exit 0，e_intrinsic「禁止隐藏按钮」被判 E、exit 0。对照 product_direct「禁止复制任何产品文件」正确返回 P、exit 1。详见 probes.txt 和 evidence/independent-probes.json。",
+      "judgment": "[判断类，E1] 噪音增加可以作为保守分类的代价，但当前仍漏掉明确的产品能力限制，不能据此宣称已实现 fail-closed。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立探针 empty_changed 返回 exit 2；unknown 返回 exit 1/UNKNOWN-ID；proposed、empty_quote 返回 exit 1/NOT-APPROVED；approved 返回 exit 0。断言 T01、T06–T08 和变异 M05–M08 复跑通过。本结论限于已抽取并分类为 P 的条款。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "unverified",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "运行时机制已达 E3：独立探针 baseline_original 返回 0，baseline_reword、baseline_new_clause、baseline_move 均返回 1；T34/M23 验证带标签行不写入 baseline。独立集合核对得到旧 586、新 623、新增 78、移出 41，与 CHANGED.txt 的交集为空。但新增 78 项对应源文件全部不在送审副本内，不能独立确认它们全部属于历史文本。",
+      "subresults": {
+        "baseline_runtime": "pass",
+        "counts_and_changed_scope": "pass",
+        "historical_source_authenticity": "unverified"
+      }
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立探针验证反引号、波浪线、四空格代码块，以及引用、划线、词内假阳性、超长行均返回 exit 0 且 prohibitions=0；T31 缩进列表返回 exit 1。T29–T32 与 M18–M21 复跑通过，围栏长度和缩进前置条件的实际红集与固定预期一致。"
+    },
+    {
+      "id": "C5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "TEMP 副本复跑 selftest：exit 0、RESULT=36/36；mutate：exit 0、RESULT=23/23、void=0。M16 实红 T25/T27/T28，M17 实红 T33，M18–M21 分别实红 T29/T30/T31/T32，M22 实红 T36，M23 实红 T34。代码使用固定预期红集与实际集合比较，并核退出码、消息和 baseline 数据行数；未从被测输出反推预期。详见 selftest.txt、mutate.txt。通过仅证明现有格子有效，不代表覆盖了 C1 的两个新反例。"
+    },
+    {
+      "id": "C6",
+      "type": "fact-consistent",
+      "status": "unverified",
+      "claimed_strength": "E2",
+      "strength_met": false,
+      "evidence": "11 份前像的 SHA256 和字节数全部匹配清单，已独立生成并阅读分类器前后差异。主要改动可对应 B1 分类、B2 代码块、B3 定义检查和 C3 标签登记保护。但 DELIVERY 的自举失败史没有提供所述中间失败文本及对应分类器版本，现有 BOOTSTRAP-TRIGGER-POLICY.txt 只有 violations=0，不能独立证明所有中间修改均未为自有文本放宽。",
+      "judgment": "[判断类，E1] 未发现按自有文件路径设置的特殊豁免；这不等于已经证明修改动机或完整修改过程。C1 的漏检有直接反证，但不能据此推断作者故意迁就自身文本。"
+    },
+    {
+      "id": "C7",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "python -B scripts/constraints-check.py --defs 返回 exit 0、defs=6、violations=0；AGENTS.md:37–39 与 TRIGGER-POLICY.md:491–493 包含注册表三项逐字定义，I 定义含「只约束实验进程，不得外溢成产品能力边界」。T36 删除定义文字后返回 MISMATCH，M22 准确使 T36 变红。"
+    },
+    {
+      "id": "C8",
+      "type": "fact-consistent",
+      "status": "unverified",
+      "claimed_strength": "E2",
+      "strength_met": false,
+      "evidence": "本轮前像机制可核：11 份哈希及字节数全部匹配，AGENTS.md 独立对照为 +8/-1，删除内容由三态定义替换。预算独立复跑得到 body=49136、rendered=49484，omitted/truncated 均为空。历史 26483→19576 B 的瘦身没有移出前原文，无法证明逐字迁移；按简报要求保留 unverified。",
+      "subresults": {
+        "current_preimages_and_changes": "pass",
+        "historical_verbatim_migration": "unverified"
+      }
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B1a",
+      "claim": "产品上下文被丢弃，真实 P 条款仍可按 I 无出处通过。",
+      "what": "分类器先跳过不含禁限词的子句，导致后续动作失去产品范围。",
+      "why": "违反 C1；上一轮 B1 的根本问题仍存在。",
+      "evidence": "scripts/constraints-check.py:185「if not ANY_PROHIBIT_RE.search(clause):」在产品否决之前返回 None。独立输入「- 对于产品，禁止复制任何文件。」得到 I=1、P=0、exit 0；同义对照「- 禁止复制任何产品文件。」得到 P=1、NO-PROVENANCE、exit 1。完整输出位于 probes/product_context/output.txt 和 probes/product_direct/output.txt。"
+    },
+    {
+      "id": "B1b",
+      "claim": "E 类仍存在单个动作词直接放行，未确认动作对象属于证据。",
+      "what": "「隐藏」被视为内在证据动作，按钮等产品对象不需要任何出处。",
+      "why": "违反 C1 的证据完整性与产品能力边界区分。",
+      "evidence": "scripts/constraints-check.py:190「if E_ACT_INTRINSIC_RE.search(clause):」直接返回 E。独立输入「- 禁止隐藏按钮。」得到 E=1、P=0、violations=[]、exit 0，见 probes/e_intrinsic/output.txt。"
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "上一轮 B2、B3 已通过本轮复验；B4 已建立本轮前像机制，但不能追认此前历史断言。",
+      "evidence": "C4、C7 的独立复跑及 C6、C8 的前像核对结果。"
+    },
+    {
+      "id": "N2",
+      "what": "保留范围限制：新增 baseline 的历史来源、历史瘦身逐字迁移未验证；quote 真伪及其与条款的对应关系仍不由检查器核验。",
+      "evidence": "REVIEW-BRIEF.md §4、§6；独立检查显示 78 个新增 baseline 项的源文件均缺席。"
+    },
+    {
+      "id": "N3",
+      "what": "引用、改动面扫描与容量检查均复现通过。",
+      "evidence": "cite-check --strict：exit 0、named=6、OK=6、LONE=3；constraints-check --changed-from CHANGED.txt：files=5、violations=0；agents-budget --changed AGENTS.md：RESULT=OK、body=49136、rendered=49484。"
+    }
+  ],
+  "rework_brief": "保留产品范围在相邻子句中的约束作用，避免遇到逗号就丢失；收窄 E 的内在动作豁免，使「隐藏按钮」等非证据对象不能自动通过。将两个新反例与同义对照加入固定断言及针对性变异，同时保持纯 E/I 正例通过。补齐 C6 中间失败证据，无法提供的继续标为 unverified；不要事后重建并冒充原件。",
+  "escalate_red_line": [
+    4
+  ],
+  "escalate_question": "[红线 4；契约 §六第二轮升级] B1 经一次返工仍存在。请决定继续按上述最小修复收窄自动豁免，还是调整分类设计后重新定义验收标准；当前版本不能按通过交付。",
+  "reviewer_notes": "输入树前后均为 349 个文件，SHA256 核对新增、删除、修改均为 0，被测分类器副本与输入文件一致；这只证明采样间净状态一致。测试写入均在 TEMP，副本变异台仅补回隔离环境继承；首次 tmp 目录命中排除项及中文管道编码问题均纠正后重跑，失败运行不作为功能证据。未调用网络、真实模型或修改工程文件，外层验收入口最终机器报告仍须由调用方结合本裁决核对。"
+}

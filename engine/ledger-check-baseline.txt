@@ -1,0 +1,4 @@
+{
+    "schema": "ledger-format-v2-baseline",
+    "entries": []
+}

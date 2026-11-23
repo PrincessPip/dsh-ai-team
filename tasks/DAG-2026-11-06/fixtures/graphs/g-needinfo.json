@@ -1,0 +1,21 @@
+{
+  "v": 1,
+  "plan_id": "plan-b1-needinfo",
+  "budget": { "max_calls": 8 },
+  "nodes": [
+    {
+      "id": "w_try",
+      "kind": "work",
+      "do": "往 fixtures/sandbox/notes.md 末尾追加一行 '- needinfo 升档后写入'。",
+      "after": [],
+      "ctx": { "read": ["tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"] },
+      "writes": ["tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"],
+      "out": ["changed", "summary"],
+      "accept": [
+        { "type": "scope", "rule": "只许改 notes.md" },
+        { "type": "assert", "rule": "changed 恰好是 notes.md" }
+      ],
+      "on_fail": { "retry": 1, "escalate": "integrate", "then": "replan" }
+    }
+  ]
+}

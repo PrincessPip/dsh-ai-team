@@ -1,0 +1,23 @@
+{
+  "task": "P0-2026-11-05",
+  "round": 2,
+  "reviewer": "claude -p CLI (allowedTools=Read,Grep,Glob)",
+  "reviewed_at": "2026-11-05",
+  "scope": "C1,C2,C3,C4,C5,C7,C8 （C6 已在第一轮 pass，本轮不在范围）",
+  "verdict": "pass",
+  "confidence": 0.93,
+  "criteria": [
+    { "id": "C1", "status": "pass", "evidence": "~/.dsh/profiles/web/cordis.patch.yml:3361 `- id: tool-subagent-claude-code`, :3362 name, :3363 `disabled: false`" },
+    { "id": "C2", "status": "pass", "evidence": "cordis.patch.yml:3189 `- id: subagent-model-selection-settings`, :3193 allowedModels, :3220 provider openrouter, :3221 `model: anthropic/claude-haiku-5.5` —— 是列表最后一条，下一条顶层条目是 :3222 `- id: hmr`，证明落在白名单内、不是 OpenRouter 模型目录里的同名副本" },
+    { "id": "C3", "status": "pass", "evidence": "package.json:5 `\"@deepseek-ai/dsh-subagent-claude-code\": \"0.2.1-rc.2\"`（dependencies）；:24 同包名在 dsh.profile.bundles（15–25 行）" },
+    { "id": "C4", "status": "pass", "evidence": "Glob 该包目录返回 13 个文件，含 package.json / lib/index.js / cordis.patch.yml / README.md / LICENSE / lib/types/*.d.ts" },
+    { "id": "C5", "status": "pass", "evidence": "cordis.patch.yml.bak-20261105-aiteam 存在；备份内 :3359 该行、:3361 `disabled: true`，可回滚" },
+    { "id": "C7", "status": "pass", "evidence": "ai-team/AGENTS.md:36 记实测 orgName；旧名仅以「当时网页显示名，不是账号事实」的明确标注出现，符合例外条款。~/.dsh/AGENTS.md:149 同。grep 这两个文件仅命中这两行" },
+    { "id": "C8", "status": "pass", "evidence": "全仓 grep「重启」并分类：AGENTS.md:31/32、CLAUDE-SETUP.md:158-159、PLAN.md:50/94/117 均已是更正后结论或明确标注已更正；其余匹配无关（SECRETS-AND-LOGIN.md:270 指 sshd 重启、DELIVERY.md:22 陈述未重启、TASK.md 与第一轮 decisions 中的引用）" }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    { "id": "N1", "what": "decisions/ 下第一轮文件仍带 fail 裁决，本轮落盘时应归档" }
+  ],
+  "reviewer_notes": "C6 不在范围未查。第一轮 blocking（C8 四处残留 + 裸旧组织名）在当前文件中均已修复，行号有位移（如 PLAN.md:49 → :50）。decisions/ 下上一轮的 fail 裁决应覆盖或归档。"
+}

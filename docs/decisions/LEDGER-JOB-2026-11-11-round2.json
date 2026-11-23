@@ -1,0 +1,116 @@
+{
+  "verdict": "escalate",
+  "confidence": 0.85,
+  "criteria": [
+    {
+      "id": "K1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "Mirror run: BOM EF BB BF on both scripts; -Path/-Baseline/-WriteBaseline; real ledger rc=1 without baseline, rc=0 with baseline; bench file-not-found/invalid-utf8/schema-mismatch cases exit 2 (TESTS=29 FAILED=0)."
+    },
+    {
+      "id": "K2",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "Code: scripts/ledger-check.ps1:325「if ($t -match '^(再?更正|收口|救火|返工后送|补登)') {」, :329「elseif ($t -match '^(?<![不非未无])(免检|留存|送审)') {」. Header: scripts/ledger-check.ps1:45「R_DISP=^(再?更正|收口|救火|返工后送)」, :46「R_TIER=(?<![不非未无])(免检|留存|送审)」. The header K2 requires describes the pre-fix rules."
+    },
+    {
+      "id": "K3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "M2 caught (both orphan cases red); real ledger 171–188 judged ORPHAN_CONTINUATION."
+    },
+    {
+      "id": "K4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "My run on a copy of the 281-line ledger: violations=19 = FIELD3_INVALID@170 + ORPHAN_CONTINUATION@171..188; no line 56; row.tier=106 row.disposition=24. Probes 1-6 and 9/16 give FIELD3_INVALID as expected. Counter-check: mutant X3 (R_DISP unanchored) gives violations=0, so the result depends on the anchor."
+    },
+    {
+      "id": "K5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "-Baseline scripts/ledger-check-baseline.txt: rc=0 new=0 known=19; baseline-new-violation-still-red green, and M5 turns it red."
+    },
+    {
+      "id": "K6",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "Mirror: TESTS=29 FAILED=0 rc=0, including the 4 new B1 cases."
+    },
+    {
+      "id": "K7",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "head -n 279 decisions/self/ledger.md sha256 = job-copy sha256 = 7e3425e3…; both scripts start with EF BB BF; ledger-audit LEDGER_OK [suspect] none (my run)."
+    },
+    {
+      "id": "K8",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "Mirror: defined=10 void=0 ran=10 caught=10 restored_green=True. My 6 extra mutants: X1 equivalent (lookbehind is dead code), X2/X4/X5/X6 caught, X3 (R_DISP unanchored) survived, see N1."
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "what": "The B1 fix changed the code but not the header comment of scripts/ledger-check.ps1: lines 45-46 still list R_DISP without 补登 and R_TIER without ^",
+      "why": "K2 requires the decision order in the header; the header now contradicts :325/:329. This is the same text-versus-code defect as round-1 B1, introduced by the fix.",
+      "evidence": "scripts/ledger-check.ps1:45「R_DISP=^(再?更正|收口|救火|返工后送)」 vs :325「'^(再?更正|收口|救火|返工后送|补登)'」; :46「R_TIER=(?<![不非未无])(免检|留存|送审)」 vs :329「'^(?<![不非未无])(免检|留存|送审)'」"
+    },
+    {
+      "id": "B2",
+      "what": "REVIEW-BRIEF-round2 reports DELIVERY fixes that were not made: §四 row 3 not deleted, §八·6 times not corrected, notes.md not added to §六·7",
+      "why": "Round-1 rework_brief item 2 explicitly required deleting the §四#3 claim; DELIVERY still contradicts itself (§四#3 vs §一·3/§五·2), and the brief tells the reviewer it was done. A fix claim that doesn't match the file is unverified (rule 2).",
+      "evidence": "REVIEW-BRIEF-round2.md:36「DELIVERY §四 表格第 3 行（原先写「无合法形态被误判」）已删」 vs DELIVERY.md:113「每一条都能在原文找到对应问题，无「合法形态被误判」」; DELIVERY.md:262「同一命令 12:03 绿 `523/0`、13:55 红 `207/27`」; grep notes.md in DELIVERY.md finds only the :248 table claim and no §六·7 text."
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "Mutant X3 (remove ^ from R_DISP) leaves all 29 cases green but changes the real ledger to violations=0, because line 170 contains 「更正」. Add a case like '不送审（…更正…）' expecting FIELD3_INVALID, plus a matching mutant."
+    },
+    {
+      "id": "N2",
+      "what": "With the ^ anchor, (?<![不非未无]) can never fire (X1 stays all green). Deleting M3/M8 is right, but they would be MISSED equivalent mutants, not VOID. Delete the dead lookbehind from the code and header, or comment it as historical."
+    },
+    {
+      "id": "N3",
+      "what": "TRIGGER-POLICY.md:72-73 still says 25 cases / 9 mutants; :86 says 「剥掉开头的 `*`」 but the code strips only 1-2 asterisks and does not trim again, so '* 送审' gives FIELD3_INVALID."
+    },
+    {
+      "id": "N4",
+      "what": "Other stale DELIVERY text: §四 rows 1-2 (25 cases / 9 mutants); the mutant table lists M3/M8 and lacks M10-M12; §六·3 says '…-1140-clean.txt 改名为 …-1140-clean.txt'; the §八 cross-references (§六·2/3/4/5/6) point at the old numbering."
+    },
+    {
+      "id": "N5",
+      "what": "Round-1 N3 not addressed: DELIVERY §三.3 still gives 'line numbers drift as continuation blocks shrink' as the reason for sha keys; the real reason is that an edited history line turns red again."
+    },
+    {
+      "id": "N6",
+      "what": "EGRESS.txt / LEDGER-AUDIT.txt are from 11:40, before the round-2 edits (12:16-12:22), against TASK §六 'prerequisites are the last step'. My fresh runs are READY / LEDGER_OK, so the substance holds."
+    }
+  ],
+  "rework_brief": "1) scripts/ledger-check.ps1 header :45-46 (and the S5 lines in the header): change to the actual R_DISP/R_TIER; either remove the dead (?<![不非未无]) from code and header, or mark it as historical. 2) DELIVERY.md: delete the claim at :113; update §四 rows 1-2 to 29 / 10, update the mutant table (remove M3/M8, add M10-M12 with reasons); change §八·6 to 11:40 / 12:02; add the manual restore of fixtures/sandbox/notes.md to §六·7; fix the §六·3 rename sentence and the §八 cross-reference numbers; rewrite the §三.3 sha-key reason. 3) TRIGGER-POLICY.md:72-73 → 29 / 10; make the :86 star-stripping wording match the code. 4) Add a test case '不送审（…更正…）' expecting FIELD3_INVALID and mutant 'R_DISP loses ^'. 5) Rerun egress / ledger-audit / cite-check last. Verify with: grep the header for 补登 and ^(?<!; bench FAILED=0; mutation bench catch=N/N void=0; check DELIVERY against these rerun numbers line by line.",
+  "escalate_question": "[红线 4] Round 2 still has blocking issues, so contract §六 upgrades this to escalate automatically, and per TRIGGER-POLICY §二·五 this is the unit's second non-pass ruling (auto-B fire-chief condition). The remaining work is only about 5 text and test edits. The code is correct: 19 violations, baseline pass, 29/29 tests, 10/10 mutants. Options: (A) let the worker fix it under rework_brief and send a 3rd round; cheapest, but it breaks the §六 'no 3rd rework round' rule, so it needs your explicit OK. (B) dispatch the fire chief as the rules say; compliant, but spends a GPT-6 Astra or Opus run on text edits. (C) accept the code now and record B1/B2 as known debt for the next unit; the documents then stay inconsistent with themselves.",
+  "escalate_red_line": [
+    4
+  ],
+  "reviewer_notes": "Writes went only to %TEMP%\\lj-review2\\ (mirror, fx probes, m3, xmut.py, CITE.txt); on the main tree I ran only the read-only egress check (no -Start), ledger-audit.ps1 and cite-check.py --out TEMP. I did not run runner-harness and did not check the round-1 nonblocking items about runs/_harness. The red-line number is an approximation: §六 auto-upgrade is not one of the six red lines, so I chose 4 under the 'undeclared counts as 4-6' rule."
+}

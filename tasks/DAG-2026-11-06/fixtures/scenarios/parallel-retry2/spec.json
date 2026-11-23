@@ -1,0 +1,21 @@
+{
+  "_comment": "第 2 轮验收官 B4 的反例 (a)。两个 scout 各 retry=2、max_calls=4、都要第 3 次才成功。串行按波内顺序把重试名额用完：s1 拿到两次重试后 ok，s2 首发失败后重试被拒（agent_calls=4）。并行不退化时每轮给每人各一次：两人各跑 2 次后都被拒，都 fail —— 结果随调度方式变。所以这一组必须整组退回串行。",
+  "nodes": {
+    "s1": {
+      "expect_prompt_contains": ["id: s1"],
+      "attempts": [
+        { "result": { "status": "fail", "summary": "第 1 次失败" } },
+        { "result": { "status": "fail", "summary": "第 2 次失败" } },
+        { "result": { "facts": ["notes.md 3 行"], "summary": "第 3 次成功" } }
+      ]
+    },
+    "s2": {
+      "expect_prompt_contains": ["id: s2"],
+      "attempts": [
+        { "result": { "status": "fail", "summary": "第 1 次失败" } },
+        { "result": { "status": "fail", "summary": "第 2 次失败" } },
+        { "result": { "facts": ["OFF-LIMITS.md 3 行"], "summary": "第 3 次成功" } }
+      ]
+    }
+  }
+}

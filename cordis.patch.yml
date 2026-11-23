@@ -1,0 +1,15 @@
+- insert:
+    - id: dsh-ai-team
+      name: dsh-ai-team
+      config:
+        backend: codex
+        model: ""
+        codexPath: codex
+        codexSandbox: workspace-write
+        openaiBaseUrl: https://api.openai.com/v1
+        openaiApiKeyEnv: OPENAI_API_KEY
+        timeoutMs: 3600000
+        engineDir: ""
+        pythonPath: python
+        nodePath: node
+        outDirName: .ai-team

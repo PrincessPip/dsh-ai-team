@@ -1,0 +1,119 @@
+{
+  "verdict": "rework",
+  "confidence": 0.96,
+  "readonly_enforcement": "snapshot_only",
+  "evidence_root": "%USERPROFILE%/AppData/Local/Temp/edge-independent-0abj6ckv",
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立完整回归35/35；活动会话探针4/4：新建专用会话、原Agent保留、停止后旧引用拒绝、普通会话不可接管。原件：official-gui-candidate/evidence/REPAIR-FULL-1794813256963.json；parent-evidence/CREATE-SESSION-1794813329962.json。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "原value/checked反证独立复跑2/2通过，但新增callId反证失败：等待审批时改写callId后，真实MCP仍返回isError=false。见B1；跨Session审批错配覆盖仍缺。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "已复现忙renderer、待审、重复stop、归属篡改、lease、失联及卸载测试；但规定的三个启动阶段没有分别验证。integration.mjs:131仅等待20ms后stop，不能证明覆盖全部阶段；见B3。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "真实Client/Host Gateway机械测试通过，覆盖创建/选择、状态解包、stop、退订和停止后旧引用拒绝；独立重算builtClientMatchesTemplate=true。仅判候选机械范围，未判真实React DOM或人审通过。"
+    },
+    {
+      "id": "C5",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "正常ScriptedAdapter轮次的19个报告事件与实际JSONL一致，磁盘共20事件且审批配对成立；但新增反证使asked使用原callId，approval/dispatch/result使用另一callId，审计关联不成立。见INDEPENDENT-AUDIT.json及B1。"
+    },
+    {
+      "id": "C6",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "回滚规则演练5/5，方案定性部分达到E1；但送审候选与portable各漏252个manifest文件，完整依赖副本一致性失败。已只读确认这些504项在原交付中存在且SHA正确，缺陷归属送审复制流程，见B2。"
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "claim": "待审批callId变更未被拒绝，工具执行与审批审计身份脱节。",
+      "evidence": "运行python -B PARENT-run.py PARENT-binding-probe.mjs，退出1、未超时、实现源码前后不变。审批原ID为review-original-call；变更为review-replacement-call后，browser_tabs实际执行成功，isError=false，dispatch/result记录新ID。原件：official-gui-candidate/parent-evidence/REVIEW-BINDING-1794813464425.json。src/host.mjs:35的APPROVAL_STALE条件没有比较原callId。",
+      "why": "违反TASK C2的callId绑定和C5的审批/工具/结果关联要求。这是同进程受控变更反证，不据此宣称网页能够改写callId。"
+    },
+    {
+      "id": "B2",
+      "claim": "送审复制脚本误删依赖中的runtime目录，独占验收副本不等于冻结产物。",
+      "evidence": "review-parent.py:7「EXCLUDE={'runtime','review','__pycache__'}」配合第12行在所有目录层级过滤，漏掉@babel/runtime及其他依赖runtime内容。INDEPENDENT-AUDIT.json记录两边共504项缺失、其余38536项相符；COPY-OMISSION-CROSSCHECK.json确认504项原交付字节全部符合manifest。",
+      "why": "copyMatch只比较同一份已过滤清单，无法发现漏复制；当前测试不能作为完整冻结包的独占副本验收。"
+    },
+    {
+      "id": "B3",
+      "claim": "必验的跨Session审批错配和分阶段启动停止反证仍未交付。",
+      "evidence": "TASK.md:18要求「待审取消＋迟到allow和跨Session串单」；PARENT-MATRIX.md:11要求「stop在spawn前、spawn后record前、provider挂载中」。DELIVERY.md:63明确承认这两组覆盖缺口；独立复跑的35项也没有补齐。",
+      "why": "已有普通Session/fork拒绝和单次20ms启动竞争不能替代这些组合；披露缺口不构成验收豁免。"
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "claim": "父级原R1表单状态问题与R2活动会话入口问题，本轮独立探针分别2/2、4/4通过。"
+    },
+    {
+      "id": "N2",
+      "claim": "真实React DOM、用户GUI人审及生产发布未执行，符合本轮边界；机械答复者和React spy不作为人审证据。"
+    },
+    {
+      "id": "N3",
+      "claim": "引用检查退出0，但refs=0；旧账本格式及mtime债保持原披露，不据此宣称全仓通过。"
+    }
+  ],
+  "executions": [
+    {
+      "command": "node supervise.mjs --implementation",
+      "result": "退出0，35/35，无超时",
+      "artifact": "official-gui-candidate/evidence/supervisor-1794813126055.json"
+    },
+    {
+      "command": "python -B PARENT-run.py PARENT-state-probe.mjs",
+      "result": "退出0，2/2",
+      "artifact": "official-gui-candidate/parent-evidence/STATE-PROBE-1794813269985.json"
+    },
+    {
+      "command": "python -B PARENT-run.py PARENT-create-session-probe.mjs",
+      "result": "退出0，4/4",
+      "artifact": "official-gui-candidate/parent-evidence/CREATE-SESSION-1794813329962.json"
+    },
+    {
+      "command": "python -B PARENT-run.py PARENT-binding-probe.mjs",
+      "result": "退出1，9项前置通过，新增callId拒绝断言失败",
+      "artifact": "official-gui-candidate/parent-evidence/REVIEW-BINDING-1794813464425.json"
+    },
+    {
+      "command": "python -B PARENT-run.py PARENT-rollback-rehearsal.mjs",
+      "result": "退出0，5/5",
+      "artifact": "official-gui-candidate/parent-evidence/ROLLBACK-1794813552057.json"
+    }
+  ],
+  "rework_brief": "固定并复核审批前的callId、工具身份及live Agent，统一使用该身份记录审计；加入callId变更拒绝且零dispatch的回归。将review-parent.py的排除规则限定到预期顶层产物目录，复制后按完整发布manifest核对文件集合和SHA。补齐两个真实专用Session同时待审的错配反证，以及三个启动阶段的确定性停止屏障测试，再提交完整冻结副本复验。",
+  "reviewer_notes": "所有执行及新增探针均在上述TEMP副本；原输入58013文件前后无新增、删除或内容变化，见INPUT-AFTER-AND-CLEANUP.json。最终自有进程残留0、锁0，14个专用profile保留，3080与日常浏览器根保持不变。未调用外部模型、未派子代理、未修改生产；前后快照不能检测写后还原或树外写入。"
+}

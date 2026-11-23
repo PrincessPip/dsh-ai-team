@@ -1,0 +1,20 @@
+{
+  "v": 1,
+  "plan_id": "plan-a2-harm-escalate",
+  "budget": { "max_calls": 6 },
+  "nodes": [
+    {
+      "id": "w_bad",
+      "kind": "work",
+      "do": "往 tasks/DAG-2026-11-06/fixtures/sandbox/notes.md 末尾追加一行 '- 只许改这里'。",
+      "after": [],
+      "writes": ["tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"],
+      "out": ["changed", "summary"],
+      "accept": [
+        { "type": "scope", "rule": "只许改 notes.md" },
+        { "type": "assert", "rule": "changed 只许含允许清单内的文件" }
+      ],
+      "on_fail": { "retry": 1, "escalate": "integrate", "then": "replan" }
+    }
+  ]
+}

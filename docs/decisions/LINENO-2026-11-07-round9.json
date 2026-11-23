@@ -1,0 +1,74 @@
+{
+  "_provenance": {
+    "note": "验收官返回体的逐字副本（仅 JSON）。除本 _provenance 字段外未改动任何字段。",
+    "unit": "LINENO-2026-11-07",
+    "round": 9,
+    "scope": "极窄审：只核 rework_brief 第 5 条的 grep 逐条归属 + CITE-CHECK.txt 的来源命令（四条判据 C1–C4）",
+    "channel": "claude -p CLI（--model opus，--allowedTools Read,Grep,Glob,Bash；可读全盘）",
+    "date": "2026-11-09",
+    "egress": "claude-egress-check.ps1 → READY（<PROXY-PORT-TUNNEL> → <VPS-IP>，绑物理网卡 <LAN-IP>）",
+    "outcome": "pass / 0.90 / 0 blocking / 4 nonblocking",
+    "human_decision": "伙伴 2026-11-09 选 A（第 9 轮窄审），不做 B 自查收口、不做 C 带账收口。",
+    "worker_response": "四条判据全 pass。验收官对我在 brief 里摊开的那一格（账本原行 :166 由更正行覆盖是否算过）裁决为「按路径 1 算过，路径 2 不要求」，并明确说 item 5 的措辞歧义是第 8 轮验收官自己的责任、不是工人的问题。",
+    "open_item": "本单元拿到 pass。4 条 nonblocking：N1 计数口径（出现次数 vs 行数）、N2 一处交叉引用指错（§十一 → 实为 §十·三）、N3 任务书里写的冻结时间不准（18:28 而非 19:1x，但 mtime 核对无违规）、N4 C1 裁决的接受代价（原行残句仍在）。",
+    "post_review_changes": "过审后按 N1/N2 做了两处 nonblocking 修订，并重生成 CITE-CHECK.txt；改动清单在 DELIVERY.md §十二，账本收尾行同步记。过审时的版本可由 FREEZE-round9.txt 的 mtime/大小 + 本文件 C1/C2 的 evidence 复现。"
+  },
+  "verdict": "pass",
+  "confidence": 0.9,
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "I re-ran the brief's command (copied verbatim) from the repo root. `grep -nE '现为 53|checks=61 failed=0|defined=18 void=0|OK=10 / HIST=2' tasks/LINENO-2026-11-07/DELIVERY.md decisions/self/ledger.md` returned rc=0 with hits on 9 distinct lines: DELIVERY.md:269/274/318/319/329/334/369 and ledger.md:166/196. ROUND9-GREP.txt has 19 hits on the same 9 line numbers; it counts every occurrence, so the two agree. Where each hit lands: DELIVERY.md:269 `「**现为 53/14**」（第 7 轮原文，**逐字**引` → ② sourced historical quote. :274 `**本轮没动**，改由**追加的更正行**（§十·三）声明「2026-11-07 快照，当前值跑命令看」` → ① marked as a snapshot. :318 / :319 / :329 are in the §十·三 table that quotes the round-8 B1/B2/N4 findings, and :319 also contains `截断残句`…`（括号不配对）` → ② and ③. :334 `验收官 grep 的是**第 7 轮 rework_brief 的原串** `现为 53`` → ② quotes the search string. :369 is a §十·三·三 table row that names these strings → a meta-reference. ledger.md:196 `**更正 · 只声明时效，不改原行**` → ④ the correction row. [Ruling on the cell the worker could not decide: ledger.md:166, the original row.] It counts as a pass on path 1, and path 2 is not required. Reasons: (a) I wrote item 2 of round 8's rework_brief, and it prescribed path 1 as the main route: 'append a correction row; don't edit row 166', with editing the original row only as an option if the partner allows it. (b) Item 5 was a check on what remained after item 2. Under item 2, row 166 could not be changed, so its strings were always going to remain. Item 5's 'or in the new correction row' was meant to cover hits whose status the correction row declares. :196 names all of them verbatim: ① `checks=61 failed=0` ② `defined=18 void=0 ran=18 caught=18` ③ `RESULT=LEDGER_OK` ④ `退出码 **0**`, plus the residue `OK=10 / HIST=2` declared void with `整句作废`. So every hit on :166 has a declaration it can be traced to. The ambiguity in item 5's wording is my fault as the round-8 reviewer, not the worker's. Strength: hit lines from two independent sources (the worker's ROUND9-GREP.txt and my own run) agree, and I read each hit in context → E2."
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "D2 exit code + D3 output + D1 byte-level comparison. I ran `python scripts/cite-check.py --files tasks/LINENO-2026-11-07/TASK.md tasks/LINENO-2026-11-07/DELIVERY.md REVIEW-CONTRACT.md TRIGGER-POLICY.md decisions/LESSONS.md AGENTS.md --strict` and got rc=0. Output: `[scope] files=6  refs=33  named=16  lone=17` / `[cover] anchored=13 (81.2% of named)` / `[OK]         13` / `[LONE]       17` / `[HIST]       3`. `head -1 tasks/LINENO-2026-11-07/CITE-CHECK.txt` → `[scope] files=6  refs=33  named=16  lone=17`. I wrote the fresh output to %TEMP%\\r9-cc6.txt and compared it with the file after stripping \\r: `diff_rc=0`, so the whole file matches, not just the first line. The temp file is deleted (`ls` → `No such file or directory`). Counter-proof: `head -1 tasks/LINENO-2026-11-07/CITE-CHECK-with-brief.txt` → `[scope] files=7  refs=35  named=16  lone=19`, so the 7-file output differs and is stored separately. The file's provenance matches the 6-file command."
+    },
+    {
+      "id": "C3",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "`grep -n '现为 53' tasks/LINENO-2026-11-07/DELIVERY.md` rc=0 → 4 hits, at 269 / 318 / 329 / 334. Section headings from `grep -n '^##'`: §五 = 161–180, §十 = 266, §十·三 = 311, §十一 = 380. All 4 hits fall inside §十 (269 is the background verbatim quote; 318 quotes round-8 B1; 329 is the N4 comparison; 334 is the §十·三·一 retrospective). Nothing in §五 matches. The §五 B3 row now reads DELIVERY.md:169 `数字改 49/10（**当时值**；当前值跑 §四 的命令看，本文件不抄）`. I checked this two ways, by grep and by reading the line directly → E2."
+    },
+    {
+      "id": "C4",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "§十 table row ① at DELIVERY.md:274: `**改成指路** —— **只改了这一段**。同一行「怎么验的」列里另有三处数字（`checks=61 failed=0` / `defined=18 … caught=18` / `RESULT=LEDGER_OK`）**本轮没动**`. It names all three numbers and no longer over-claims. I checked on disk that 'only this part was changed' is true. The tier column of ledger.md:164 now contains `机械面：闸门 / 断言 / 变异 / 审计的**当前值一律跑命令看**…**本行不抄数**`, while the three numbers are still in the original form at ledger.md:166 (`checks=61 failed=0` / `defined=18 void=0 ran=18 caught=18` / `RESULT=LEDGER_OK`). The claim and the disk agree. The correction row exists at ledger.md:196 `2026-11-09 | decisions/self/ledger.md | **更正 · 只声明时效，不改原行**`. Checked by reading the claim, the disk and the ledger directly → E2."
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "The §十·三·三 classification table in DELIVERY.md:360 still says it classifies 'ROUND8-GREP.txt 的 17 条命中'. The brief and ROUND9-GREP.txt use 19, the 2 extra being the two occurrences on line :369 of the table itself. Also, `HITS=19` counts occurrences, while grep -n reports 9 lines; the two counting methods aren't explained, so a reader can easily mistake them for a discrepancy. Next time, label it something like 'occurrences=19 / lines=9'."
+    },
+    {
+      "id": "N2",
+      "what": "The pointer at DELIVERY.md:269, `正是第 8 轮 N4 抓到的误引，见 §十一`, is wrong. N4 is handled at §十·三 (:329); §十一 is the current-status table and doesn't mention N4. This is a cross-reference error, not part of the four criteria, and doesn't affect C1's classification."
+    },
+    {
+      "id": "N3",
+      "what": "The brief says 'materials frozen at 2026-11-09 19:1x', but the brief's mtime is 18:28:54.17. I checked mtimes against the brief's actual mtime: DELIVERY 18:26:05 / CITE-CHECK 18:28:25 / ledger 18:22:15 / AGENTS 18:26:38 / LESSONS 18:17:54 are all earlier, and the sizes match FREEZE-round9.txt one by one (38176 / 260 / 109400 / 42256 / 31547 B). So there's no freeze violation; only the time in the brief's text is off."
+    },
+    {
+      "id": "N4",
+      "what": "Accepted cost of the C1 ruling: the unbalanced-parenthesis residue `更早记录的是 `OK=10 / HIST=2`），退出码 **0**` on ledger.md:166 is still there, and anyone reading only the original row can still be misled. The correction row discloses this in its 'where it's weak' section. If the partner later allows editing historical rows, path 2 (adding inline notes) can still be done, but this unit's pass doesn't depend on it."
+    }
+  ],
+  "rework_brief": "",
+  "escalate_question": "",
+  "reviewer_notes": "Commands I ran: stat on the mtime and size of the 8 frozen files; the brief's C1 grep (verbatim); the C2 6-file cite-check (once to the terminal, once to %TEMP% and diffed against CITE-CHECK.txt, temp file deleted); head -1 of CITE-CHECK.txt and CITE-CHECK-with-brief.txt; the C3 grep '现为 53'; grep '^##' for section boundaries; grep/sed to read ledger.md:164/166/196; python to read round8.json; awk to read contract §四. Not run (out of scope): ledger-audit.ps1, cite-check-harness/mutate (the brief excludes reopening the tools, rules and audit). The C1 ruling on ledger.md:166 is my interpretation of my own round-8 rework_brief wording; its basis is stated in C1's evidence."
+}

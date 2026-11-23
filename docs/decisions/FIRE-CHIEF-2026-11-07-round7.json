@@ -1,0 +1,30 @@
+{
+  "unit": "FIRE-CHIEF-2026-11-07",
+  "round": 7,
+  "date": "2026-11-07",
+  "trigger": "mandatory（#5 返工后 · 第 6 轮 escalate 后的极短核，只复核那 3 行）",
+  "channel": "claude -p --model opus --allowedTools Read,Grep,Glob,Bash (stdin prompt, 指路式)",
+  "verdict": "pass",
+  "confidence": 0.9,
+  "blocking": [],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "C9-COUNTER-SEARCH.txt 里的 HITS=3 是写本轮账本行之前的快照；账本补完后同一命令得 6 处（新增 ledger :165/:167/:169），新增三处同样都在「撤回 / 记录」语境。",
+      "disposition": "fixed",
+      "how": "在该节上方加注「快照不含本轮账本行，补完后为 6 处，新增三处同为撤回/记录语境」"
+    },
+    {
+      "id": "N2",
+      "what": "`Select-String '只有 openrouter\\|only'` 里的 `\\|` 在 .NET 正则里是**字面竖线**、不是「或」，所以那条命令只搜整串字面量，HITS_OLD_REGEX=0 的证据偏弱。",
+      "disposition": "fixed",
+      "how": "改用 `-SimpleMatch` 分别搜两个旧正则字面串：`only.*openrouter` → 1 命中 `ledger.md:166`；`只有 openrouter|only` → 1 命中同一行 —— **该行是「旧正则 → 新正则」的修改记录，不是当前判据残留**"
+    }
+  ],
+  "criteria": [
+    { "id": "C1", "status": "pass", "evidence": "grep '响过' 在任务目录 + ledger.md 共 6 处，全部处于「撤回 / 记录」语境，无一处还当事实陈述；账本强度列的 E3 依据已改成「只给一条理由的当前状态措辞 = 0」，不再依赖被撤回那句" },
+    { "id": "C2", "status": "pass", "evidence": "旧正则已从「改了什么」「强度」两列删除；`-SimpleMatch` 复核后只命中修改记录行" }
+  ],
+  "reviewer_notes": "本轮只核「响过」撤回是否彻底与旧正则是否残留，其余条目按第 6 轮已判 pass 处理，没有复核。PowerShell 的 Select-String 被宿主拦了，改用 Grep（ripgrep）跑同一个「响过」模式；ledger 长行用 -o 截取上下文判断语境。",
+  "final": "本单元至此收工：规则落地（TRIGGER-POLICY.md §二·五 救火档 v2.0 + INC-TEMPLATE.md v1.1 + 四份状态同步），七轮验收 7 次裁决，最终 pass 0.90 / 0 blocking / 0 未处置 nonblocking。"
+}

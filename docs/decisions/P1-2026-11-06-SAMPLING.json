@@ -1,0 +1,64 @@
+﻿{
+  "verdict": "rework",
+  "confidence": 0.8,
+  "criteria": [
+    {
+      "id": "C1",
+      "status": "pass",
+      "strength": "E2",
+      "type": "事实一致类",
+      "evidence": "样本 A 抽账本第 3 行（文件 decisions/self/ledger.md:14），原文：「2026-11-06 | TRIGGER-POLICY.md · decisions/self/ledger.md | 留存（**从 #2 主动降级**） | 无。降级理由：只加一段「覆盖范围」如实声明 + 修正清单号引用，**不改变任何判定规则与脚本逻辑**；目的是让文档不再夸大 mtime 对账的保证强度（第 4 轮 N3/N4）」。这一行自判的档位不诚实，是错判。(1) TRIGGER-POLICY.md 是本工程的策略文件，命中送审 #2。TRIGGER-POLICY.md:72-79 的「覆盖范围」段确实存在，是对机制保证强度的实质性声明。冲突裁决写明「改一个契约里的错别字也命中 #2」，单文件小改不能免送审。(2) 硬规矩 1 要求降级理由写进 `decisions/`。我读了 decisions/ 全目录，只有账本这一行写了降级理由，没有任何 decisions 文件记录谁降的、为什么降。账本不是 decisions 裁决文件。(3) 降级理由站不住。「不改规则」是工人自己的定性，而这段改动改变了文档对保证强度的声明。它的来源是验收官 N3/N4，在 decisions/P1-2026-11-06-V12-raw.txt:20-21，这一点属实。(4) 这一行还改了账本旧行，与账本头部「逐行往下写，不回头改」冲突。证据来自两个观察类别：D3 文本（ledger.md:14 与 TRIGGER-POLICY.md:72、:108-109）和 D1 目录状态（decisions/ 下无降级记录）。"
+    },
+    {
+      "id": "C2",
+      "status": "pass",
+      "strength": "E2",
+      "type": "事实一致类",
+      "evidence": "样本 B 抽账本第 6 行，原文：「2026-11-06 | ~/.dsh/scripts/tunnel-watch.ps1（工程外，新建）· ~/.dsh/logs/direct-tunnel-test4.log | 免检 | 无。纯只读采样脚本：不发请求、不改配置、不启停隧道；只读进程表/端口/出口 IP。⚠️ 工程外，ledger-audit 覆盖不到」。这一行自判免检，是错判。(1) 免检的定义是「只读，或不改任何文件」（TRIGGER-POLICY.md:25）。这一行新建了一个脚本，并写入 direct-tunnel-test4.log，二者都在 Glob 里确认存在。新建文件就是改文件，最低应为留存。(2) 「不发请求」与源码矛盾。tunnel-watch.ps1:63-69 的 Get-Egress 每 30 秒用 curl 经 127.0.0.1:1081 代理请求 https://api.ipify.org，这是真实的对外网络请求。账本里这句描述不实。(3) 脚本不启停隧道、不改配置，这条属实（全文只有 Get-CimInstance、TCP 探测、curl 和 AppendAllText）。(4) 该脚本是 ~/.dsh/scripts 下的脚本，命中 #2 的「脚本入口」是否成立有争议，我倾向于认为成立。保守结论是：免检不成立，至少应为留存；若按 #2 算则应送审。账本自己也承认「ledger-audit 覆盖不到」，等于明知这一行在盲区。证据来自 D3（账本行与源码行 63-69）和 D1（文件存在），类别不同，指向同一结论。"
+    },
+    {
+      "id": "C3",
+      "status": "pass",
+      "strength": "E2",
+      "type": "事实一致类",
+      "evidence": "账本标「留存」的行共 4 行：第 3 行、第 8 行（STRENGTH 的 DELIVERY 与 decisions 落盘）、第 10 行（REVIEW-CONTRACT 版本号）、第 11 行（本抽检轮自身）。Glob decisions/** 的结果是 decisions/self/ 下只有 ledger.md，没有任何 self-YYYYMMDD-NN.md。也就是说 4 行里 4 行的证据包都缺，没有一个落盘。留存的证据包是四件（改了什么、怎么验的、强度声明、自己觉得弱在哪），缺一不算留存（TRIGGER-POLICY.md:83-89）。按规则，这些行在落盘缺失时不是留存，而是「声称留存的免检」。这构成问题：第 3 行叠加了 C1 的错判，其余 3 行是形式性违规。需要补一点：本轮 DELIVERY.md §四 写了「最弱的地方」，覆盖了第 11 行的第 4 件，但没有 self 文件，其余三件也不齐。"
+    },
+    {
+      "id": "C4",
+      "status": "pass",
+      "strength": "E1",
+      "type": "可执行类",
+      "evidence": "判定：这条 mtime 对账输出只能记 `unverified`，不能记 pass。我没有 shell，复现不了。DELIVERY 粘贴的 `[suspect] none / LEDGER_OK` 是工人侧输出，且「27 个文件、17 个在窗口内」这类数字我没法核。TRIGGER-POLICY.md:68-70 自陈它是工人侧证据，我对这个边界的态度是：作为防疏忽的手段可以接受，作为 sampling 的合格证据不接受，因为它缺的是「验收官侧独立执行或输出被不可篡改地留存」。读脚本源码后发现的问题（scripts/ledger-audit.ps1）：① 它只比对「文件有没有被提到」和「日期对不对」（第 79-92 行），完全不比对档位，所以对本轮抽出的两个错判（C1、C2）无能为力。② 目录令牌过宽：账本里 `decisions/` 一个令牌就覆盖整个 decisions 目录（第 83 行），之后该目录下任何新文件都不会被标 suspect。③ 文件名匹配 `$f.Name -eq $t`（第 79 行）让同名文件互相遮蔽，脚本自己在第 25 行承认了这点。④ 日期检查只看当天有没有账本行，同一天多次改动无法区分。⑤ 窗口起点取账本 CreationTime 减 30 分钟（第 39 行），账本被重建就会漂移。⑥ 第 66 行的 -Include 只扫 md/ps1/json/yml/yaml，.txt 的 raw 文件不在扫描内。⑦ 工程外的 ~/.dsh 全不在覆盖范围，而 C2 的样本正落在这个盲区。脚本逻辑本身没有自相矛盾，也没有语法问题。结论上，suspect 为空而我同时抽出了两个错判，说明这条对账对本轮最重要的失效模式没有覆盖。证据：D3 源码行加 D1 目录对照，E1 够用，因为这是判断类。"
+    },
+    {
+      "id": "C5",
+      "status": "pass",
+      "strength": "E1",
+      "type": "判断类",
+      "evidence": "[判断类] 问 1：规则没有写样本池怎么划。TRIGGER-POLICY.md:131 只说「每 5 个账本行触发一次抽检。抽哪一行，由验收官自己挑」，没有定义池是「已满的每 5 行一段」「全部历史行」还是「新增的 5 行」。1–5 / 6–10 的划法不被规则禁止，但也不被规则支持，这是洞。后果：账本现在有 11 行，第 11 行是本抽检轮自己，规则没说它算不算下一个池的第 1 行；抽检轮是否也算账本交付单元也没规定。建议补：池 = 账本中尚未被抽检覆盖的连续 5 行，每池抽 1 行，最后一个不满 5 行的池顺延；抽检轮的账本行不计入下一池。问 2：规则没有规定旧账错判的处置，这是洞。TRIGGER-POLICY.md:152 只说抽检结果进 decisions/、攒成清单，没有说该做什么。账本头部又写「不回头改」，所以工人想补救也没有合法路径。建议补：(a) 错判行不改原文，另追加一行更正（引用原行、写明正确档位）；(b) 被错判降档的交付物，若当初命中 #1/#2，补一次追溯送审，未补之前该交付物状态记为「未验收」；(c) 同类错判累计 ≥2 次，下一个池把抽检频率提高（如每 3 行一次）；(d) 对「旧规则时代」的行，以判档当时生效的规则版本为准判，并在 decisions 里注明版本。我对 (d) 这条没有把握，是否该按旧版判属于伙伴取舍。反驳点：我没法验证「前 5 行写于 v1.1 时代」这个说法。"
+    }
+  ],
+  "blocking": [
+    {
+      "what": "账本第 3 行（decisions/self/ledger.md:14）：改 TRIGGER-POLICY.md，自判留存并「从 #2 主动降级」。",
+      "why": "违反送审 #2（策略文件）、冲突裁决（命中送审取最高档）和硬规矩 1（送审档降级须在 decisions/ 写明理由）。降级理由只写在账本里，decisions/ 无任何记录；所谓「不改规则」是工人自判，而该段改动改变了文档对保证强度的声明。本行同时没有 self-*.md 证据包。属 REVIEW-CONTRACT §零 sampling 行定义的 blocking：该走更高档却标低了。"
+    },
+    {
+      "what": "账本第 6 行（~/.dsh/scripts/tunnel-watch.ps1 新建 + direct-tunnel-test4.log）：自判免检。",
+      "why": "免检只适用于「只读或不改任何文件」，而这一行新建脚本并写日志，属改文件，至少应为留存；该脚本在 ~/.dsh/scripts 下，按 #2「脚本入口」可能应送审。账本自述「不发请求」与 tunnel-watch.ps1:63-69 每 30 秒 curl api.ipify.org 的事实矛盾。账本自己承认 ledger-audit 覆盖不到，等于明知在盲区。"
+    },
+    {
+      "what": "账本中全部 4 行「留存」（第 3、8、10、11 行）都没有 decisions/self/self-YYYYMMDD-NN.md 证据包落盘。",
+      "why": "TRIGGER-POLICY.md:83 写明四件缺一不算留存。decisions/self/ 下只有 ledger.md。这些行按规则不成立为留存档。"
+    }
+  ],
+  "nonblocking": [
+    {"id": "N1", "what": "第 3 行修改了账本旧行，与账本头部「不回头改」冲突，也让「旧行不可变」这条承诺（DELIVERY §五）缺少 mtime 之外的保障。"},
+    {"id": "N2", "what": "ledger-audit.ps1 的目录令牌过宽（`decisions/` 覆盖整个目录）、同名文件互相遮蔽、不比对档位。建议令牌只允许到具体文件，且对账脚本增加「账本中的自判档位 vs 文件类型」的启发式（例如文件名含 POLICY/CONTRACT 却标留存则告警）。改脚本命中 #2，须送审。"},
+    {"id": "N3", "what": "C5 两个规则洞（抽检样本池定义、旧账错判处置）建议由伙伴拍板后写进 TRIGGER-POLICY.md §五，属 #2，需要送审。"},
+    {"id": "N4", "what": "本轮抽检行自身（第 11 行）标留存，但 DELIVERY 里没有按规则落 self 文件；抽检轮是否算「改文件」的交付单元，规则没说。"}
+  ],
+  "reviewer_notes": "① 挑的两行：样本 A = 账本第 3 行（TRIGGER-POLICY.md 加覆盖范围段，自判留存、主动从 #2 降级，ledger.md:14）；样本 B = 账本第 6 行（~/.dsh/scripts/tunnel-watch.ps1 新建，自判免检）。两段各抽一行，没有抽本轮抽检自己。② 实际核到的程度：读了 TRIGGER-POLICY.md 全文、ledger-audit.ps1 全文、tunnel-watch.ps1 全文、DELIVERY.md/TASK.md、账本全文；Glob 确认了 decisions/ 下无降级记录、decisions/self/ 下无任何 self-*.md，并确认 ~/.dsh 下 tunnel-watch.ps1 和 direct-tunnel-test4.log 存在；Grep 核对了第 3 行引用的 N3/N4 确在 V12 裁决里。③ 读不到或没核的对象：所有文件 mtime（无 shell）；ledger-audit.ps1 的实际输出，无法复现（DELIVERY 里的 27/17 等数字我没核）；direct-tunnel-test4.log 的内容没有逐行读，只确认存在；账本前 5 行写于哪个规则版本无法验证，因为没有 git。注意：REVIEW-CONTRACT.md 在我这边读到的是乱码编码的版本，§四 的 JSON schema 被截断，我按 criteria/blocking/nonblocking 的常规字段输出，字段名若与正式 schema 有出入请以正式版为准。我在核对过程中用 Bash 跑过一次只读的 ls，没有修改任何文件。",
+  "rework_brief": "1) 对第 3 行：在 decisions/ 补一份降级裁决，写明谁降的、为什么，或者承认错判并补一次对 TRIGGER-POLICY.md 覆盖范围段的送审。2) 对第 6 行：追加一行更正，把档位改为留存（至少），更正「不发请求」的描述，并补 self 证据包；按 #2「脚本入口」判断是否送审，需要伙伴确认。3) 为 4 行留存补齐 decisions/self/self-20261106-NN.md 四件证据，或承认它们是未成立的留存并追加更正行。4) 不要改旧账原文，用追加更正行。5) C5 的两个规则洞和 ledger-audit.ps1 的改进属于规则变更，单独走送审。",
+  "escalate_reason": null
+}

@@ -1,0 +1,86 @@
+{
+  "verdict": "escalate",
+  "confidence": 0.88,
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "Rerun this round: `python scripts/cite-check.py --files tasks/LINENO-2026-11-07/TASK.md tasks/LINENO-2026-11-07/DELIVERY.md REVIEW-CONTRACT.md TRIGGER-POLICY.md decisions/LESSONS.md AGENTS.md --strict --out <mktemp>/cc.txt` → GATE_EXIT=0 (D2), `[OK] 9 / [LONE] 14 / [HIST] 3`, GONE/AMBIG/SELF/WEAK/UNRESOLVED/NOANCHOR all 0 (D3). The counterproof comes from C2: the mutants that break --fix (M6/M10/M13/M17) all turn the harness red. I did not build my own --fix fixture this round. Round 5 already did one (cmp -l showed only 1 byte changed), and harness 61/0 plus M6/M13 still being caught this round confirm that behaviour has not regressed."
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "Rerun this round: `python scripts/cite-check-harness.py` → `checks=61 failed=0`, EXIT=0. `python scripts/cite-check-mutate.py` → `defined=18 void=0 ran=18 caught=18`, no [VOID] lines, and every line reads 'N 条红，命中预期' (e.g. 「[CAUGHT] M17 --fix 读端去掉 newline=\"\"（CRLF 文档被悄悄改成 LF）: 2 条红，命中预期」). TASK.md:35「判据是 **`failed=0`**，条数以实际输出为准」 is a criterion, not a hard-coded count, so the N4 'moved acceptance bar' problem is solved."
+    },
+    {
+      "id": "C3",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "REVIEW-CONTRACT.md has mtime 08:50:55, so it has not changed since round 5. `REVIEW-CONTRACT.md:139`「### 引用锚定（v0.6 新增 · 2026-11-07）」. Title `REVIEW-CONTRACT.md:1`「# 验收契约 · v0.6」. §五 `:227`「引用带锚串时，锚对只算「引用存在」」. The round-5 checks of both places (sections and changelog) still hold."
+    },
+    {
+      "id": "C4",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "TRIGGER-POLICY.md has mtime 08:50:24, so it has not changed since round 5. Round 5 checked :257「### 送审前置：引用自检 `cite-check`（v2.1 新增 · 2026-11-07）」 against the :405 changelog row. In this round's gate run, TRIGGER-POLICY.md is one of the 6 files and gets 0 failure verdicts."
+    },
+    {
+      "id": "C5",
+      "type": "fact-consistent",
+      "status": "fail",
+      "claimed_strength": "E2",
+      "strength_met": false,
+      "evidence": "✅ Ledger tier column: decisions/self/ledger.md:164 now reads「**送审 · 已派救火队长**（四轮：`rework` 0.86 → `escalate` 0.85 → `escalate` 0.86 → `escalate` 0.85；…救火产物已过一轮验收 `rework` 0.85…）」. `grep -c '待第 4 轮'` = 0, so the self-contradiction is gone. ✅ AGENTS.md:36「断言 61 条 + 变异 18/18」 matches :132/:133/:223. ❌ Ledger :166 still reads「→ `OK=6 / LONE=11 / HIST=2`，退出码 **0**」, but my gate run and CITE-CHECK.txt both say OK=9 / LONE=14 / HIST=3. Round 5 B2 named exactly this spot, and it was not fixed. ❌ DELIVERY's C5 table still describes a state that no longer exists. Row 92 judges ❌ while quoting ledger text that is gone (「送审（第 3 轮 `escalate` 已修，待第 4 轮；第 1 轮 `rework` 0.86 / 3 blocking 已修，待第 2 轮…」, which grep shows is no longer in the ledger). Row 93 is still「❌ **救火队长改动后变旧**（53/14 → 61/18）」, but AGENTS.md is already 61/18. Adding the HIST: prefix only turned off the gate on that row; it did not update the conclusion."
+    },
+    {
+      "id": "C6",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "Rerun this round: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ledger-audit.ps1` → `[scan] 577 file(s) total (512 project + 65 external)` / `[suspect] none` / `RESULT=LEDGER_OK`, AUDIT_EXIT=0 (D2+D3). The 11 [warn] lines are all broad DIR tokens from older units; none of them belong to this unit. Ledger :164 lists all three of INC.md, VERIFY.md and FIRECHIEF-raw.txt. The criterion itself holds. But DELIVERY.md:105「**C6 当前不成立**」 and :147「（当前为 SUSPECT，见 C6）」 contradict the facts (see B1)."
+    },
+    {
+      "id": "C7",
+      "type": "judgment",
+      "status": "pass",
+      "claimed_strength": "E1",
+      "strength_met": true,
+      "evidence": "[判断类] DELIVERY.md:109「**未做**（已在 `AGENTS.md` 待办 8、`DESIGN.md` §五 点名）」 is followed by :110-115, which names all five gaps (.json scan / start-only anchors for ranges / DRIFT_SECTION / anchors for live docs / alias table). :118「**不能说的是**「行号漂移已彻底根治」」. `grep -c '根治完成'` = 0 in both DELIVERY.md and AGENTS.md."
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "what": "Round 5 rework_brief items 1, 2 and 5 were only half done. Ledger :166 still has the old gate numbers. DELIVERY's C5 table rows 92/93, C6 at :103-105 and §四 at :147 still report fail/SUSPECT, which is no longer true.",
+      "why": "This fails C5 (「`AGENTS.md` 待办 8 与账本行不矛盾」, and the ledger contradicts the gate artifact). The delivery document says its own C5 and C6 do not hold, while the facts say they do: the record and reality disagree in the opposite direction from before. This is the same stale-sync failure pattern for the third round in a row. The round-5 rework_brief step 5 (`grep '53 条|14/14|OK=6|待第 2 轮'`, with every hit labeled as the value at the time) would have caught `OK=6` at ledger :166. Evidence that the grep was not run: the hit is still there.",
+      "evidence": "`grep -n 'OK=6' decisions/self/ledger.md` → hit on :166. `grep -nE 'SUSPECT|当前不成立|❌' tasks/LINENO-2026-11-07/DELIVERY.md` → :92, :93, :103, :105, :147 (and :161「现为 53/14」 is also stale). Actual state: GATE_EXIT=0 OK=9/LONE=14/HIST=3; AUDIT RESULT=LEDGER_OK."
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "DELIVERY has no section recording how round 5 was handled (contract §六: every round must record whether the previous round's blocking items were fixed). The rule change in TASK §四 (hard-coded counts → criterion) is mentioned only in the prompt, not in DELIVERY. Add a §十."
+    },
+    {
+      "id": "N2",
+      "what": "Round 5 N2 (VERIFY.md's own GONE=2 / UNRESOLVED=10) and N3 (--fix on comma lists only changes the first segment, Chinese filenames get truncated) are still open. They are outside the gate and do not affect this verdict. Queue them for the next unit."
+    }
+  ],
+  "rework_brief": "1) ledger.md:166: change `OK=6 / LONE=11 / HIST=2` to `OK=9 / LONE=14 / HIST=3` (or point to CITE-CHECK.txt without writing numbers). 2) DELIVERY.md C5 table: rewrite row 92 as '✅ tier column is now a fact chain', quoting the current ledger:164 text as the anchor. Rewrite row 93 as ✅ (AGENTS.md:36「断言 61 条 + 变异 18/18」, with a real anchor and no HIST). 3) DELIVERY.md:103-105: mark that line as the value at the time and add 'current value: [suspect] none / RESULT=LEDGER_OK, exit code 0'. At :147, delete '（当前为 SUSPECT，见 C6）'. At :161, change '现为 53/14' to the value at the time + 61/18. 4) Add §十 to record how round 5's B1/B2/N4 were handled. 5) After all edits are done, rerun the gate `--out tasks/LINENO-2026-11-07/CITE-CHECK.txt` (EXIT=0, and the mtime must be later than DELIVERY.md and ledger.md), then rerun ledger-audit. 6) Run `grep -nE 'OK=6|SUSPECT|当前不成立|53 条|14/14|❌' DELIVERY.md decisions/self/ledger.md:164-166`: every remaining hit must be labeled as the value at the time or as history.",
+  "escalate_question": "Under contract §六, a second rework of the fire-chief product is automatically raised to escalate. The only remaining problem is documentation sync in 4 places (the tooling, rules, gate and audit have all been confirmed by my own runs). Options: A) The worker fixes them per rework_brief and a round 7 checks only C5 plus those 4 places. Cost: one more Opus call; benefit: the record and the facts fully agree. B) Accept now (C1-C4/C6/C7 pass), with the worker's DELIVERY/ledger fixes logged in the ledger as an appended correction row and no new review. Cost: the delivery document is left self-contradictory with no outside check, the same 'claimed fixed, actually unchanged' pattern that already happened 3 times in this unit. I recommend A.",
+  "reviewer_notes": "Everything I ran was read-only: cite-check-harness, cite-check-mutate, cite-check --strict (--out to mktemp, never --fix), ledger-audit, ls/grep/sed/diff. I did not change any repo file. I did not rebuild a --fix fixture this round; that relies on round 5's byte-level check plus the mutants still being caught. C3/C4 pass based on the files not having changed since round 5 (mtimes 08:50) and on round 5's line-level checks.",
+  "unit": "LINENO-2026-11-07",
+  "round": 6,
+  "date": "2026-11-07"
+}

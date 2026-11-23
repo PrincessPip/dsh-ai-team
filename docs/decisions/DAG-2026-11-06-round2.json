@@ -1,0 +1,87 @@
+{
+  "_provenance": "本文件是 subagent_claude_code 返回体的逐字副本（round 2，2026-11-06，trigger: mandatory）。除本字段与 trigger/channel 两个归档元数据外，其余字段未做任何增删改。",
+  "verdict": "pass",
+  "confidence": 0.85,
+  "trigger": "mandatory",
+  "channel": "subagent_claude_code",
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "B1 核实已修：scripts/dag.workflow.mjs:265(EDGE_SELF)/275(FROM_UNDECLARED)/221-223(integrate 必须 cmd|assert) 判据存在；fixtures/contrast-cases.json 新增 edge-self(52-67)/integrate-without-cmd(117-132)/from-undeclared(198-212) 三个案例，harness.mjs:30-47 EXPECT 表同步加 key，且 :132 有'案例名↔EXPECT一一对应'的强制断言。我用 Grep 独立统计 dag.workflow.mjs 的 err()/warn() 唯一 code：err 32 个、warn 7 个，与 DELIVERY §七声称的'32 error/7 warn'精确一致（D2：独立计数，不是转述其数字）；12 个有负样本的 code 与 DELIVERY 列表逐一核对也精确吻合。dry-run(577-608)/真跑拒收(611-622)分支均在 624 行执行器启动前 return，命中前不调 agent()。实际跑 node 的 checks=110 数字本身我跑不了，按工人侧证据处理（TASK §三已明示此限制），但覆盖结构、精确集合比对逻辑(harness.mjs:136-137 sort 后严格相等)均由我直接 Read 确认。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "scripts/dag.workflow.mjs:577-608：dryRun 分支内无 agent( 调用，在 624 行执行器启动前 return；plan() 函数(386-430)只用图结构(byId/ids)计算 waves/criticalPath，不依赖任何节点执行结果，dry-run 独立可算。本轮脚本本体未改，round1 证据原样成立。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "B2 核实已修：harness.mjs:182-200 新增 op='in'（命中第1值/命中第2值且大小写归一/不命中，3个方向）与 op='exists'（有值/空串/字段缺失，3个方向）的运行期测试，逐一对照 evalWhen()(dag.workflow.mjs:666-670) 的实现：exists 用 val!==undefined&&val!==null&&val!=='' 判断，in 用 w.val.map(cmp).indexOf(cmp(val))>=0 判断，测试期望值与此逐条吻合（D3：对实现逐行核对）。body()(704-815) 全路径核过：ok/fail/need_info/skipped 四态都显式 record()，没有把 fail 悄悄写成 ok 的分支。反证齐全：join=any 场景上游 fail 仍跑（213-219+harness212-219）、exists 的两个'本该不成立'情形(空串/字段缺失)实测确实 skipped。"
+    },
+    {
+      "id": "C4",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "scripts/dag.workflow.mjs:33-51 本轮未改，TIERS.check/strong 仍落 deepseek-official + channel:'official-substitute' + 带 why 文案；:833-835 degraded_tiers 构造逻辑未变。与 round1 核实结果一致，未发现劣化。"
+    },
+    {
+      "id": "C5",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "contrast-cases.json 现有 16 个案例，harness.mjs:30-47 EXPECT 表 16 个 key，名称逐一比对完全一致（位置独立两处，E2 达标）。逐案例核 _mut：14/16 精确；发现 1 处新的不精确表述——from-not-ancestor(230-244) 的 _mut 写'd 是 b 的后代'，但按 after 边实际关系，d 只依赖 c（d.after=['c']），b 只依赖 a，b 与 d 互不可达，d 并非 b 的'后代'，只是'非祖先'（这正是 FROM_NOT_ANCESTOR 判据要的条件，不影响触发结果，但描述不准，记 nonblocking）。⚠️ TASK.md 本条文字仍写'9 个案例'/'checks=85'，未随本轮改写同步（任务书自己说只重写了 C1/C3），对实际 16 案例/110 checks 的事实核验本身不受影响。"
+    },
+    {
+      "id": "C6",
+      "type": "judgment",
+      "status": "pass",
+      "claimed_strength": "E1",
+      "strength_met": true,
+      "evidence": "[判断类] 三条本轮未变：①harness.mjs:1 注释自述不经引擎走 new Function 沙箱，属实；②scenarios() 里 retry/escalate/abort/scope 用例(224-307)全部用假 agentImpl 驱动；③ledger-audit.ps1:134 `$auditExt = @('*.md','*.ps1','*.json','*.yml','*.yaml')` 确无 *.mjs。三条均可反驳而未被我驳倒。"
+    },
+    {
+      "id": "C7",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E3（要求，因属被返工项）",
+      "strength_met": true,
+      "evidence": "B3 核实已修：DELIVERY.md §二③(84-94) 现贴出 [ledger]/[scope]project/[scope]external/[scan]/[scope]logs/[warn]×3/[suspect]none/RESULT=LEDGER_OK，顺序与 ledger-audit.ps1:222-235 的 Write-Output 顺序逐一对应，此前缺失的 3 行 [scope] 已补全（D3：逐行比对脚本打印语句与贴出文本，两处独立）。'Step 0 那行物理上排在补记行之后'的事故遗留在 decisions/self/ledger.md 里属实可见：第56行(AGENTS.md补记)确实物理排在第57行(Step 0 送审本体)之前，与 DELIVERY/PROGRESS 的自述吻合。⚠️ 新发现两处自述口径误差（见 nonblocking N1/N2），均不影响上述核心修复的成立，按工人侧证据强度处理（我跑不了 ledger-audit.ps1 本身）。"
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "decisions/self/ledger.md 第59行写'checks=85→checks=108（+23条断言）'，但 DELIVERY.md §二①与 PROGRESS.md §二①都写 checks=110（+25）。我用 Grep 数出 harness.mjs 里 eq( 调用点 75 处，再按循环展开手工推算实际调用次数=110（dry-run 48 + scenarios 62），与 DELIVERY/PROGRESS 的 110 吻合，账本里的 108/+23 是错的。这是本轮新引入的账本自述与实际不一致，在 C7『账本行与实际改动是否对得上』的核验范围内，但量级很小（二级描述性数字，不影响 B1/B2 的实质修复），归类为 nonblocking。"
+    },
+    {
+      "id": "N2",
+      "what": "DELIVERY.md §二③ 第97行自称贴出的对账输出'共9行'，但其紧邻上方(85-94行)实际贴了10行([ledger]1+[scope]×3+[scan]1+[warn]×3+[suspect]1+RESULT1=10)。属本轮新出现的、在同一节自我核对时产生的计数误差，和上一轮B3的'裁剪却称原文'性质类似但程度轻得多（这次内容完整、顺序对，只是数错了行数）。"
+    },
+    {
+      "id": "N3",
+      "what": "contrast-cases.json 的 from-not-ancestor 案例 _mut 称 'd 是 b 的后代（不是祖先）'，但按边的实际走向 d 既非 b 的祖先也非 b 的后代（二者在 DAG 里互不可达，只是都不是对方祖先），这不影响 FROM_NOT_ANCESTOR 触发的正确性，但描述本身不准确，与 round1 N1/N2 同类问题。"
+    },
+    {
+      "id": "N4",
+      "what": "TASK.md 的 C5 小节仍写着上一轮的旧数字（'9 个案例'/'checks=85'），任务书头部声明本轮只重写了 C1 与 C3，但 C5 对应的夹具已经从 9 个变成 16 个、checks 从 85 变成 110，C5 原文未同步更新，容易让下一个读者以为交付缩水或对不上。"
+    }
+  ],
+  "rework_brief": "",
+  "escalate_question": "",
+  "reviewer_notes": "我没有执行 node 或 pwsh，checks=110 failed=0 这个实跑数字、以及 ledger-audit.ps1 的实际退出码/输出，都是工人侧证据，我只验证了其结构与源码逐行对应关系（含我自己用 Grep 对 err/warn code 唯一值计数得到 32/7，与 DELIVERY 声称数字独立吻合）。我假设 contrast-cases.json 与 harness.mjs 自本轮读取的内容即为实际送审版本，未检测是否存在送审后又被改动的情况。"
+}

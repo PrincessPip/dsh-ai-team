@@ -1,0 +1,19 @@
+{
+  "_comment": "预算：max_calls=2 恰好等于节点数。w_fail 第一次失败后想重试 → 余量不够 → 被拒并记录原因；w_ok 的首发名额必须还留着。",
+  "nodes": {
+    "w_fail": {
+      "expect_prompt_contains": ["id: w_fail"],
+      "attempts": [
+        { "exit_code": 1, "result": { "changed": [], "summary": "第一次失败" } },
+        { "exit_code": 0, "result": { "changed": ["tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"], "summary": "如果这条被执行了，说明预算没拦住重试" } }
+      ]
+    },
+    "w_ok": {
+      "expect_prompt_contains": ["id: w_ok"],
+      "write_files": {
+        "tasks/DAG-2026-11-06/fixtures/sandbox/BUDGET.md": "# 预算测试文件\n\n- 预算够用\n"
+      },
+      "result": { "changed": ["tasks/DAG-2026-11-06/fixtures/sandbox/BUDGET.md"], "summary": "追加了一行" }
+    }
+  }
+}

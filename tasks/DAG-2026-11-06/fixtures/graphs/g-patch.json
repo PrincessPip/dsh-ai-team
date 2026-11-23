@@ -1,0 +1,160 @@
+{
+  "v": 1,
+  "plan_id": "plan-e2efix-patch",
+  "budget": {
+    "max_calls": 12
+  },
+  "nodes": [
+    {
+      "id": "s_facts",
+      "kind": "scout",
+      "do": "读 notes.md，数条目数写进 facts。不写任何文件。",
+      "after": [],
+      "ctx": {
+        "read": [
+          "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+        ]
+      },
+      "out": [
+        "facts",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "facts 里必须写清条目数"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "abort"
+      }
+    },
+    {
+      "id": "w_patch",
+      "kind": "work",
+      "do": "只交 patch，不碰主树（DESIGN.md:203 的正例）。",
+      "after": [
+        "s_facts"
+      ],
+      "ctx": {
+        "from": [
+          "s_facts.facts"
+        ]
+      },
+      "writes": [
+        "tasks/DAG-2026-11-06/fixtures/sandbox/PATCH-A.md"
+      ],
+      "out": [
+        "patch",
+        "patch_targets",
+        "changed",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "patch 非空、patch_targets 在允许清单内、changed 是空数组"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "skip"
+      }
+    },
+    {
+      "id": "w_direct",
+      "kind": "work",
+      "do": "违反「只交 patch」：直接写主树（同一个 out 声明，两种做法的待遇必须翻转）。",
+      "after": [
+        "s_facts"
+      ],
+      "ctx": {
+        "from": [
+          "s_facts.facts"
+        ]
+      },
+      "writes": [
+        "tasks/DAG-2026-11-06/fixtures/sandbox/PATCH-DIRECT.md"
+      ],
+      "out": [
+        "patch", "patch_targets",
+        "changed",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "patch 非空、changed 是空数组"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "skip"
+      }
+    },
+    {
+      "id": "w_nopatch",
+      "kind": "work",
+      "do": "声明了 patch 却交空。",
+      "after": [
+        "s_facts"
+      ],
+      "ctx": {
+        "from": [
+          "s_facts.facts"
+        ]
+      },
+      "writes": [
+        "tasks/DAG-2026-11-06/fixtures/sandbox/PATCH-B.md"
+      ],
+      "out": [
+        "patch", "patch_targets",
+        "changed",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "patch 非空"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "skip"
+      }
+    },
+    {
+      "id": "w_oos",
+      "kind": "work",
+      "do": "交 patch，但 patch 目标跑出允许清单。",
+      "after": [
+        "s_facts"
+      ],
+      "ctx": {
+        "from": [
+          "s_facts.facts"
+        ]
+      },
+      "writes": [
+        "tasks/DAG-2026-11-06/fixtures/sandbox/PATCH-C.md"
+      ],
+      "out": [
+        "patch",
+        "patch_targets",
+        "changed",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "patch_targets 必须在允许清单内"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "skip"
+      }
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "unit": "AGENTS-DIET-2026-11-12",
+  "round": 2,
+  "date": "2026-11-12",
+  "channel": "subagent → openrouter/anthropic/claude-opus-5.5（DSH 子代理，全新会话，带工具，只读；与第 1 轮同一通道）",
+  "verdict": "pass",
+  "confidence": 0.84,
+  "confirmed_by_reviewer": [
+    "FREEZE.json 一致：全局 25,393 B / 2d8ae2ef…aa10；项目 21,285 B / db640f78…b737（审查开始与结束各算一次）",
+    "四条复现命令都是它亲手跑的：selftest 15/15 · mutate 在 %TEMP% 镜像里 8/8 · verify-landing 12/12 + 反证 OK · agents-budget RESULT=OK omitted=[]",
+    "基线 rendered=55,642 omitted=['user-global/AGENTS.md'] 复现",
+    "B1 三处落点亲眼核过；镜像里把 launcher 一块两个锚串都换掉 → rc=1，不是假绿",
+    "人格 / 偏好 / 硬约束 / 写协议四段按基线逐字节核过",
+    "它本身是新会话，两份 AGENTS 完整注入、无 omitted —— K8 的 E2 证据",
+    "cite-check anchored=6 (100%) LONE=3 · doc-sync OK · ledger-check n=295"
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {"id": "N1", "what": "DELIVERY 有旧数字与自相矛盾（14/7 应为 15/8；§四·6 与 §七·1 冲突；K10「十节」实际九节）", "suggest": "文本残留，改掉", "fixed": true},
+    {"id": "N2", "what": "verify-landing 锚串偏弱，「2 中 1 命中」会放过部分丢失（镜像实测）", "suggest": "改成全部命中 + 换强锚 + 补 NEXT-STEPS 落点", "fixed": true},
+    {"id": "N3", "what": "MIGRATION.md 没跟着 B1 更新", "suggest": "同步补两处落点", "fixed": true},
+    {"id": "N4", "what": "项目 AGENTS L91 除删行号外还把「只留」改成「只转发」，DELIVERY 只声明 1 处", "suggest": "改成「改 2 处」", "fixed": true},
+    {"id": "N5", "what": "CITE-CHECK.txt 文件头是占位符；ledger-check n=295 不在任何证据里", "suggest": "写实际清单 + 新增 LEDGER-CHECK.txt", "fixed": true},
+    {"id": "N6", "what": "agents-budget 对整个 profile 正则匹配 maxBytes:", "suggest": "按 agent-instructions 插件块定位", "fixed": true},
+    {"id": "N7", "what": "RELEASE L11 与 L83 两处「唯一剩下的动作」指不同的事", "suggest": "区分「分发」与「装机」", "fixed": true}
+  ],
+  "impossible": [
+    "没有逐句比对每一块删除内容的语义，只核了锚串与抽检段落",
+    "Hindsight 在本工作区 disabled，「已 ingest」无法核实"
+  ],
+  "reviewer_notes": "只在原地跑只读命令；mutate 与打坏试验都在 %TEMP%\\review-diet-r2 镜像里。EGRESS.txt 的 [action] 行仍写「via 1081」，是脚本注释的旧账，不归本单元。",
+  "summary": "守卫本身可靠；B1/B2 都已修且可复现；材料冻结前后一致。剩余问题集中在文本残留与锚串强度，按契约 §五 不制造 blocking，判 pass。"
+}

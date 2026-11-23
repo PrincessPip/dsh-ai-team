@@ -1,0 +1,49 @@
+{
+  "unit": "E2EFIX-2026-11-09",
+  "round": 1,
+  "verdict": "rework",
+  "confidence": 0.88,
+  "criteria": [
+    {"id": "C1", "type": "executable", "status": "fail", "claimed_strength": "E3", "strength_met": false, "evidence": "g-patch fixture flips correctly (w_patch ok / w_direct fs_write_forbidden / w_nopatch patch_missing / w_oos patch_out_of_scope), but counter-examples B1 and B2 break C1"},
+    {"id": "C2", "type": "executable", "status": "pass", "claimed_strength": "E3", "strength_met": true, "evidence": "runs/_harness/from/FAKE-COUNTERS has .calls-down_ok/.calls-s_ok/.calls-w_bad and no .calls-down; no NODES/down.a1.json; runner.py:427-457"},
+    {"id": "C3", "type": "executable", "status": "pass", "claimed_strength": "E3", "strength_met": true, "evidence": "dag-gate.mjs on the real graph: 0 err / 4 warn incl. CMD_NO_EXEC_BYPASS + FROM_OPTIONAL_UPSTREAM; harness.mjs 166/0"},
+    {"id": "C4", "type": "executable", "status": "pass", "claimed_strength": "E3", "strength_met": true, "evidence": "runner.py:783 derives prompt_has_prev from prompt content; the fake worker exits 9 when expect_prompt_contains is missing from stdin; mutate 29/29"},
+    {"id": "C5", "type": "executable", "status": "pass", "claimed_strength": "E3", "strength_met": true, "evidence": "fixture-level E3 (runner-harness timeout scenario + 2 mutations); real-headless behaviour is [判断类] E1, see report §二·3"},
+    {"id": "C6", "type": "executable", "status": "fail", "claimed_strength": "E3", "strength_met": false, "evidence": "B3: same graph PASS in parallel, FAIL with --no-parallel"}
+  ],
+  "blocking": [
+    {"id": "B1", "criterion": "TASK C1③ (patch_targets ⊄ allow → patch_out_of_scope)", "what": "patch_out_of_scope is evaluated only when patch_targets is a list (runner.py:916-920). If the field is omitted or written as a string, the check is silently skipped. The real graph's w_script and w_docs declare no patch_targets, so on the very graph this unit targets the check is a no-op. The Gate does not require patch_targets alongside patch.", "your_evidence": "custom scenario on g-patch.json: w_oos without patch_targets (diff header → OFF-LIMITS.md) → [w_oos] ok; w_patch with patch_targets as the string \"…/OFF-LIMITS.md\" → [w_patch] ok. runs/plan-20261107-003443/GRAPH.json: w_script out=[patch,changed,summary], w_docs out=[patch,changed]"},
+    {"id": "B2", "criterion": "DELIVERY §一 core claim / TASK C1 flip", "what": "fs_write_forbidden is not counted as harm (runner.py:1372 parallel, :1582 serial), so a retry washes it away: a node that writes the main tree on attempt 1 and delivers only a patch on attempt 2 ends ok with RUN=PASS, and the illegal write stays on disk. That reproduces the E2E pattern (violator ends ok + main tree modified).", "your_evidence": "custom g-wash (retry=1, out has patch): attempt1 FAIL fs_write_forbidden PATCH-A.md → attempt2 ok → [runner] result PASS rc=0; PATCH-A.md content afterwards = 'attempt1 wrote main tree'"},
+    {"id": "B3", "criterion": "TASK C6 (serial and parallel paths behave identically)", "what": "Under attribution=='wave' (runner.py:901-902) the three patch checks are never evaluated, and the Gate allows read-only kinds to declare out=patch. A parallel group therefore passes nodes that the serial path fails.", "your_evidence": "custom g-par: two scouts in one wave, s_a delivers an empty patch + patch_targets=[OFF-LIMITS.md]. Parallel: [s_a] ok, result PASS rc=0. --no-parallel: [s_a] FAIL patch_missing + patch_out_of_scope, result FAIL rc=1"}
+  ],
+  "nonblocking": [
+    {"id": "N1", "why": "ledger-audit currently prints RESULT=LEDGER_SUSPECT (rc=1); the only suspect is REVIEW-BRIEF-e2efix.md, which is missing from the ledger. The BRIEF claimed LEDGER_OK.", "your_evidence": "powershell -File scripts/ledger-audit.ps1 → [suspect] tasks/DAG-2026-11-06/REVIEW-BRIEF-e2efix.md -- never mentioned in ledger"},
+    {"id": "N2", "why": "DELIVERY §二 C1 table reports w_direct/w_nopatch/w_oos as 'fail'. Their final node status is skipped (then=skip); FAIL is only the attempt verdict.", "your_evidence": "runs/_review/g-patch/NODES/*.json status=skipped (dir since deleted)"},
+    {"id": "N3", "why": "Pre-existing, not introduced here: on timeout, kill() only kills the direct child. A node grandchild holding the stdout handle can block communicate(). Verify this before relying on C5 with real headless runs.", "your_evidence": "runner.py:789-803 subprocess.run(capture_output=True, timeout=...)"},
+    {"id": "N4", "why": "TASK §四·3 says the interpreter only gets the C3 warn. The delivery also added FROM_OPTIONAL_UPSTREAM and patch_targets in FIELDS/ARRAY_FIELDS. Harmless, but the scope change is not declared.", "your_evidence": "scripts/dag.workflow.mjs:96, :103"},
+    {"id": "N5", "why": "The Gate does not reject read-only kinds or integrate declaring out=patch. The former triggers B3; the latter makes the node unsatisfiable (any write → fs_write_forbidden).", "your_evidence": "g-par passed Gate with 0 err / 0 warn"},
+    {"id": "N6", "why": "A patch node has zero landed changes by design, so any failing cmd accept on it is always 'deterministic'. Its cmd runs on the main tree and cannot see the patch, so a cmd accept on a patch node is meaningless. Worth a Gate warn.", "your_evidence": "runner.py:1559-1560 deterministic = (not ok) and cmd failed and not node_diff.changed_paths"}
+  ],
+  "missed_failures": [
+    {"guess": "patch scope check is opt-in: omitted/string patch_targets is never checked", "evidence": "B1 reproduction", "severity": "blocking"},
+    {"guess": "retry launders fs_write_forbidden; the violating write persists while RUN=PASS", "evidence": "B2 reproduction", "severity": "blocking"},
+    {"guess": "parallel (wave) attribution skips all patch checks → serial/parallel divergence", "evidence": "B3 reproduction", "severity": "blocking"},
+    {"guess": "Gate allows out=patch on read-only/integrate kinds", "evidence": "N5", "severity": "nonblocking"}
+  ],
+  "rework_brief": "1) runner.py compare(): for nodes whose out contains patch, a missing / non-list / empty patch_targets (while patch is non-empty) must fail (patch_missing or a new key); normalise a string patch_targets the way changed is normalised. Gate: out has patch but not patch_targets → err (sync manager.schema.json + graph-rules.md). 2) Add fs_write_forbidden to harm on both paths (runner.py :1372 and :1582) so a retry cannot wash it away. 3) Make the patch checks independent of attribution (patch_missing/patch_out_of_scope read only RESULT and should be evaluated in the wave branch too), OR have the Gate / group_parallel_safe reject/demote read-only nodes declaring patch. Verify each with a fixture equal to my reproductions (omit/string patch_targets; g-wash; g-par parallel vs --no-parallel must agree) plus one mutation per fix; rerun runner-harness, runner-mutate, ledger-audit (add the BRIEF to the ledger) and cite-check.",
+  "reviewer_notes": "Real headless behaviour of the C5 timeout path is a judgment (E1), not run. B1-B3 were reproduced only on --engine fixture with my own minimal scenarios (since deleted). I did not re-judge the E2E round-1 conclusions.",
+  "ran": [
+    "python tasks/DAG-2026-11-06/runner-harness.py → rc=0, checks=321 failed=0",
+    "node tasks/DAG-2026-11-06/harness.mjs --all → rc=0, checks=166 failed=0",
+    "node tasks/DAG-2026-11-06/manager-harness.mjs → rc=0, checks=166 failed=0",
+    "node scripts/dag-gate.mjs runs/plan-20261107-003443/GRAPH.json → rc=0, OK 0 error / 4 warn",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ledger-audit.ps1 → rc=1, RESULT=LEDGER_SUSPECT (REVIEW-BRIEF-e2efix.md)",
+    "python scripts/cite-check.py --strict --files TASK-e2efix.md DELIVERY-e2efix.md scripts/graph-rules.md → rc=0, [OK] 2",
+    "python scripts/runner.py g-patch.json --engine fixture --fixture-dir scenarios/patch --run-id _review/g-patch → rc=1 (expected four verdicts)",
+    "python scripts/runner.py g-patch.json --fixture-dir %TEMP%/e2efix-review/scen-omit --run-id _review/g-patch-omit → rc=1, w_oos ok + w_patch ok (B1)",
+    "python scripts/runner.py %TEMP%/.../g-wash.json --fixture-dir scen-wash --run-id _review/wash → rc=0 PASS (B2)",
+    "python scripts/runner.py %TEMP%/.../g-par.json --run-id _review/par-par → rc=0 PASS; same with --no-parallel → rc=1 FAIL (B3)",
+    "python tasks/DAG-2026-11-06/runner-mutate.py → rc=0, mutations=29 caught=29 restored_green=True",
+    "cleanup: rm -rf runs/_review and %TEMP%/e2efix-review; rm the sandbox PATCH-DIRECT.md / PATCH-A.md left by my reproductions; scripts/ untouched"
+  ]
+}

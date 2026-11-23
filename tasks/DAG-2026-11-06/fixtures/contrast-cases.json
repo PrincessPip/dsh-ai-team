@@ -1,0 +1,4951 @@
+{
+  "_comment": "DESIGN §8 Step 0 的单变量对照夹具：1 条合法基线 + 15 份变体，用来证明 Gate 的死规则真的会咬。喂法：workflow 的 args = { dryRun:true, graphs: <本文件 cases> }。基线形状：a → {b, c}，c → d（b、c 是兄弟，用来造写集冲突与「非祖先」；d 是 c 的后代，用来造 when 条件）。每份变体只改一处，改的地方写在 _mut 里，措辞按实际改动写（v2 修了 N1/N2 指出的三处不精确表述）。",
+  "cases": [
+    {
+      "case": "baseline-ok",
+      "_mut": "不改：合法基线，期望 ok=true",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-baseline",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "cycle",
+      "_mut": "a.after = [\"d\"] —— a→c→d→a 成环，期望 CYCLE",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-cycle",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [
+              "d"
+            ],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "unknown-id",
+      "_mut": "b.after 多一个 \"nope\"，期望 EDGE_UNKNOWN",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-unknown-id",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a",
+              "nope"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "edge-self",
+      "_mut": "a.after = [\"a\"]（自己指自己）—— 同时命中 EDGE_SELF 与 CYCLE，两条都该出",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-edge-self",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [
+              "a"
+            ],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "write-conflict",
+      "_mut": "把 c.writes 整个换成 [\"src/x.ts\"]（不是追加）—— b、c 是兄弟、互不为祖先，期望 WRITE_CONFLICT",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-write-conflict",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "hot-file-by-worker",
+      "_mut": "hot_files 加 package.json 且 b.writes 换成 [\"package.json\"]（b.do 也相应改成「加依赖」，纯描述）—— 期望 HOT_FILE_WRITE",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-hot-file",
+        "hot_files": [
+          "package.json"
+        ],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包加依赖",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "package.json"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "work-without-cmd",
+      "_mut": "b.accept 换成只有一条 scope（没有 cmd/assert）—— 期望 NODE_ACCEPT（Gate#4，DESIGN 原文）",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-work-without-cmd",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "scope",
+                "rule": "changed ⊆ writes"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "integrate-without-cmd",
+      "_mut": "加第 5 个节点 integ（kind=integrate，写 src/integ.ts），accept 只有一条 scope —— 期望 NODE_ACCEPT（「比 DESIGN 严一条」：写手也必须自证）",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-integrate-without-cmd",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "integ",
+            "kind": "integrate",
+            "do": "落地 c 与 d 的 patch",
+            "ctx": {
+              "from": [
+                "c.patch",
+                "d.patch"
+              ]
+            },
+            "after": [
+              "c",
+              "d"
+            ],
+            "writes": [
+              "src/integ.ts"
+            ],
+            "out": [
+              "changed"
+            ],
+            "accept": [
+              {
+                "type": "scope",
+                "rule": "changed ⊆ writes"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "review-on-work",
+      "_mut": "b.accept 里加一条 review 型验收（work 节点不许）—— 期望 NODE_ACCEPT",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-review-on-work",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "review",
+                "rule": "看着顺眼"
+              },
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "when-op-bad",
+      "_mut": "给 d 新增整个 when 块，op 写成 \"like\"（只许 eq/in/exists）—— 期望 NODE_WHEN",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-when-op",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "when": {
+              "ref": "c.verdict",
+              "op": "like",
+              "val": "pass"
+            },
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "when-undeclared",
+      "_mut": "给 d 新增 when 块，引用 c.iface —— iface 是已知字段但 c.out 只声明了 patch/verdict，期望 WHEN_UNDECLARED",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-when-undeclared",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "看 c.iface 决定改不改 z",
+            "after": [
+              "c"
+            ],
+            "when": {
+              "ref": "c.iface",
+              "op": "exists"
+            },
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "when-not-ancestor",
+      "_mut": "给 d 新增 when 块，引用 b.patch —— b.patch 声明过、字段合法，但 b 不是 d 的祖先（是 c 的兄弟），期望 WHEN_NOT_ANCESTOR",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-when-not-ancestor",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "看 b.patch 决定改不改 z",
+            "after": [
+              "c"
+            ],
+            "when": {
+              "ref": "b.patch",
+              "op": "exists"
+            },
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "from-undeclared",
+      "_mut": "b.ctx.from 换成 [\"a.iface\"] —— iface 是已知字段但 a.out 只声明了 facts，期望 FROM_UNDECLARED",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-from-undeclared",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.iface"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "from-unknown",
+      "_mut": "b.ctx.from 换成 [\"nope.facts\"]（引不存在的节点），期望 FROM_UNKNOWN",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-from-unknown",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "nope.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "from-not-ancestor",
+      "_mut": "b.ctx.from 换成 [\"d.patch\"] —— d.patch 声明过、字段合法，但 b 与 d 在图上互不可达（b 只依赖 a，d 只依赖 c），d 不是 b 的祖先，期望 FROM_NOT_ANCESTOR",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-from-not-ancestor",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "d.patch"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "budget-overflow",
+      "_mut": "budget.max_calls 从 10 降到 2（节点数 4）—— v2 起这是**整图拒收**（旧版本只 warn 一句 BUDGET_NODES），期望 BUDGET_OVERFLOW",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-budget-overflow",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 2,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "budget-renamed",
+      "_mut": "budget 用旧名 max_agents（v2 已改名 max_calls）—— 期望 BUDGET_RENAMED，而不是默默按旧口径跑",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-budget-renamed",
+        "hot_files": [],
+        "budget": {
+          "max_agents": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "budget-no-margin",
+      "_mut": "budget.max_calls=4（=节点数，首发刚好够）且把 d 的 retry 从 0 改成 1 —— 最坏 5 次 > 4，但这不该拒收，只期望 warn BUDGET_NO_MARGIN，ok 仍为 true",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-budget-no-margin",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 4,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 1,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "scope-uncheckable",
+      "_mut": "b 的 accept 换成只有一条 scope，并把 b.writes 整个删掉 —— allowlist 无处可来，期望 SCOPE_UNCHECKABLE（外加 NODE_ACCEPT：work 没有 cmd/assert）",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-scope-uncheckable",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "scope",
+                "rule": "changed ⊆ writes"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "scope-from-not-array",
+      "_mut": "加 integ 节点（integrate，writes + cmd + scope），scope 的 allow_from 指向 [\"a.facts\"] —— facts 是自由文本不是数组，期望 SCOPE_FROM_NOT_ARRAY",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-scope-from-not-array",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "integ",
+            "kind": "integrate",
+            "do": "落地 c 与 d 的 patch",
+            "ctx": {
+              "from": [
+                "c.patch",
+                "d.patch"
+              ]
+            },
+            "after": [
+              "c",
+              "d"
+            ],
+            "writes": [
+              "src/integ.ts"
+            ],
+            "out": [
+              "changed"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/integ.test.ts",
+                "expect": "exit0"
+              },
+              {
+                "type": "scope",
+                "rule": "changed ⊆ writes 及 allow_from 列出的路径",
+                "allow_from": [
+                  "a.facts"
+                ]
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "scope-from-undeclared",
+      "_mut": "同上但 allow_from 指向 [\"a.allow_paths\"] —— 字段类型对（数组类），但 a.out 只声明了 facts，期望 SCOPE_FROM_UNDECLARED",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-scope-from-undeclared",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "integ",
+            "kind": "integrate",
+            "do": "落地 c 与 d 的 patch",
+            "ctx": {
+              "from": [
+                "c.patch",
+                "d.patch"
+              ]
+            },
+            "after": [
+              "c",
+              "d"
+            ],
+            "writes": [
+              "src/integ.ts"
+            ],
+            "out": [
+              "changed"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/integ.test.ts",
+                "expect": "exit0"
+              },
+              {
+                "type": "scope",
+                "rule": "changed ⊆ writes 及 allow_from 列出的路径",
+                "allow_from": [
+                  "a.allow_paths"
+                ]
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "scope-from-not-ancestor",
+      "_mut": "同上但 allow_from 指向 [\"b.allow_paths\"]，b.out 也补上 allow_paths —— 字段与类型都对，但 b 不是 integ 的祖先，期望 SCOPE_FROM_NOT_ANCESTOR",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-scope-from-not-ancestor",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "allow_paths"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "integ",
+            "kind": "integrate",
+            "do": "落地 c 与 d 的 patch",
+            "ctx": {
+              "from": [
+                "c.patch",
+                "d.patch"
+              ]
+            },
+            "after": [
+              "c",
+              "d"
+            ],
+            "writes": [
+              "src/integ.ts"
+            ],
+            "out": [
+              "changed"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/integ.test.ts",
+                "expect": "exit0"
+              },
+              {
+                "type": "scope",
+                "rule": "changed ⊆ writes 及 allow_from 列出的路径",
+                "allow_from": [
+                  "b.allow_paths"
+                ]
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "scope-rule-unchecked",
+      "_mut": "同上但 allow_from 整个删掉，只在 scope.rule 文字里写「含 b.patch 提到的文件」—— 文字引用了节点字段却没进 allow_from，期望 SCOPE_RULE_UNCHECKED（F1 的原始病灶）",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-scope-rule-unchecked",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "integ",
+            "kind": "integrate",
+            "do": "落地 c 与 d 的 patch",
+            "ctx": {
+              "from": [
+                "c.patch",
+                "d.patch"
+              ]
+            },
+            "after": [
+              "c",
+              "d"
+            ],
+            "writes": [
+              "src/integ.ts"
+            ],
+            "out": [
+              "changed"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/integ.test.ts",
+                "expect": "exit0"
+              },
+              {
+                "type": "scope",
+                "rule": "changed ⊆ writes，含 b.patch 提到的文件"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "check-writes",
+      "_mut": "加 chk 节点（kind=check）并给它 writes:[\"src/chk.ts\"] —— 只读核查员不该有写集，期望 CHECK_WRITES",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-check-writes",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "chk",
+            "kind": "check",
+            "do": "只读复核 b 的改动范围",
+            "ctx": {
+              "from": [
+                "b.patch"
+              ]
+            },
+            "after": [
+              "b"
+            ],
+            "writes": [
+              "src/chk.ts"
+            ],
+            "out": [
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run --reporter=dot",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "check-reuses-writer-cmd",
+      "_mut": "加 chk 节点（kind=check，无 writes），但它的 cmd 与写手 b 一字不差 —— 同一条命令不会因为在 check 上就变只读，期望 CHECK_REUSES_WRITER_CMD（F3 的原始病灶）",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-check-reuses-writer-cmd",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "chk",
+            "kind": "check",
+            "do": "重跑 b 的测试确认没回归",
+            "ctx": {
+              "from": [
+                "b.patch"
+              ]
+            },
+            "after": [
+              "b"
+            ],
+            "out": [
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "scope-from-unknown",
+      "_mut": "加 integ 节点（integrate，writes + cmd + scope），allow_from 指向 [\"nope.allow_paths\"]（引不存在的节点）—— 期望 SCOPE_FROM_UNKNOWN（第 1 轮验收 R-C3 指出这条没有对照案例）",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-scope-from-unknown",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "integ",
+            "kind": "integrate",
+            "do": "落地 c 与 d 的 patch",
+            "ctx": {
+              "from": [
+                "c.patch",
+                "d.patch"
+              ]
+            },
+            "after": [
+              "c",
+              "d"
+            ],
+            "writes": [
+              "src/integ.ts"
+            ],
+            "out": [
+              "changed"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/integ.test.ts",
+                "expect": "exit0"
+              },
+              {
+                "type": "scope",
+                "rule": "changed ⊆ writes 及 allow_from 列出的路径",
+                "allow_from": [
+                  "nope.allow_paths"
+                ]
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "scope-rule-uppercase-id",
+      "_mut": "加节点 S1（大写 id，scout，out facts），integ 的 scope.rule 文字里写「及 S1.facts 列出的路径」但没有 allow_from —— 期望 SCOPE_RULE_UNCHECKED。v2 旧正则只认小写 id，这条会被静默漏掉（第 1 轮验收 N3）",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-scope-rule-uppercase",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "S1",
+            "kind": "scout",
+            "do": "再侦察一遍测试路径",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "integ",
+            "kind": "integrate",
+            "do": "落地 c 与 d 的 patch",
+            "ctx": {
+              "from": [
+                "c.patch",
+                "d.patch"
+              ]
+            },
+            "after": [
+              "c",
+              "d"
+            ],
+            "writes": [
+              "src/integ.ts"
+            ],
+            "out": [
+              "changed"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/integ.test.ts",
+                "expect": "exit0"
+              },
+              {
+                "type": "scope",
+                "rule": "changed ⊆ writes 及 S1.facts 列出的路径"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "check-no-cmd",
+      "_mut": "加 chk 节点（kind=check，无 writes，accept 只有 assert，没有 cmd）—— 不拒收，但期望 warn CHECK_NO_EXECUTABLE（第 1 轮验收 N2：只有「有 cmd 就 warn」会逼经理把可执行核查删光）",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-check-no-cmd",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "chk",
+            "kind": "check",
+            "do": "只读复核 b 的改动范围",
+            "ctx": {
+              "from": [
+                "b.patch"
+              ]
+            },
+            "after": [
+              "b"
+            ],
+            "out": [
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "patch 只动 src/x.ts"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "cmd-no-bypass",
+      "_mut": "b.accept[0].run 改成 `powershell -NoProfile -File scripts/x.ps1`（不带 -ExecutionPolicy）—— 不拒收，但期望 warn CMD_NO_EXEC_BYPASS。这是 E2E 真跑里 `integ` 三轮全败的唯一共同原因（F2）",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-cmd-no-bypass",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "powershell -NoProfile -File scripts/x.ps1",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "cmd-with-bypass",
+      "_mut": "同 cmd-no-bypass，但命令带上 `-ExecutionPolicy Bypass` —— 期望连 warn 都没有（反证：那条 warn 不是恒报警）",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-cmd-with-bypass",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/x.ps1",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "from-optional-upstream",
+      "_mut": "d 加 join=any 且 ctx.from 引用 c.patch —— 不拒收，但期望 warn FROM_OPTIONAL_UPSTREAM。这是 E2E 里 `integ` 在上游全败时照跑、自己现写 122 行的图级根因（F10）",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-from-optional-upstream",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "join": "any",
+            "ctx": {
+              "from": [
+                "c.patch"
+              ]
+            },
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "patch-on-scout",
+      "_mut": "b 改成 kind=scout 却声明 out 里有 patch —— 期望整图拒收 PATCH_REQUIRES_WORK（只读节点交不出 diff；并发路径也拿不到 attempt 级窗口、判不了 fs_write_forbidden，E2EFIX B3）",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-patch-on-scout",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "scout",
+            "do": "只读侦察，不该交 diff",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "patch-without-targets",
+      "_mut": "b 的 out 去掉 patch_targets —— 期望整图拒收 PATCH_WITHOUT_TARGETS（没它 patch_out_of_scope 永远没有输入，E2EFIX B1）",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-patch-without-targets",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "scope-excluded-writes",
+      "_mut": "work 节点的 writes 指向 runs/（快照排除区）",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-scope-excluded-writes",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts",
+              "runs/probe.json"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "scope-excluded-allow-under",
+      "_mut": "scope 的 allow_under 圈住 runs/（快照排除区）",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-scope-excluded-allow-under",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "scope",
+                "rule": "只许改 writes 里列出的文件，一个都不许多",
+                "allow_under": [
+                  "runs/"
+                ]
+              },
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "scope-not-excluded-prefix",
+      "_mut": "writes 里有 runsX/ 与 myruns/（同名前缀但不是 runs/ 目录，不许误报）",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-scope-not-excluded-prefix",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts",
+              "runsX/report.ts",
+              "myruns/a.md"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "scope-nested-excluded",
+      "_mut": "排除区出现在路径中段（lib/runs/、src/__pycache__/、tools/node_modules/）—— 第 1 轮 B1 的回归",
+      "graph": {
+        "v": 1,
+        "plan_id": "contrast-scope-nested-excluded",
+        "hot_files": [],
+        "budget": {
+          "max_calls": 10,
+          "max_usd": 1
+        },
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "scout",
+            "do": "读源码出事实包",
+            "out": [
+              "facts"
+            ],
+            "after": [],
+            "accept": [
+              {
+                "type": "assert",
+                "rule": "每条结论带 file:line"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "b",
+            "kind": "work",
+            "do": "按事实包改 x",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/x.ts",
+              "lib/runs/out.json",
+              "src/__pycache__/m.pyc",
+              "tools/node_modules/a.js"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/x.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "c",
+            "kind": "work",
+            "do": "按事实包改 y 并判 pass/rework",
+            "ctx": {
+              "from": [
+                "a.facts"
+              ]
+            },
+            "after": [
+              "a"
+            ],
+            "writes": [
+              "src/y.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets",
+              "verdict"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/y.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          },
+          {
+            "id": "d",
+            "kind": "work",
+            "do": "按 c 的结论改 z",
+            "after": [
+              "c"
+            ],
+            "writes": [
+              "src/z.ts"
+            ],
+            "out": [
+              "patch",
+              "patch_targets"
+            ],
+            "accept": [
+              {
+                "type": "cmd",
+                "run": "pnpm vitest run src/z.test.ts",
+                "expect": "exit0"
+              }
+            ],
+            "on_fail": {
+              "retry": 0,
+              "then": "replan"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

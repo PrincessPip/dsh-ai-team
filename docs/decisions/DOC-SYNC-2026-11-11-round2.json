@@ -1,0 +1,53 @@
+{
+  "unit": "DOC-SYNC-2026-11-11",
+  "round": 2,
+  "date": "2026-11-12",
+  "reviewer": {
+    "model": "openrouter/anthropic/claude-opus-5.5",
+    "channel": "openrouter-pay-per-token",
+    "note": "订阅通道被 Anthropic 账号级人机验证拦住两次（原文 REVIEW-round2-EGRESS-FAILED.txt，211 字节无裁决内容）；伙伴 2026-11-12 授权改走按量计费通道（约 $0.3）。同一模型、同样带 shell。",
+    "self_checks": "pwsh 5.1 + Python 3.14.7；BRIEF §三 四条关键事实由它自己跑命令复现；工程树（不含 runs/）前后各 605 文件 sha256 一致"
+  },
+  "verdict": "rework",
+  "score": 0.8,
+  "blocking": [
+    {
+      "id": "NB1",
+      "what": "--skip-render 测试钩子并非「只会让结果更红」：引擎自写四件 + 派单方加 --skip-render → exit 0；伪造的三件被 META.written_by 记成 fire-chief.py 写的，并收进 PRODUCT-SHA256.txt，META 与产物目录无任何 skip_render 痕迹",
+      "evidence": "%TEMP%\\r2\\n2.py → HOLE_skip_render_worker_forges_all4 rc=0, TRANSCRIPT.log=(16,'fake transcript'), written_by={'TRANSCRIPT.log':'fire-chief.py',...}；对照 CTRL_complete_no_skip rc=0 但三件被机器版覆盖(2700B)。虚假声明见 scripts/fire-chief.py:1145 与 DELIVERY.md:155-156",
+      "must_fix": "skip_render 时出口码一律非 0（或渲染前删掉同名三件）；META 记 skip_render=true、written_by 按实际写；加 T59 与一格变异；改正 :1145 与 §四·14 的措辞"
+    }
+  ],
+  "nonblocking": [
+    {"id": "X1", "what": "N3 的 stderr 提示「另有机器缺件」没有任何断言", "evidence": "tasks/**/*.py 里 grep「另有机器缺件」0 命中；实测提示存在"},
+    {"id": "X2", "what": "DELIVERY.md:123 标题写「16 条」，正文实际 18 条", "evidence": "DELIVERY.md:123 vs :125-166"},
+    {"id": "X3", "what": "doc-sync.py:62 docstring 只列 4 种抽取器，漏 artifact/count/table_first_col；AGENTS.md 也没有 table_first_col", "evidence": "scripts/doc-sync.py:62 vs :113-121"},
+    {"id": "X4", "what": "§四 没写 N6 的取舍（0 字节 VERIFY.md 也算交了）", "evidence": "DELIVERY.md:107"}
+  ],
+  "round1_items": [
+    {"id": "B1", "closed": true, "evidence": "M34 形态副本 55/58，红 T54/T55/T56；原版 m7 56/58，恰好红 T55+T56；原样 58/58；T56 用时 3.4s 确为超时被杀"},
+    {"id": "B2", "closed": true, "evidence": "删 INC-TEMPLATE.md:157 → copy #1 3 项 MISMATCH rc=1；tokens 改回 artifact → rc=0；还原 → rc=0"},
+    {"id": "N1", "closed": true, "evidence": "3 种类型错 + 另 9 种坏登记表全部 rc=2、无 traceback"},
+    {"id": "N2", "closed": true, "evidence": "--skip-render + worker_verify_only → rc=6 报「本脚本…的 bug」；M35 CAUGHT"},
+    {"id": "N3", "closed": true, "evidence": "部分修（声明过）：engine_fail + skip_render → rc=3 + stderr 提示；优先级未改；提示无守护见 X1"},
+    {"id": "N4", "closed": true, "evidence": "TRIGGER-POLICY.md:194-197 / FIRE-CHIEF.md:105-107 / INC-TEMPLATE.md:216 已对齐"},
+    {"id": "N5", "closed": true, "evidence": "INC-TEMPLATE.md:203-205 改为写进账本行的缺陷说明"},
+    {"id": "N6", "closed": true, "evidence": "verify_empty → rc=0；T58 PASS"}
+  ],
+  "per_k": {
+    "K8": "PASS（B2 复现成立）",
+    "K10": "FAIL（--skip-render 只有正例 T57，没有反证 → 即 NB1）"
+  },
+  "new_findings": [
+    "NB1：--skip-render 能让伪造件以 exit 0 过关，且来源记录不实",
+    "救火变异台 35/35 void=0 restored_green=True（M27/M29 都抓住，无 MISSED）",
+    "闸门变异台 13/13、闸门自验 23/23、cite-check 9 文件 17/17 OK、真树 doc-sync RESULT=OK、ledger-audit [suspect] none"
+  ],
+  "disposition": {
+    "rule": "TRIGGER-POLICY.md §二·五·一：「两次都是 rework（没有 escalate）→ 按自动 B 正常派」；v3.0 明确不派清单降级为建议、命中自动 B 照样派",
+    "action": "未走 escalate 交伙伴；派救火队长 GPT-6 Astra，事故单 tasks/DOC-SYNC-2026-11-11/INC-20261112-01.md，产物 runs/fire/INC-20261112-01/",
+    "next": "第 3 轮验收对本单元下最终结论"
+  },
+  "notes": "命令由验收官自己跑（pwsh 5.1 / Python 3.14.7），副本在 %TEMP%\\r2\\。NB1 只有派单方能触发（引擎碰不到这个参数），但它把伪造件洗进正式哈希清单，且与 BRIEF 要核的声明正好相反，所以判 blocking。",
+  "raw": "tasks/DOC-SYNC-2026-11-11/REVIEW-round2-raw.txt"
+}

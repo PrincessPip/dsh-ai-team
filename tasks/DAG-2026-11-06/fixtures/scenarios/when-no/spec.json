@@ -1,0 +1,9 @@
+{
+  "_comment": "when 不成立（verdict=stop）：w_maybe **不应被调用**（故意不给它 spec —— 真被调用的话 worker 会 exit 8，节点判 fail，断言立刻红）。k_check 因 join=all 也 skipped。",
+  "nodes": {
+    "s_gate": {
+      "expect_prompt_contains": ["id: s_gate", "只读"],
+      "result": { "verdict": "stop", "summary": "侦察认为不该继续" }
+    }
+  }
+}

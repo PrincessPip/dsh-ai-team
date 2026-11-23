@@ -1,0 +1,17 @@
+{
+  "_comment": "升档：同档重试 1 次 + 升档 1 次，三次都失败（exit_code=1）。断言第 3 次的 tier=integrate —— 证明 escalate 不是静默忽略。⚠️ 2026-11-12（V4PRO-REMOVE）：`strong` 档已移除，全档位同为 deepseek-flash，所以**不再有 --patch / overlay**，第 3 次只换档位名不换模型。",
+  "nodes": {
+    "w_try": {
+      "expect_prompt_contains": ["id: w_try"],
+      "attempts": [
+        { "exit_code": 1, "result": { "changed": [], "summary": "第一次失败" } },
+        { "exit_code": 1, "result": { "changed": [], "summary": "第二次失败" } },
+        { "exit_code": 1, "result": { "changed": [], "summary": "升档后仍然失败" } }
+      ]
+    },
+    "k_after": {
+      "expect_prompt_contains": ["id: k_after"],
+      "result": { "verdict": "pass" }
+    }
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "verdict": "rework",
+  "confidence": 0.98,
+  "readonly_enforcement": "snapshot_only",
+  "independent_evidence_root": "%USERPROFILE%/AppData/Local/Temp/astra-independent-web-audit-qmoxt769",
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立复跑 verify-copy.py：exit=0，69678文件，drift=0，nonIndependentFiles=0；voice-local的45文件已解引用，副本目录链接为0；网络拒绝及本地恢复正例通过。REVIEW-FINAL-CHECKS.json：72094保护项无变化、无新增。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "已核2434条overlay来源SHA及实际加载SHA；但独立入口重定向反例允许未登记核心文件执行，详见B1及REVIEW-PROVENANCE-COUNTEREXAMPLE-V2.json。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立八阶段均取得HTTP、boot及7项资源。已核父级8-BROWSER.json、9-RUNNER.json和10-browser.png，确有首页渲染。构建路线判断为E1：78个client产物、90个dist文件无覆盖；读取加载器确认动态包使用预构建client字节，七核心包均无client声明。结论限本次装配及首页壳。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立full.py复跑：behavior探针通过主preset、非目标Basic和桌宠行为；bad-isolation退出1并报NATIVE_SERVICE_CONFLICT，恢复后的behavior退出0。probe.mjs:15「await ctx.agentPresets.mount(c,preset)」确认使用实际Web服务链。"
+    },
+    {
+      "id": "C5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立none/Zstd各完成seed/cold/bad；cold均tools=2、nativeCalls=0；坏日志前后字节一致。未知完整性验证仅为已装配Web的resume-audit事件注入；名义18765由进程内模拟响应处理。"
+    },
+    {
+      "id": "C6",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立full.py退出0、scriptDrift=[]，8个不同Web PID、8阶段符合预期且无超时；原有5项反例及恢复通过。额外入口反例之前closeout为stagePass=true；反例恢复后的REVIEW-FINAL-CHECKS.json确认owned=[]、13380/13381空闲、生产仍原PID25820。"
+    },
+    {
+      "id": "C7",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立cite-check.py --strict：2文件、3引用、OK=3、exit=0。已核两份DELIVERY的范围声明、保留失败记录、模拟fetch代码及网络拒绝实测；未将首页、模拟请求或清理成功提升为生产兼容结论。"
+    },
+    {
+      "id": "C8",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "仅判机制及已完成检查：独立调用postcheck.check的10个正反例符合预期，能拒绝布尔退出码、条目差异、清理失败及错误输入绑定。当前只读快照complete=true、2708条目；最终核2597冻结输入和2594原源均无漂移。本轮正式after尚待父级执行。"
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "claim": "核心包入口重定向可执行未登记文件，未满足C2要求的运行前来源绑定。",
+      "what": "guard对映射缺项采取放行行为。",
+      "why": "包名仍是受强制解析的dsh-llm，但实际执行字节可以不属于候选映射；事后校验不能代替运行前拒绝。",
+      "evidence": "独立执行TEMP中的review-provenance-v2.py：修改副本dsh-llm/package.json入口，指向映射外最小模块；alternateInExpectedMapping=false，导入exit=0，stdout=UNPINNED_CORE_EXECUTED，guard记录该模块但无sha。对照组：已登记index.js漂移exit=1/OFFLINE_DENIED_MODULE_SHA_DRIFT；恢复后exit=0。完整结果位于independent_evidence_root/REVIEW-PROVENANCE-COUNTEREXAMPLE-V2.json。代码依据：tasks/ASTRA-NATIVE-WEB-ASSEMBLY-2026-11-15/guard.mjs:21「if(hash&&createHash('sha256')」，hash缺失时不拒绝。"
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "浏览器证据仅支持首页壳加载；原生历史完整UI交互、禁用插件兼容、真实历史迁移及长期质量仍未验。"
+    },
+    {
+      "id": "N2",
+      "what": "原样closeout通过发生在额外故障注入之前；两版独立反例均保留，最终恢复与清理另有回执，不以旧closeout覆盖新增发现。"
+    }
+  ],
+  "rework_brief": "仅修装配层，不改过审release：加载前核验决定核心解析的package.json，并对七核心包实际解析出的未登记文件明确拒绝；生成探针如需例外应单独限定。加入最小入口重定向反例，要求执行前非零退出且无哨兵输出，再验证恢复正例。随后重新冻结并执行八阶段、映射/来源校验及清理。",
+  "reviewer_notes": "未修改送审工程；所有复制、运行及故障注入均在独立TEMP目录，证据已保留。最终核对冻结输入、原源及生产保护清单均无漂移，反例修改已恢复且无本次Node进程残留。C8不预签本轮after，父级仍须实际执行postcheck并核验真实回执。"
+}

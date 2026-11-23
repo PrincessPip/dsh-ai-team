@@ -1,0 +1,23 @@
+{
+  "unit": "FIRE-CHIEF-2026-11-07",
+  "round": 5,
+  "date": "2026-11-07",
+  "trigger": "mandatory（#5 返工后 · 第 4 轮 escalate 后按伙伴拍板走 (A)）",
+  "channel": "claude -p --model opus --allowedTools Read,Grep,Glob,Bash (stdin prompt, 指路式)",
+  "partner_decision": "走 (A) 降级收工：(1) 划掉完整性声明 (2) LINENO-CHECK 按真实覆盖标 E1 (3) C9 补反例搜索到 E3 (4) 短核一轮收工。",
+  "scope_of_this_round": [
+    "DELIVERY.md C9：强度 E2 → E3，补 D3 + D2 + 反例搜索（单一理由的当前状态措辞 0 命中）",
+    "DELIVERY.md §九 N1 行：把「每一处 / 49 处全对齐」改成真实覆盖（49 条仅前缀形态，漏 12 处孤立引用，无判定列，无脚本不可复现，只够 E1）",
+    "DELIVERY.md §九 N3 行：把「已加注」改成如实「没改，TASK 冻结」",
+    "LINENO-CHECK.txt 头部：补覆盖范围 / 不覆盖 / 强度 E1 / 不可复现 四项声明",
+    "DELIVERY.md §六 入口：:243 → :241",
+    "DELIVERY.md §十：记录 escalate → (A) 的处置对照",
+    "不给 C9 之外的条目提强度；不新增脚本（B 不在本单元做）"
+  ],
+  "expected_checks": [
+    "C9 是否真的够 E3（两个不同观察类别 + 一条反证）",
+    "LINENO-CHECK 的描述是否已与真实覆盖一致（不再说满）",
+    "N1/N3 的处置是否如实（有没有新的夸大）",
+    "有没有引入新矛盾"
+  ]
+}

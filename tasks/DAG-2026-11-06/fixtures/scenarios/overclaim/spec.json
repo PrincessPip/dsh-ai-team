@@ -1,0 +1,18 @@
+{
+  "_comment": "超报：什么都没改，却报 changed。runner 必须把该路径记进 checks.overclaim。",
+  "nodes": {
+    "s_recon": {
+      "expect_prompt_contains": ["id: s_recon"],
+      "result": {"facts": "3 条", "summary": "只读侦察完成"}
+    },
+    "w_write": {
+      "expect_prompt_contains": ["id: w_write"],
+      "write_files": {},
+      "result": {"changed": ["tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"], "summary": "声称追加了一行（其实一个字节都没写）"}
+    },
+    "k_check": {
+      "expect_prompt_contains": ["id: k_check"],
+      "result": {"verdict": "pass", "notes": "上游说写了"}
+    }
+  }
+}

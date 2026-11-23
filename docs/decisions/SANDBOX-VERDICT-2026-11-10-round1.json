@@ -1,0 +1,131 @@
+{
+  "verdict": "rework",
+  "confidence": 0.88,
+  "criteria": [
+    {
+      "id": "K1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "scripts/runner.py:746「def _overlaps(a, b):」 realpath on both sides, bidirectional; harness pick_sandbox_root unit cases (runs/sandbox, a/.., parent+run_id=ROOT.name, ../x) all die(2); mutation cell 'N1·临时区放回 workspace' caught"
+    },
+    {
+      "id": "K2",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "Paths are distinct per attempt but never created: RUN.json sandbox.attempts[*].exists=False (retrythenok/parallel-check/escalate); :793 has no mkdir; dsh windows-acl runner.js with a missing --temp → exit 127 (reproduced, 127 vs 0)"
+    },
+    {
+      "id": "K3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "collect_sandbox :799-857, too_large at :835; sandbox-writes SANDBOX-MANIFEST lists eg-temp-probe.txt 83 B as archived and SANDBOX/ARCHIVE/w_write/a1/eg-temp-probe.txt is on disk; unit test: big.bin archived=False with sha256; 不采集/不归档 mutation cells caught"
+    },
+    {
+      "id": "K4",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "TEMP pointing at a missing dir makes Python tempfile fall back to the real %TEMP%, so the manifest stays empty while files are written elsewhere; with worker.py:188 replaced by pass, --only sandbox-writes gives failed=5"
+    },
+    {
+      "id": "K5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "runner.py:1371 inside compare(); check-verdict / check-protocol / check-protocol-bad green; RUN.json check_verdicts has raw/normalized/decision/reason/attempt; mutation 'N2·裁决判据整条删掉' caught"
+    },
+    {
+      "id": "K6",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "Hard stops at :1970 (parallel) and :2203 (serial); a retry=1 check runs attempt_count=1 on both paths (parallel-check plus --no-parallel control); both hard-stop mutation cells caught"
+    },
+    {
+      "id": "K7",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "when-yes / when-no / join-any green in the 441/0 run; mutation 'N2·判据扩到全 kind' turns when-yes red on '三个节点都 ok'"
+    },
+    {
+      "id": "K8",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "Fixture {verdict:fail, notes} with no status key → node ok=False, RUN.result=fail, exit 1"
+    },
+    {
+      "id": "N3-fix",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E2",
+      "strength_met": false,
+      "evidence": "Code at :2026-2029 is correct, but in the mirror the real B4 regression form passes honest 21/0 three times (duration 2.0 s, within the ±2 s tolerance); the mutation cell uses a constant date. Not a TASK K-item, so nonblocking"
+    },
+    {
+      "id": "PRE",
+      "type": "fact-consistent",
+      "status": "fail",
+      "claimed_strength": "E2",
+      "strength_met": false,
+      "evidence": "cite-check 16/16 OK rc=0 and egress READY both match the saved files; ledger-audit rerun gives LEDGER_SUSPECT, not the saved LEDGER_OK"
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "what": "runner.py points TMP/TEMP/TMPDIR at a per-attempt directory it never creates; dsh's Windows ACL runner rejects a missing --temp (exit 127, ENOENT on the write-enabled path) and Python silently falls back to the real %TEMP%",
+      "why": "Breaks K2/K4 and the unit goal: on the third real run every sandboxed pwsh call, including read-only nodes that were 40/40 in B4, would fail with a new environment error. The tests are green only because fake-worker/worker.py:188 creates TEMP itself",
+      "evidence": "No attempt-dir mkdir in runner.py; RUN.json exists=False for every attempt; runner.js with a missing --temp → rc=127 vs rc=0 with an existing dir; node realpathSync.native/mkdtempSync → ENOENT; python tempfile.gettempdir() → real %TEMP%; mirror run without worker.py:188 → failed=5"
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "The N3 test does not catch the real B4 form (started_at taken at summary time): it passes 3/3 in a 2.0 s mirror run; the mutation cell uses a constant date"
+    },
+    {
+      "id": "N2",
+      "what": "ledger-audit rerun gives LEDGER_SUSPECT (REVIEW-BRIEF.md and run-third.py not in the ledger); LEDGER-AUDIT.txt and EGRESS.txt are UTF-16 from PowerShell '>'"
+    },
+    {
+      "id": "N3",
+      "what": "DELIVERY §八 (Codex research) and §七/§九 are still 待填, so the research source is not on disk; §一.1 '不该再出现' is should-language"
+    },
+    {
+      "id": "N4",
+      "what": "sandbox-writes takes the external dir from RUN.json (the runner's own report); comment at worker.py:184 is stale"
+    },
+    {
+      "id": "N5",
+      "what": "332+ run folders under %LOCALAPPDATA%\\ai-team-sandbox; die(2) at suffix -101 will break the test suite after about 100 runs per scenario; the harness should delete its own _harness_* folders"
+    },
+    {
+      "id": "N6",
+      "what": "[判断类] A check node can skip N2 by leaving 'verdict' out of out; consider a Gate warning"
+    },
+    {
+      "id": "N7",
+      "what": "outside_workspace is the literal True (:2347, :2383), not recomputed"
+    },
+    {
+      "id": "N8",
+      "what": "The brief cites contract §六 for the schema; it is §四"
+    }
+  ],
+  "rework_brief": "1) In run_node, just before setting TMP/TEMP/TMPDIR, add Path(sandbox_dir).mkdir(parents=True, exist_ok=True); this one place covers both :1844 and :2104. Record rec['sandbox_dir_existed_at_launch'] from an is_dir() check right before the child process starts. 2) In fake-worker/worker.py, remove the mkdir at :188; instead, at worker start, exit 127 if TEMP is not an existing directory, the same way dsh's requireDirectory does. 3) Add harness assertions that every sandbox.attempts[*].exists is True in honest, parallel-check and retrythenok (a1 and a2), plus a mutation cell that deletes the new mkdir line and must turn those assertions red. 4) For N3, have the harness record the time just before it launches runner.py and assert started_at <= that + 1 s; replace the constant-date mutation cell with the real form. 5) Re-run ledger-audit after the last file is written and save the output as UTF-8. Verify: harness all green, mutation bench all caught including the new mkdir cell, and RUN.json shows exists=True for read-only nodes.",
+  "escalate_question": "",
+  "reviewer_notes": "The third real graph was not run. B1 comes from dsh's installed source plus a direct probe with its own ACL runner using the same argument shape, not from a real dsh session. Side effects: harness run in the main tree; mutation and counter-experiments in %TEMP%\\rv-sv-mirror with files restored; no main-tree scripts/ edits, no git."
+}

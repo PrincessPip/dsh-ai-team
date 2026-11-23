@@ -1,0 +1,110 @@
+{
+  "verdict": "rework",
+  "confidence": 0.97,
+  "readonly_enforcement": "snapshot_only",
+  "blocking": [
+    {
+      "id": "B1",
+      "claim": "交付缺少逐项证据强度声明及类型初判，未满足完整验收契约。",
+      "evidence": [
+        "REVIEW-CONTRACT.md:49「每条验收标准必须带强度声明」；同条规定未声明按 E0 处理。",
+        "REVIEW-CONTRACT.md:51「强度由工人自称，由你核」。",
+        "REVIEW-CONTRACT.md:87「类型由工人初判、验收官终裁」。",
+        "独立 DECLARATION_SCAN 扫描 DELIVERY.md、PREPARE-NOTES.md、ARCHITECTURE-REVIEW.md、REVIEW-BRIEF.md、SCOPE.md：E0–E3、claimed_strength、fact-consistent、[判断类] 匹配数为 0。"
+      ]
+    }
+  ],
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E0",
+      "strength_met": false,
+      "evidence": "真实服务调用链已核：副本 run-bounded.py --offline 退出 0，43 项回归全部成功，包含严格 SSE 拒绝反例；契约判定受 B1 阻断。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E0",
+      "strength_met": false,
+      "evidence": "verify-correction.py 重算确认旧 retained 在旧 opaque 前、旧 opaque 恰一次、trigger 仅在压缩请求末尾；错误 retained 边界实测在发送前拒绝；受 B1 阻断。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E0",
+      "strength_met": false,
+      "evidence": "73 项重算确认物理 journal 保留两份 source、active surface 仅第二份 checkpoint；七项事务损坏全部拒绝；受 B1 阻断。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E0",
+      "strength_met": false,
+      "evidence": "实际 SSE function_call、TOOL-EXECUTIONS.jsonl、请求 function_call_output 的 call_id、参数和结果相符；首轮执行一次，修正轮执行零次；旧 journal 工具续接反例复跑成功；受 B1 阻断。"
+    },
+    {
+      "id": "C5",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E0",
+      "strength_met": false,
+      "evidence": "历史 producer PID13228、consumer PID27740，均 exit0、forcedKill=false，consumer 在 producer 退出后启动；本次离线复跑 PID2268→25172 同样成功；八项独立进程恢复反例均零请求、零工具执行；受 B1 阻断。"
+    },
+    {
+      "id": "C6",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E0",
+      "strength_met": false,
+      "evidence": "直接读取修正轮两份 SSE 输出，九字段值和类型均与 fixture 一致；独立重算确认最终请求未明文泄露随机答案；首轮确实仅漏 recent_marker；受 B1 阻断。"
+    },
+    {
+      "id": "C7",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E0",
+      "strength_met": false,
+      "evidence": "副本 NEGATIVE-RESULT.json 九项全部成功；adversarial-journal.mjs 七项全部拒绝，baselineValid=true、networkRequests=0；受 B1 阻断。"
+    },
+    {
+      "id": "C8",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E0",
+      "strength_met": false,
+      "evidence": "43 项回归与 extra-offline.mjs 的16项检查均复跑成功；错角色 tool-addition 和不支持 developer block 仍拒绝；1616 个包文件仅 native-compaction.js 相对2A有差异；受 B1 阻断。"
+    },
+    {
+      "id": "C9",
+      "type": "fact-consistent",
+      "status": "fail",
+      "claimed_strength": "E0",
+      "strength_met": false,
+      "evidence": "历史真测独立重算 passed=73、failed=0，六个不同 response ID；首轮预算3且 failed=true，修正轮预算3且 failed=false；原失败与锁均保留；受 B1 阻断。"
+    },
+    {
+      "id": "C10",
+      "type": "fact-consistent",
+      "status": "fail",
+      "claimed_strength": "E0",
+      "strength_met": false,
+      "evidence": "独立只读哈希输出：protectedFiles=4226，changedOrMissing=[]，addedInProtectedTrees=[]；送审清单2063项哈希全部匹配；受 B1 阻断。"
+    }
+  ],
+  "verification": {
+    "artifact_root": "%USERPROFILE%/AppData/Local/Temp/astra-independent-audit-9kjf9gr4",
+    "offline": "副本 python -B run-bounded.py --offline：exit0；43项回归、9项反例成功。",
+    "parent_checks": "副本 python -B run-local.py extra-offline.mjs 与 adversarial-journal.mjs：均 exit0、forcedKill=false；分别16项、7项成功。",
+    "historical_reconstruction": "verify-correction.py 按 SOURCE-MANIFEST 映射历史读取路径，断言未改：73/73，networkRequests=0，drift=[]。",
+    "citation_check": "cite-check.py --strict 检查三份交付文档：exit0，refs=0；该结果不补足强度声明。",
+    "readonly_snapshot": "送审树前后均2067文件；changed=[]、missing=[]、added=[]、reparsePoints=[]。"
+  },
+  "nonblocking": [],
+  "rework_brief": "在 DELIVERY.md 增加与 SCOPE.md 十条不变量逐项对应的验收表，声明类型、E0–E3 强度、观察类别及具体证据；可执行项列明正向验证和真实反例。现有功能证据已核实，此次最小返工是补齐声明与映射，无需新增模型请求或修改实现。",
+  "reviewer_notes": "各项 fail 来自契约明确规定的缺声明按 E0 处理，不表示上述功能测试失败。仅在新 TEMP 副本生成测试产物，未运行任何 --live、启动服务或修改送审文件。保护检查器执行曾被自动审批拒绝，原因是无法确认指向原工程的操作全部只读；随后以源码可见的纯读取哈希命令完成同一保护面核对，无剩余审批阻塞。"
+}

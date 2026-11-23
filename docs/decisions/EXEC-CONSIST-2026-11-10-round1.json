@@ -1,0 +1,40 @@
+{
+  "unit": "EXEC-CONSIST-2026-11-10",
+  "round": 1,
+  "verdict": "pass",
+  "confidence": 0.86,
+  "criteria": [
+    {"id": "C1", "type": "executable", "status": "pass", "claimed_strength": "E3", "strength_met": true, "evidence": "O4: scripts/dag.workflow.mjs:890「if (k === 'patch') r.patch = payload.patch;」+ :1266「const shrinkForReturn = (r) =>」+ :1292「nodes: all.map(shrinkForReturn),」。镜像变异 E2→红 exec/patch-full-to-downstream + exec/patch-chars-recorded；E3→红 exec/patch-return-clipped + exec/patch-chars-recorded（连带项属同一判据）。弱点：Y5（截到 2800）full-to-downstream 不红，见 N2"},
+    {"id": "C2", "type": "executable", "status": "pass", "claimed_strength": "E3", "strength_met": true, "evidence": "O3: :1157「const scNow = fail ? null : scopeCheck(node, res);」。Y1（循环内 scNow=null）下 ok-attempt.终态 fail/只调 1 次 仍绿 —— :1175 break 后 :1228 循环后 scopeCheck 照样判 fail，修复前 noC1.mjs:1201 同款 → 作者降级是事实、不是照结果改判据。E4/Y1/Y9/Y10 分别咬住 harm 点名、patch_harm、fail-attempt 两条。Y3（O3 专属过度修复）被 O3/干净.终态 ok 抓住。漏一处影响面：need_info 出口（探针：现版 fail，Y1 下 need_info），见 N1"},
+    {"id": "C3", "type": "executable", "status": "pass", "claimed_strength": "E3", "strength_met": true, "evidence": "N1: E1→仅 exec/schema-patch-changed 红；E6→仅 exec/schema-non-patch-no-changed 红；源码注释 :763–:766 已改成事实。第 2 轮验收官 nonblocking[0] 的「改掉错说法」只落实了源码一处，FIRE-CHIEF DELIVERY.md:127 / HANDOVER.md:94 仍是旧说法（N6）；Y8（按 kind==='work'）0 红（N3）"},
+    {"id": "C4", "type": "fact-consistent", "status": "pass", "claimed_strength": "E2", "strength_met": true, "evidence": "当前 harness.mjs 删去 scenariosExecConsist 整段 + :484 调用行 → sha256 前缀 4767a1f5，与 INC-20261110-01 第 2 轮验收官记录的审后哈希一致（REVIEW-fire-round2-raw.txt「harness.mjs 4767a1f5…」）；多删一行即变 4db1bbe1。旧 259 条逐字节未动（E3）"},
+    {"id": "C5", "type": "executable", "status": "pass", "claimed_strength": "E3", "strength_met": true, "evidence": "mutate-exec.py 有 anchor 唯一性（count!=1→VOID）、finally 恢复原字节、结尾重哈希、基准先绿否则 ABORT、after 复跑。镜像复跑 defined=6 void=0 ran=6 caught=6 / ALL_CAUGHT，与 MUTATE.txt 逐格一致。缺「红在别处」检查：E5 额外打红旧断言 scope.outside 与 A/动态 allowlist，输出不可见（N5）"},
+    {"id": "C6", "type": "judgment", "status": "pass", "claimed_strength": "E1", "strength_met": true, "evidence": "[判断类] DELIVERY §五 第 1/7 条如实、未说满；第 3 条与 §三「只有两处」、账本 :248 ③ 说少了 need_info 出口（N1），方向是低报不是夸大"}
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {"id": "N1", "what": "O3 的第三处影响面没写也没守护：need_info attempt 报越界，修复前以 need_info 收尾（循环后 scope 只在 ok 时跑），现在进 harm → fail。我的探针：现版 status=fail/calls=1，Y1 下 status=need_info。补一组断言，并把 DELIVERY §三/§五·3、账本 :248 的「只有两处」改成三处"},
+    {"id": "N2", "what": "exec/patch-full-to-downstream 是「≥2500 连续 x」阈值断言，record() 截到 2800 时它仍绿（只有 patch-chars-recorded 红）。改成卡面包含 BIG 全文或 x 连续长度 == 3000"},
+    {"id": "N3", "what": "exec/schema-non-patch-no-changed 只用 scout 反例，把条件改成 kind==='work' 时 0 红。加一个 out 不含 patch 的 work 节点反例"},
+    {"id": "N4", "what": "scripts/dag.workflow.mjs:1228–:1230 循环后 scope tail 现已不可达（删掉 0 红）；:1225 harm 收尾文案对 scope 越界也写 fs_write_forbidden。删或注明防御性保留，文案按来源区分"},
+    {"id": "N5", "what": "mutate-exec.py 只核 must 都红，不报告 must 之外红了谁；E5 改的是修复前就有的 scopeCheck，同时打红两条旧断言，对 O3 过度修复不专属。打印全部红项，E5 换成只改 O3 新代码的过度修复（如把 res.changed 全推进 harm）"},
+    {"id": "N6", "what": "第 2 轮验收官 N1 要求改掉的错说法还剩两处：tasks/FIRE-CHIEF-2026-11-10/DELIVERY.md:127 与 HANDOVER.md:94（后者是接手入口，写成「本单元最值钱的一条」）。各追加一行勘误指向本单元"}
+  ],
+  "ran": [
+    {"cmd": "node tasks/DAG-2026-11-06/harness.mjs --all", "result": "checks=273 failed=0"},
+    {"cmd": "node tasks/DAG-2026-11-06/manager-harness.mjs", "result": "checks=174 failed=0"},
+    {"cmd": "python tasks/DAG-2026-11-06/runner-harness.py", "result": "checks=338 failed=0"},
+    {"cmd": "node tasks/DAG-2026-11-06/verify-findings.mjs", "result": "RESULT=ALL_OK"},
+    {"cmd": "node scripts/dag-gate.mjs runs/plan-20261107-003443/GRAPH.json", "result": "exit 0，2 条 CHECK_NO_EXECUTABLE warn（k_hash/k_count）"},
+    {"cmd": "python scripts/cite-check.py --files tasks/EXEC-CONSIST-2026-11-10/DELIVERY.md --strict", "result": "exit 0，OK 5，anchored 100%"},
+    {"cmd": "%TEMP%/ec-acc-mirror（只复制 dag.workflow.mjs + harness.mjs + fixtures）+ mutate-exec.py 副本（只改 ROOT 指向镜像）", "result": "defined=6 void=0 ran=6 caught=6 / ALL_CAUGHT，与 MUTATE.txt 逐格一致；restore sha 一致；after 273/0"},
+    {"cmd": "镜像 + 自写变异脚本（python -I）：E1–E6 + Y0/Y1/Y2/Y3/Y5/Y6/Y8/Y9/Y10，打印全部 FAIL 名", "result": "E5 额外红旧断言 scope.outside / A/动态 allowlist；Y1 下 ok-attempt.终态 fail 仍绿（证实作者纠偏）；Y2 0 红（循环后 tail 不可达）；Y3 红 O3/干净.终态 ok；Y5 只红 patch-chars；Y8 0 红；Y0 0 红"},
+    {"cmd": "镜像 harness 临时加 2 条 need_info-attempt 越界断言（不入主树）", "result": "现版 275/0；Y1 下 status 实际 need_info → 证实 O3 第三处影响面"},
+    {"cmd": "python 重建：当前 harness.mjs 删 scenariosExecConsist 段 + :484 调用行后 sha256", "result": "4767a1f5，与 INC-20261110-01 第 2 轮审后哈希一致；旧 259 条逐字节未动"},
+    {"cmd": "grep runs/fire/INC-20261110-01/dag.workflow.noC1.mjs", "result": ":877 clip(payload.patch, 1200) / :1201 循环后 scopeCheck / :1258 nodes: all —— 改前状态与 TASK.md 一致"},
+    {"cmd": "清理", "result": "%TEMP%/ec-acc-mirror 与 ec-acc-tools 已删（剩 0）；主树 dag.workflow.mjs 53dd9b12… / harness.mjs 6cead50f… 审查前后不变；未跑会覆写主树的 mutate-exec.py 原件"}
+  ],
+  "rework_brief": "无需返工。N1–N6 在下次碰 dag.workflow.mjs / harness.mjs 时一并处理：① 加 need_info-attempt 越界断言（status=fail、calls=1、harm=['src/evil.ts']），文档改「三处」；② patch-full-to-downstream 改精确长度；③ 加非 patch work 节点的 schema 反例；④ 处理 :1228 不可达分支与 :1225 文案；⑤ mutate-exec.py 打印全部红项、E5 换 O3 专属过度修复；⑥ FIRE-CHIEF DELIVERY.md:127 / HANDOVER.md:94 追加勘误。验法：harness 全绿 + 镜像里用本报告 Y1/Y3/Y5/Y8 复跑应各自变红。",
+  "escalate_question": "",
+  "reviewer_notes": "本单元改前的 dag.workflow.mjs 无快照，「只改白名单四处」只核到 E1。真引擎行为（O4 的因果、N1 schema 是否真交给模型）未验，与作者自述一致。所有变异都在 %TEMP% 镜像里做，未覆写主树。"
+}

@@ -1,0 +1,23 @@
+{
+  "verdict": "pass",
+  "confidence": 0.85,
+  "criteria": [
+    {"id": "C1", "status": "pass", "evidence": "TRIGGER-POLICY.md 五部分齐全：三档 :19-27、送审清单 :61-70、两条硬规矩 :74-83、抽检 :94-111、通道表 :85-90。六条清单和两条硬规矩与原始需求一致。唯一偏离见 N1：抽检单位由『留存档』改成『账本行』。"},
+    {"id": "C2", "status": "pass", "evidence": "TRIGGER-POLICY.md:23-27 免检是客观条件『只读或不改任何文件』，留存是『默认：任何改文件』，送审是命中清单。:29-34 规定同时命中取最高档。『改契约错别字』：改文件，所以不是免检；命中 #2，所以取送审。唯一落档，免检里已没有『什么算小改』这类主观判断。仍有一处小模糊，见 N2。"},
+    {"id": "C3", "status": "pass", "evidence": "REVIEW-CONTRACT.md:12-19 的表给出两个值的差异：mandatory『不需额外动作，只判交付质量』；sampling『判交付质量＋评审档位诚实，读 ledger.md 对照，读不到记 unverified』。TRIGGER-POLICY.md:102-109 的表述与它一致，没有矛盾。"},
+    {"id": "C4", "status": "pass", "evidence": "AGENTS.md:9 已是『v1.1…每 5 个账本行抽 1 个（含免检）』。:75-76 文件地图有冲突裁决、账本机制和 ledger.md 一行。:89 为『触发策略 v1.1』。Grep『留存抽|v1\\.0|3 个真实|跑 3』在 AGENTS.md 和 PLAN.md 无命中，PLAN.md:128 已重写。AGENTS.md、TRIGGER-POLICY.md、REVIEW-CONTRACT.md 三处的抽检口径一致。"},
+    {"id": "C5", "status": "pass", "evidence": "TRIGGER-POLICY.md:89-90：目录内用 subagent_claude_code，目录外用 claude -p 且带 --allowedTools Read,Grep,Glob。『可读全盘』只出现在 claude -p 一侧。AGENTS.md:62 同样写 subagent 被锁在子级工作目录内。没有相反说法。"},
+    {"id": "C6", "status": "pass", "evidence": "我找到并核对了四个口子：(a) 工人整条漏记账本。ledger.md 只有 1 行，没有外部校验。工人在 DELIVERY 里也承认。(b) 把跨文件改动拆成多次单文件改动，每次只记『留存』，躲开 #3。(c) 自判档位和是否送审都由工人说了算，抽检第 5 行也由工人数，所以他可以挑着不让高风险行落在第 5 个。(d) 硬规矩 2『验不了转伙伴』和『同时命中取最高档』的优先级没写，工人可以借它把命中 #2 的改动转走。最小修补：让伙伴或脚本按 mtime/文件清单定期对账 ledger（一周一次 diff 比对，缺行即记违规）。#3 改为『同一事实同一天内涉及 ≥2 文件，按累计算』。抽检由『第 5 行』改为『按行号取模或交给验收官点选』。硬规矩 2 补一句『命中清单 #1/#2 的，即使部分验不了也必须送审，验不了的部分标 unverified』。"},
+    {"id": "C7", "status": "pass", "evidence": "B1 已修：TRIGGER-POLICY.md:29-34 有『取最高档』裁决，用错别字案例验证得唯一落档（见 C2）。B2 已修：免检要记账本一行（:25、:38-51），抽检样本池为账本行（:96、REVIEW-CONTRACT.md:17），不再只抽留存档。ledger.md:11 有首条实例。修复内容是客观判据，不是只加一句话。"}
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {"id": "N1", "what": "伙伴原话是『每 5 个留存档交付抽 1 个』，v1.1 改成『每 5 个账本行抽 1 个（含免检）』。这是对伙伴拍板内容的扩展，不是单纯措辞。AGENTS.md:9 写着『伙伴拍板』，容易让人以为伙伴也批了这次改动。建议让伙伴确认 v1.1 的口径。"},
+    {"id": "N2", "what": "硬规矩 2（验不了转伙伴）和送审清单命中时的优先级没写明，例如既命中 #2 又涉及 UI 效果的改动。建议在 §四 补一句优先级。"},
+    {"id": "N3", "what": "TRIGGER-POLICY.md:3 题头仍写『v1.0』，变更记录已有 v1.1。题头和版本号不一致。"},
+    {"id": "N4", "what": "ledger.md:11 把 5 个文件合成一行，会影响『按行数抽检』的计数口径。建议写明『一个交付单元记一行』。"}
+  ],
+  "rework_brief": "",
+  "escalate_question": "",
+  "reviewer_notes": "我只读文档，没有联网也没有跑运行态。我没有核对 DELIVERY 里『只改了 AGENTS.md』这句话：mtime 显示 TRIGGER-POLICY.md、REVIEW-CONTRACT.md、PLAN.md 都是 05:47，早于 AGENTS.md 的 05:48，与第 1 轮返工的时间吻合，但我拿不到改前的版本做 diff。账本漏记这个口子无解，工人自己也承认，我按设计限制记为 nonblocking。"
+}

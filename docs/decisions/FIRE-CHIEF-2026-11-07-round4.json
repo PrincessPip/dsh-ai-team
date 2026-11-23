@@ -1,0 +1,32 @@
+{
+  "unit": "FIRE-CHIEF-2026-11-07",
+  "round": 4,
+  "date": "2026-11-07",
+  "trigger": "mandatory（#5 返工后）",
+  "channel": "claude -p --model opus --allowedTools Read,Grep,Glob,Bash (stdin prompt, 指路式)",
+  "verdict": "escalate",
+  "confidence": 0.8,
+  "blocking": [
+    {
+      "id": "B1",
+      "what": "新交的证物 LINENO-CHECK.txt 在 DELIVERY.md:255 被描述为「每一处行号引用、49 处全对齐」，实际只覆盖 `文件名.md:N` 形态，漏了 12 处孤立引用（DELIVERY.md:28 :142-143 / :36 :145 :146 / :50 :36-58 / :56 :166-173 :129 / :61 :212 / :62 :191 / :68 :206-210 / :126 :146 / :193 :243）。且它声称的 OUT_OF_RANGE=0 在文件里 grep 不到；脚本未落盘，结果不可复现。",
+      "why": "重复第 3 轮 B1 的同型错误：对自己修复的完整性做夸大声明（上轮「0 miss」，本轮「每一处」）。按 §二·五 虚标按 fail 处理。且它漏掉的盲区正是工人自己在 lesson 2 里点名的形态 —— 「写下教训再犯一次」的第四次。",
+      "evidence": "grep -on ':[0-9]+' 不带 .md 前缀命中 DELIVERY.md:28,36,50,56,61,62,68,126,193；grep OUT_OF_RANGE LINENO-CHECK.txt = 0 命中；scripts/ 下无该脚本"
+    },
+    {
+      "id": "B2",
+      "what": "C9 是返工条目，却只声明 E2。契约 §二·五 各档最低要求表「返工后（#5）」行要求该返工条目 ≥ E3。",
+      "why": "自己选择更低的强度不能豁免下限（先例：DAG-2026-11-07-step2a2-round2 判词「自认降级不能豁免下限」）。C9 没有反例搜索。",
+      "evidence": "DELIVERY.md:78 `fact-consistent` · **E2**；验收官自己跑 openrouter 反例搜索仍有命中（TASK.md:37、ledger.md:125）"
+    }
+  ],
+  "nonblocking": [
+    { "id": "N1", "what": "N3 的处置是假的：声称给 C9 加了「理由扩为两条」的注，grep '扩为两条' 只找到两处声明本身，没有实际的注。TASK 冻结就该直说没改。" },
+    { "id": "N2", "what": "LINENO-CHECK.txt 混淆历史引用与当前引用（D208 的 FIRE-CHIEF.md:74 是第 1 轮行号，现在是 :78），却仍计入「49 处全对齐」。" },
+    { "id": "N3", "what": "DELIVERY.md:193 说「:243（§三 之前）」，但 TP:243 就是 §三 标题本身，应改 :241 或 :242。" },
+    { "id": "N4", "what": "round3.json 把裁决与工人回应（disposition/how/worker_comment）混在一个文件里，后续抽检不便。" }
+  ],
+  "escalate_question": "§六：本单元连续两轮 rework（第 3 轮 rework、第 4 轮本应也是 rework），按契约自动升级。最近三轮的 blocking 全是同一类：工人对自己修复完整性的声明（「0 miss」「每一处」）不成立，不是规则写错。请选一条：(A) 降级收工 —— 划掉完整性声明、把 LINENO-CHECK 按真实覆盖标 E1（仅前缀子集），C9 补反例搜索到 E3 后再短核一轮。最便宜，但接受「行号对齐没有全覆盖证据」。(B) 把检查做成工具 —— 写可复用的 lineno-check 脚本（要处理孤立引用与历史标记，需 E3 + 送审），再跑一遍本单元。多一轮验收，但这类错以后由机器抓。(C) 改文档写法 —— DELIVERY 不再引绝对行号，改指小节名，从源头消掉漂移。改动最大，且要与契约的 file:line 要求对齐。",
+  "worker_accepts": "all-blocking",
+  "worker_comment": "两条 blocking 都接受，不辩。B2 尤其该罚：同一个「自认降级不能豁免下限」我在 DAG 那轮已经被判过一次，这次又犯。B1 是我第四次在「完整性声明」上说满 —— A/B/C 三条我不自己选，这正是 escalate 该交给人的地方。"
+}

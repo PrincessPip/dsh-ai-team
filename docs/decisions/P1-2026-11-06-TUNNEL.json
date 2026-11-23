@@ -1,0 +1,36 @@
+{
+  "verdict": "rework",
+  "confidence": 0.72,
+  "criteria": [
+    { "id": "C1", "status": "pass", "evidence": "claude-egress-check.ps1:103-107 在 -Start 分支调用 Get-PhysicalSourceIp，拼成 @('-b',$srcIp) 并放在 ssh 参数最前。IP 来自 Get-NetRoute/Get-NetIPAddress（:70-76），全文无写死的 <LAN-IP>。" },
+    { "id": "C2", "status": "pass", "evidence": ":72 过滤 `$_.NextHop -notmatch '^198\\.18\\.'`，同时排除 NextHop=0.0.0.0 的 on-link 路由（常见的 TUN 默认路由形态）。限制：只按 NextHop 过滤，没检查最终选中的 IP 是否落在 198.18/15；:72 按 RouteMetric 排序，没加网卡 InterfaceMetric；:74-75 取第一个 IPv4，多 IP 网卡可能选错。这些是 nonblocking。" },
+    { "id": "C3", "status": "pass", "evidence": ":69-78 整段包在 try/catch，找不到或出错都返回 $null。:104-105 里 $srcIp 为空时 $bind 保持空数组，ssh 不带 -b 启动，等于老行为。:107 的 `@() + $bind + @(...)` 在 $bind 为空时也能正确展开。" },
+    { "id": "C4", "status": "pass", "evidence": ":109 `'-o','ServerAliveInterval=15','-o','ServerAliveCountMax=3'`。" },
+    { "id": "C5", "status": "unverified", "evidence": "我只有 Read/Grep/Glob，读不到原始字节。ripgrep 对 \\xEF\\xBB\\xBF 的匹配返回 0，但 rg 可能自动剥 BOM，不能据此判断有无 BOM。唯一证据是 DELIVERY 里「补回，6699 字节」的自述。Read 输出里的中文显示正常，但这不能证明有 BOM。" },
+    { "id": "C6", "status": "pass", "evidence": ":157 输出 `[源地址] <ip>（绑物理网卡，绕开 TUN）`，没绑时输出「未记录（-Start 未运行或退回 TUN）」。限制：没绑和没跑 -Start 共用同一句话，分不开。" },
+    { "id": "C7", "status": "fail", "evidence": "(1) IP 变化：已起的隧道源地址失效，靠 ServerAlive 约 45 秒内退出（:109）。脚本没有自动重连（符合项目约定）。下次检查会走 code 3，再 -Start 时重新取 IP（:103），这一点自洽。但 DELIVERY 第 4.3 节自认「切 WiFi、拔网卡」没测。(2) 绑上但直连不通：ssh 经 Start-Process -WindowStyle Hidden 启动（:107-112），stderr 不可见。:113-117 只轮询约 8 秒，失败统一报 code 6「隧道拉不起来（ssh 失败或 VPS 侧 tinyproxy 未运行）」。这句话没提到 -b，也不会自动退回不绑定重试。:157 在失败时仍打印「绑物理网卡，绕开 TUN」。操作者分不清「没绑上」「绑上但不通」「tinyproxy 没跑」。另外没有 ConnectTimeout，超时后 ssh 进程可能留在后台，晚些连上，形成孤儿隧道。DELIVERY 4.3 对这两种场景都没测，也没分析。" }
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "what": "-b 绑定后直连不通时，脚本没有降级，也没有可区分的诊断。",
+      "why": "违反 C7 第 2 问。新引入的失败模式（物理网卡 IP 失效、ISP 到 VPS 的路径被封）会让 -Start 稳定返回 code 6，报错文字还指向 tinyproxy。验收前置自检被卡住，而之前 TUN 路径本来能通。",
+      "evidence": "claude-egress-check.ps1:103-117、:157。DELIVERY.md:40 自认没测。"
+    },
+    {
+      "id": "B2",
+      "what": "C5（UTF-8 BOM）我无法验证，目前只有工人自述。",
+      "why": "PS 5.1 缺 BOM 会让中文乱码甚至破坏语法，而且 DELIVERY 自己说 edit 丢过一次 BOM。按「无证据不算通过」，这一条不能当 pass。",
+      "evidence": "rg 字节匹配无结果但不可靠；DELIVERY.md:28 是自述。"
+    }
+  ],
+  "nonblocking": [
+    { "id": "N1", "what": "Get-PhysicalSourceIp 按 RouteMetric 排序，没算 InterfaceMetric；取 IP 时没排除 PrefixOrigin/SkipAsSource 异常地址，也没排除落在 198.18/15 的地址。" },
+    { "id": "N2", "what": "[源地址] 一行把「没跑 -Start」和「-Start 但退回 TUN」写成同一句，建议拆成两种文案。" },
+    { "id": "N3", "what": "直连后 VPS 侧看到的是真实宽带 IP <LOCAL-WAN-IP>，不再是节点 IP（DELIVERY.md:41 已披露），风控面有变化，需要伙伴知情。" },
+    { "id": "N4", "what": "25 分钟稳定性测试未完成（DELIVERY.md:37 已诚实说明）。我没把「直连更稳」当结论，不影响本轮判定。" }
+  ],
+  "rework_brief": "1) 在 :107 之前，$srcIp 非空时给 ssh 加 `'-o','ConnectTimeout=8'`。:113-117 的轮询失败且 $srcIp 非空时，先停掉刚起的 ssh：Start-Process 加 -PassThru 取进程，Stop-Process 该 PID。再用不带 -b 的参数重起一次，并把 $result.sourceIp 置空。若这次起来了，action 写「绑卡直连失败，已退回 TUN」。若仍失败，action 写「绑 $srcIp 与不绑均失败」，仍返回 code 6。2) 把 :107-112 的参数构造抽成函数或脚本块，让绑与不绑两次重用，避免重复。3) 把 :157 的文案改成按实际结果显示：绑卡成功 / 绑卡失败已退回 TUN / 未跑 -Start。4) 用 .NET API 读头三字节确认是 EF BB BF，并把输出贴进 DELIVERY。5) 至少实测一次「绑一个不存在的本地 IP」，例如 -b <LAN-IP>。预期是：8 秒内退回不绑定重试并读到 READY，文案能看出发生了降级。把输出贴进 DELIVERY。",
+  "escalate_question": "",
+  "reviewer_notes": "我只做了代码审查，没有执行脚本，也看不到字节级 BOM。DELIVERY 里的实测输出（<TUN-SUBNET>、<LOCAL-WAN-IP>、READY、exit 0）我都无法复现，这些只当自述。我假设 Get-NetRoute 在这台机器上能返回物理默认路由，这点没验证。"
+}

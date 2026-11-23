@@ -1,0 +1,67 @@
+{
+  "verdict": "pass",
+  "confidence": 0.94,
+  "readonly_enforcement": "snapshot_only",
+  "evidence_root": "%USERPROFILE%/AppData/Local/Temp/review-B-independent-x_wgp0z3",
+  "criteria": [
+    {
+      "id": "B1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "源图SHA256实测为443407e41297f85462b17ff48e62bac7ea52906a2001b65a1b6fb2e0bcb19ddc，与_based_on一致；重新生成的图逐字节相同。仅五个声明节点的do/accept变化，runner、Gate、历史图及检查器与备份一致。TEMP复跑GATE.txt：rc=0、0 error、3条CHECK_CMD_UNVERIFIED警告；这些警告不代表副作用已验证。"
+    },
+    {
+      "id": "B2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "GRAPH.hardened.json:152明确要求UTF-8无BOM JSON；accept_checks.py:58核验ledger-format-v2-baseline。runner入口integ正例exit0；错误schema、无BOM旧行格式、损坏JSON均exit1并定位到schema断言或JSON解析；检查器及测试脚本缺BOM分别被拒绝。"
+    },
+    {
+      "id": "B3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "TEMP复跑BEHAVIOR.txt：合法夹具rc0，四类违规及孤儿合计5条、rc1；baseline已知5条rc0，追加重复坏行后新增1条、rc1；缺输入及错误schema均rc2。独立探针：非空baseline通过，错误计数在REAL_MULTISET拒绝，恒绿检查器在CANARY_RC拒绝；预期值由固定文本和独立SHA计算生成。"
+    },
+    {
+      "id": "B4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "真实员工台子复跑TESTS=30 FAILED=0；替换恒绿检查器后TESTS=30 FAILED=30、rc1。独立构造72行、只打印TESTS=30 FAILED=0的假台子，经k_test在EMPLOYEE_DISCRIMINATION拒绝。图与交付均明确保留员工逐格覆盖的人工核查。"
+    },
+    {
+      "id": "B5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "TEMP执行python -B tasks/ACCEPT-HARDEN-2026-11-13/verify.py：rc0、83.694秒，五条runner.run_cmd_accept命令全通过，五个定向坏例均拒绝；变异8/8、VOID=0、RESTORED_GREEN=True。另行独立探针8/8符合预期，睡眠检查器25.304秒后以CALL_TIMEOUT拒绝。副本905个保护文件哈希一致；审阅源树924个文件前后路径/SHA相同，增删改均为空。"
+    },
+    {
+      "id": "B6",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E0",
+      "actual_strength": "E2",
+      "strength_met": true,
+      "evidence": "本条未单列强度声明，按契约记E0；独立核查达到E2。TASK.md:7「人工保留」与DELIVERY.md:54列出的软assert符合实际图结构；DELIVERY.md:55明确k_guard的SHA比较未机器化，:3明确没有证明GPT新整链通过，父交付:29披露相同边界。"
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [],
+  "additional_checks": {
+    "A_mutation_record": "补入文件存在；解析得到13/13捕获、0 VOID，baseline与restored各29/29；记录中的两个源码SHA与当前文件一致。本轮未重跑A全套。",
+    "PLAN_correction": "PLAN.md:38已明确角色写入授权不同，且不把相同底层权限冒称不同硬隔离通道。",
+    "citations": "独立执行cite-check --strict：rc0，6文件、0引用；不据此声称已有引用覆盖。"
+  },
+  "rework_brief": "",
+  "escalate_question": "",
+  "reviewer_notes": "仅在TEMP副本生成图、运行测试、制造反例及保存证据，未修改审阅工程，未调用模型或运行历史整链。通过范围限于本派生图列出的机器条件，不证明员工逐格覆盖、通用assert硬化或新GPT整链通过。源树文件哈希比较不替代调用方最终的外层快照机器回执，也不能检测写后恢复或树外写入。"
+}

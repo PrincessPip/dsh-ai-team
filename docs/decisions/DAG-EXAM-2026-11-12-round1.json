@@ -1,0 +1,95 @@
+{
+  "unit": "DAG-EXAM-2026-11-12",
+  "round": 1,
+  "date": "2026-11-12",
+  "channel": "subagent → openrouter/anthropic/claude-opus-5.5（DSH 子代理、全新会话、带工具、只读）",
+  "verdict": "rework",
+  "confidence": 0.8,
+  "confirmed_by_reviewer": [
+    {
+      "id": "C1",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "canonical json 比较：7/8 节点逐字节 EQUAL，k_real 只 DIFF 在 do + accept（after/out/on_fail/ctx/id/kind 相同）；反证：比较器确实能标出 k_real DIFF；sha256(GRAPH.fixed.json)=f22690e6… 16587 B == _based_on；runs/exam-20261112-073824/GRAPH.json sha=443407e4… == GRAPH.exam.json"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "图里那条 cmd 原样跑 13 例全对（正例 rc=0、新增坏行/虚高登记/缺文件/schema 错/空文件/缺检查器/count×2/债+新违规 全 rc=1，合法登记债 P1 判绿不误伤）；自洽洞实证：H2「永不报违规」stub + 坏账本 rc=0（通过）；本轮没被踩：员工检查器 5 种金丝雀坏行全抓，且在冻结 ledger.before.md 上与主树检查器给出完全相同的 19 条 code@line"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "RUN.json result=pass / 8 节点 ok / attempts=1 / check_verdicts 三项 pass / skipped={} / replan=[] / deterministic_fail=[] / timeouts=[] / aborted=false / agent_calls 8/20；代码侧 runner.py:1735 check_rejected、:2574 硬停、:2684 all_ok 要求每节点 ok → 机器层没有「check 判 fail 而整图 pass」的通路；EVIDENCE-MANIFEST 41/41 sha 一致；主树与副本证据包 42 文件 0 差异"
+    },
+    {
+      "id": "C4",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "scripts/runner.py = 1EA8FB50…3796 / 160053 B，与 11-11 07:57 以来 30+ 份 fire/job 快照一致；主树对 exam FS-BEFORE 全量 diff 只差本单元文件；07:15–07:38 mtime 扫描只有 6 个单元文件 + runner.py 07:33 + manager.pyc；dag.workflow.mjs / fixtures/sandbox/*.md 的 mtime 变了但 sha 与多份快照一致"
+    },
+    {
+      "id": "C5",
+      "type": "judgment",
+      "status": "fail",
+      "claimed_strength": "E1",
+      "strength_met": false,
+      "evidence": "[判断类] runs/*/RUN.json：e2e-20261110-2005（7 节点）与 e2e3-20261110-231402（7 节点、check_verdicts 全 pass）都是 result=pass；e2e3 的 w_script.do 是「给 scripts/review-index.ps1 加分组渲染」= 开发图不是运维图。DELIVERY.md:11 标题无限定；§五 把 e2e3 说成运维图并漏掉 e2e-2005；§二 第 5/6 行声称的账本行与 AGENTS.md 改动实测都不存在"
+    },
+    {
+      "id": "T6",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "把副本里员工写的脚本拷到 %TEMP%\\rev-emp-bench 自跑：ledger-check-test.ps1 → TESTS=28 FAILED=0 rc=0；员工检查器对真账本 RESULT=OK（带/不带 baseline）；oracle：在冻结 ledger.before.md 上员工与主树检查器都是 rc=1 n=19、code@line 集合完全相同；反证：5 种金丝雀坏行各 rc=1"
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "what": "「整链第一次 result=pass」说过头，且限定词把历史说错了",
+      "why": "e2e-20261110-2005 与 e2e3-20261110-231402 都是 7 节点整链 pass；e2e3 是开发图（给 review-index.ps1 加分组视图），叫它运维图与 AGENTS.md「第三次首获流程 pass + 产物 pass」冲突，属 #3 跨文件不一致，还会把错误结论写进记忆。真正成立的说法是「待办 #3 所指的 LEDGER-JOB 这张图第一次整链 pass」",
+      "evidence": "runs/e2e3-20261110-231402/RUN.json result=pass；runs/e2e3-20261110-231402/GRAPH.json 的 w_script.do；DELIVERY.md:11 / :81"
+    },
+    {
+      "id": "B2",
+      "what": "§二 变更清单第 5/6 行声称的改动不存在",
+      "why": "账本里没有 DAG-EXAM 行，AGENTS.md 待办 3 仍是「pass 未证」。变更清单与回滚说明描述的是一个不存在的状态（契约：没证据 = 不算通过）。若计划验收后再做，必须标「待做」",
+      "evidence": "Select-String 'DAG-EXAM' decisions/self/ledger.md → 0 命中；AGENTS.md:189「3. **DAG 整链 `pass` 未证**」；两文件 mtime 07:15:19 / 07:15:22"
+    },
+    {
+      "id": "B3",
+      "what": "图内矛盾未披露：integ.accept[2] 对 baseline 的行格式要求 vs 新 k_real 的 JSON schema",
+      "why": "integ.accept[2] 要求 baseline 每行「<行号>:<reason>」；新 k_real.accept[0] 写死 JSON schema=ledger-format-v2-baseline。pass 之所以成立，是因为 integ 员工违背了自己的 accept 规则并如实自报（「integ 的 assert 文字仍是旧版…已过期」），节点却仍判 ok —— 这是「assert 类 accept 不受机器约束」的直接证据，所以「8 节点全 ok」里含一个自报违规的节点。这个矛盾由本次测验固化（旧 k_real 根本不解析 baseline），DELIVERY §四 没披露",
+      "evidence": "GRAPH.exam.json 的 integ.accept[2].rule 与 k_real.accept[0].run；runs/exam-20261112-073824/NODES/integ.a1.json 的 result.summary"
+    }
+  ],
+  "nonblocking": [
+    {"id": "N1", "what": "不同意「机器层拦不住」：cmd accept 可加非空转守卫——在冻结 tasks/SMALL-DEBT-2026-11-12/ledger.before.md 上要求报出已知 19 条 code@line，或往 %TEMP% 账本副本追加一条金丝雀坏行要求 rc=1；H2 stub 过得了现判据、过不了这两条"},
+    {"id": "N2", "what": "新 k_real.do 去掉了旧第 (3) 步（独立 Select-String 计数）；base=0 时第 (4) 步是空转，干净账本上该 cmd 只证明检查器能跑两遍并 exit 0。旧 19 条判据拦得住 stub。真实取舍：不假红了，但判别力也没了"},
+    {"id": "N3", "what": "probe-kreal.py:131 往主树写 tasks/DAG-EXAM-2026-11-12/PROBE-KREAL.txt，与 BRIEF §三 说的「它只读」不符；验收官没跑它，用等价探针代替"},
+    {"id": "N4", "what": "DELIVERY §三 说 exam 图 18,061 B；实际文件与 MAKE-GRAPH.txt 都是 18,126 B"},
+    {"id": "N5", "what": "runs/_harness 在 08:18–08:23 复跑后重新涨到 1766 文件 / 96.3 MB（DIET-FOLLOWUP 刚回收过）；DELIVERY §四·4 只算了 15 MB 副本 + 2.5 MB 证据包"},
+    {"id": "N6", "what": "副本向员工暴露了「答案相邻」材料（GRAPH.exam.json、PROBE-KREAL.txt、LEDGER-JOB 的 VERIFY-ASSERT.txt、SMALL-DEBT 的 baseline.before.txt），c_spec 甚至说「当前主树就是空数组」——「从零」实际是「从规格」，不是盲跑"},
+    {"id": "N7", "what": "k_real 写死 baseline schema 字符串，而契约节点 c_spec 名义上可以自由定义格式，判据被耦合到一种特定契约结果"},
+    {"id": "N8", "what": "TASK/DELIVERY/CITE-CHECK 在 REVIEW-BRIEF（08:24:50）之后的 08:25 被改过；验收官审的是 08:25:52 版本。cite-check --strict 4 refs / 4 OK"}
+  ],
+  "impossible": [
+    {"what": "四套台子（523/0 · 284/0 · 190/0 · mutate 60/60）", "why": "BRIEF §三 禁跑（runner-harness 依赖全树快照、runner-mutate 会改主树）。间接证据：08:18–08:23 的 runs/_harness FS-BEFORE/AFTER 都记 runner.py=1ea8fb50，但证明不了 pass 计数"},
+    {"what": "重放真跑（run-exam.py）", "why": "禁跑（23 分钟 + 消耗调用额度）；只核了证据包、副本产物与 runner 代码路径"}
+  ],
+  "reviewer_notes": "全程只读；实验都在 %TEMP%\\rev-*（rev-kreal-mirror / rev-emp-mirror / rev-emp-bench / rev-dry-mirror，干跑 rc=0 零调用）。主树跑过 cite-check（不带 --out）与 dag-gate（OK 0 error / 3 warn）；08:25:53 之后 mtime 扫描为空。未跑：run-exam.py / runner-mutate.py / runner-harness.py / probe-kreal.py。",
+  "summary": "技术面全过（图只动一个节点、新判据抓得住且不误伤、真跑 pass 是真的、runner.py 还原与 30+ 份独立快照一致、产物在验收官自己的副本里复现 28/0 且与主树检查器 19 条完全一致）。自洽洞是真的（stub 能过）但本轮没被踩，且部分可机器封堵。返工只涉及 DELIVERY 的准确性：标题过头（e2e3/e2e-2005 也是 pass，e2e3 是开发图）、账本与 AGENTS.md 改动被声称但不存在、integ 与 k_real 的矛盾及其自报违规未披露。",
+  "rework_brief": "1) DELIVERY.md:11 与 §五 改成「待办 #3 所指的 LEDGER-JOB 图第一次整链 pass」，把 e2e-20261110-2005 与 e2e3-20261110-231402 列为既有整链 pass，不再把 e2e3 叫运维图。2) §二 第 5/6 行：要么真做（然后跑 agents-budget --changed 与 ledger-check），要么标「待验收后做」。3) §四 增加一条：integ.accept[2]（行格式 baseline）与新 k_real（JSON v2 schema）矛盾；integ 员工自报违规仍判 ok，说明 assert 不受机器约束；引 NODES/integ.a1.json。4) 可选：§四·7 补一句「冻结夹具/金丝雀 cmd 是机器层缓解」。"
+}

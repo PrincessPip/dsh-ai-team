@@ -1,0 +1,29 @@
+{
+  "round": 1,
+  "task": "tasks/P1-2026-11-06-STRENGTH",
+  "trigger": "mandatory",
+  "verdict": "rework",
+  "confidence": 0.82,
+  "criteria": [
+    { "id": "C1", "status": "fail", "claimed_strength": "E2", "strength_met": false, "evidence": "REVIEW-CONTRACT.md §二·五 E 表本身可对照成立，但 DELIVERY 为凑『位置独立性』引用的『第二位置』是讲『谁核验』的条款（硬规则第 3 条 + §五新增条），不是『E 表本身是否可对照』这同一个事实，属引用错位。实达 E1。" },
+    { "id": "C2", "status": "fail", "claimed_strength": "E3", "strength_met": false, "evidence": "D 表/正反例四项实质内容成立，但 DELIVERY 的『反证』（grep 旧口径 0 命中）与 C2 主张无关，是从 C4 原样复制；真反例（curl -s/-sv）与正例同节，位置独立性不足。实达 E1。" },
+    { "id": "C3", "status": "pass", "claimed_strength": "E3", "strength_met": true, "evidence": "WINDOW 格式/≥30 分钟/依据在契约完整；30 分钟独立见于 AGENTS.md 多处；反证 grep『10 分钟窗口』仅出现在『不算数』语境。" },
+    { "id": "C4", "status": "pass", "claimed_strength": "E3", "strength_met": true, "evidence": "三处门槛逐项一致；反证 grep 旧口径正文 0 命中（修复前 TRIGGER-POLICY 变更记录确有一处旧口径，被工人自己核出并改掉）。" },
+    { "id": "C5", "status": "pass", "claimed_strength": "E2", "strength_met": true, "evidence": "硬规则第 2 条与 §五新增条分处两个不同章节，口径一致。" },
+    { "id": "C6", "status": "fail", "claimed_strength": "E2", "strength_met": false, "evidence": "三点自查内容属实，但属单文件内部一次性判断，无第二观察位置；工人自承『弱形式』。实达 E1。" },
+    { "id": "C7", "status": "fail", "claimed_strength": "E2", "strength_met": false, "evidence": "『读了当前文件一次、看起来没变』本质单次断言；仓库非 git 无法 diff；DELIVERY 未引用已验证的跨文件旁证。实达 E1。" },
+    { "id": "C8", "status": "pass", "claimed_strength": "E2", "strength_met": true, "evidence": "双向引用均存在；两份变更记录各有 v0.3 / v1.3。" },
+    { "id": "C9", "status": "fail", "claimed_strength": "E1", "strength_met": true, "evidence": "强度标签诚实，但 TASK 要求至少回答 4 点，只对应上 3 点；第 3 问（窗口 30 分钟与已知最坏间隔谁优先）未被正面回答。" }
+  ],
+  "blocking": [
+    { "id": "B1", "what": "『文档表述类条目用位置独立性折算到 E2/E3』对判断单一段落是否自洽/够具体这类条目结构性不可达；规则逼工人找牵强引用凑格式。", "why": "与 §五『不许差不多算交叉验证』自相矛盾；给后门。", "evidence": "REVIEW-CONTRACT.md 文档类折算段 对照 DELIVERY C1/C2/C6/C7 四行引用内容" },
+    { "id": "B2", "what": "『文档表述类 / 可执行类』二级分类由谁判、判错代价谁担，§二·五 未写死；工人靠 TRIGGER-POLICY §六 兜，但 §六 讲的是三档不是二级分类。", "why": "工人只要宣称『这是文档表述』就能把本该 E3 的结论降到 E2，绕开新规则想堵的洞。", "evidence": "TRIGGER-POLICY.md §六（三档判定权）对照 DELIVERY 自承『我的解释，不是已验证的事实』" }
+  ],
+  "nonblocking": [
+    { "id": "N1", "what": "TRIGGER-POLICY 三档表无『返工后』行，而契约与 AGENTS 都单列；DELIVERY 称『三处逐项一致』略有夸大。" },
+    { "id": "N2", "what": "C9 自查漏答 TASK 第 3 问（WINDOW 30 分钟与已知最坏间隔谁优先）。" },
+    { "id": "N3", "what": "mtime 对账输出验收官无法亲自复现（已写明的设计限制）。" }
+  ],
+  "rework_brief": "1) §二·五 增加对『自洽性/结构判断类』条目的规则（允许 E1 或明确必须标 E1 接受未达标，二选一但写清）；2) 补一句『文档表述类/可执行类由验收官在送审时裁定，工人自判仅供参考，判错按档位不诚实处理』；3) 换掉 DELIVERY C2 里那条从 C4 复制的反证；4) 补齐 C9 对 TASK 第 3 问的正面回答。",
+  "reviewer_notes": "本轮两个 blocking 均为工人侧规则设计缺陷，不是执行失误；验收官自己复现了 C3/C4 的反证 grep。"
+}

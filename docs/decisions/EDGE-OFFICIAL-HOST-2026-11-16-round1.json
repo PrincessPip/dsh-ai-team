@@ -1,0 +1,87 @@
+{
+  "verdict": "pass",
+  "confidence": 0.94,
+  "readonly_enforcement": "snapshot_only",
+  "evidence_root": "%USERPROFILE%/AppData/Local/Temp/edge-host-review-_fb7xuzz/official-host",
+  "criteria": [
+    {
+      "id": "H1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "亲查官方factory及恢复源码；复跑实例为ReactLoopAgent，cwd正确；磁盘JSONL含最终回复和10条审批决定。恢复后旧Agent调用被拒、新Agent调用成功。见artifacts/1794800621738/RESULT.json及evidence/REVIEW-INSPECTION.json（D1/D2/D3＋反证）。"
+    },
+    {
+      "id": "H2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "基线复跑39次模型请求，工具目录恰为9项，真实工具结果回流；中文输入、勾选及原页提交成立，HTTP提交次数为1；拒绝路径无新增点击。见artifacts/1794800461249/RESULT.json（D2/D3/D4＋反证）。"
+    },
+    {
+      "id": "H3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "unsafe/evaluate/upload/network/resource点名均返回TRIAL_TOOL_NOT_ALLOWLISTED，越界URL返回TRIAL_URL_DENIED；许可导航成功且拒绝后页面未改变。见基线RESULT的denied-*、foreign-url-refused及navigate-result（D2/D4＋正负控制）。"
+    },
+    {
+      "id": "H4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "never、无回答者、单次授权不延续、wide不能扩大能力、取消后迟到授权均通过。audit-result.mjs退出0：10对审批、20对调用/结果绑定正确，5种变异全部检出。见evidence/EVENT-AUDIT.json及基线RESULT（D2/D3/D4＋反证）。"
+    },
+    {
+      "id": "H5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "第二Session目录为空且snapshot拒绝；原owner释放后，同ID新Agent恢复历史、权限并重新取得浏览器。独立补测旧对象返回TRIAL_NOT_LIVE_OWNER，新对象实际snapshot成功。见artifacts/1794800621738/RESULT.json的extraStaleResult、extraLiveResult（D1/D2/D3＋反证）。"
+    },
+    {
+      "id": "H6",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "cancel及active dispose保留Edge；同#late定位器已有真实成功点击，忙renderer期间动作确认在途后强停，工具以browser closed结束，无陈旧ref错误。两次成功复跑强停分别4041ms、3789ms，后代清零，停止后6.5秒无新增点击。见两份成功RESULT（D1/D2/D4＋正负控制）。"
+    },
+    {
+      "id": "H7",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "31项冻结输入不变；48个已安装DSH包均为锁定版本；候选18个复制输入SHA复核无漂移。真实归属正控制及6种错值拒绝通过；最终collect.mjs退出0，6项检查通过，自有进程/测试监听清零，profile保留，日常浏览器根进程保留，3080仍为PID25820。见evidence/REVIEW-INSPECTION.json、COLLECT.json及补测RESULT（D1/D2/D3＋反证）。"
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "历史账本债未清零，不纳入本单元通过结论。",
+      "evidence": "候选evidence/LEDGER-CHECK.txt为FIELD3_INVALID、line=384、rc=1；LEDGER-AUDIT.txt为LEDGER_SUSPECT。未改旧账或baseline。"
+    },
+    {
+      "id": "N2",
+      "what": "DELIVERY写本地链接20个，PREFLIGHT.json记录23个；数量表述需同步。",
+      "evidence": "本轮独立cite-check退出0，但refs=0，不代表引用覆盖率。"
+    }
+  ],
+  "commands": [
+    "python official-host/prepare-mirror.py：rc=0，exact=true，18文件。",
+    "副本内node supervise.mjs：rc=0，56检查通过。",
+    "副本内node supervise.mjs boundary-test.mjs：修正验收官临时断言编码后rc=0，65检查通过。",
+    "副本内node audit-result.mjs：rc=0，绑定核查及5种变异通过。",
+    "副本内node collect.mjs：rc=0，6项收尾核查通过。",
+    "cite-check.py --files TASK.md DELIVERY.md REVIEW-BRIEF.md --strict：rc=0，refs=0。"
+  ],
+  "rework_brief": "",
+  "reviewer_notes": "候选未修改；测试代码、报告和运行产物仅写入新TEMP副本及监督器临时环境，Edge使用已披露的OS目录恢复例外。首次补测因验收官新增中文断言被管道转码而误报，原始回执成功，失败源码及artifacts/1794800550485/RESULT.json均保留，修正后完整复跑通过。裁决仅覆盖确定性模型、本地fixture及有限停止窗口；父级最终快照报告仍须另核，本结论不替代它。"
+}

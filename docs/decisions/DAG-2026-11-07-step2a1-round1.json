@@ -1,0 +1,92 @@
+{
+  "_provenance": {
+    "unit": "DAG-2026-11-07-step2a1",
+    "round": 1,
+    "trigger": "mandatory",
+    "channel": "subagent_claude_code (SDK + dontAsk)",
+    "reviewed_at": "2026-11-07",
+    "egress": "READY (<VPS-IP> via 127.0.0.1:1081, physical NIC bound)",
+    "note": "验收官原始返回，逐字照录；除本 _provenance 块外未改任何字段。"
+  },
+  "verdict": "rework",
+  "confidence": 0.85,
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "runs/probe-ro/NODES/s_probe.json: permission_mode=read-only, tool_results[0].status=\"error\" + \"[sandbox: file access denied under read-only mode]\", node_diff.changed_paths=[]；runs/probe-w/NODES/w_probe.json: permission_mode=workspace-write, 同一动作 tool_result status=completed, node_diff.added=[\".../PROBE.txt\"]。两份 JSON 原文与 DELIVERY §二③ 引用逐字对得上。D1(文件状态/node_diff) + D3(沙箱拒绝原文/tool_result文本) 两类独立观察 + 反证（同一写入在两种模式下一败一成）。这两个 run 目录未被 runner-mutate.py 污染，证据链完整。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "runner.py:503 的 compare() 逻辑本身正确（checks[\"overclaim\"]=sorted(declared-actual) 未被改动，源码可读）。但 DELIVERY 引用的正向证据包 runs/_harness/overclaim/NODES/w_write.json 现状是 result.changed=[\"notes.md\"]、node_diff.changed_paths=[]、却 checks.overclaim=[]、ok=true —— 与「超报应被 checks.overclaim 点名、节点应 FAIL」的声明直接矛盾。根因：runner-mutate.py 对同名 run-id 'overclaim' 做过变异测试（删掉 overclaim 判据那一行）后没有重跑恢复，把该目录永久留在了变异态。DELIVERY §二①b 贴的终端文本我无法独立复现，而我能打开的那份对应证据包是反证据。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "runs/_harness/underclaim/NODES/w_write.json：result.changed=[]、node_diff.changed_paths=[\"notes.md\"]，应判 underclaim=[\"notes.md\"]、ok=false，实际 checks.underclaim=[]、ok=true —— 同一根因（该 run-id 被 mutate.py「删掉少报判据」的变异步骤写脏，未重跑恢复）。oos 一侧（out_of_scope）倒是正确：runs/_harness/oos/NODES/w_write.json 显示 out_of_scope=[\"OFF-LIMITS.md\"]、ok=false，与声明一致（这是因为 mutate.py 最后一步恰好重跑了 'oos' 场景）。underclaim 这一半的声明证据不成立。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "正向一半（exit0→pass）独立验证成立：runs/g3-live/NODES/w_write.json 的 cmd_accept=[{\"run\":\"node -e \\\"process.exit(0)\\\"\",\"exit_code\":0,\"ok\":true}]，这是真 headless 跑出来的，未受污染。但反向一半（exit1→fail）唯一可打开的证据 runs/_harness/cmdfail/NODES/w_write.json 显示 cmd_accept=[]（空），而该图 g4-cmdfail.json 的 accept.run 是 `node -e \"process.exit(1)\"`，理应记 exit_code=1/ok=false——同一根因：mutate.py「跳过所有 cmd accept」的变异步骤把 'cmdfail' 这个 run-id 写脏后未重跑。E3 要求的反证一侧目前打不开可信产物。"
+    },
+    {
+      "id": "C5",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "runner.py:152-166 run_gate() 把图原样交给 dag-gate.mjs --json，不自写判据（代码位置核实）；fixtures/graphs/g-bad.json 用旧字段 budget.max_agents，匹配 DELIVERY ⑤ 的 REJECTED/BUDGET_RENAMED 输出。runs/plan-20261107-003443/GRAPH.json 逐节点清点：on_fail.retry=1 的节点为 s_code/c_iface/w_script/w_docs/integ/k_hash/k_count 共 7 个（对应 7 条 UNSUPPORTED_RETRY）；on_fail.then=\"replan\" 的为 w_script/integ/k_hash/k_count 共 4 个（4 条 UNSUPPORTED_REPLAN）；带 when 的仅 w_docs 一个（1 条 UNSUPPORTED_WHEN）。12=7+4+1，与 DELIVERY 声称的计数精确吻合，且该 GATE.json 显示 gate.ok=true/errCount=0（证实「好图但超能力」与「坏图」是两条不同路径，未混淆）。"
+    },
+    {
+      "id": "C6",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "runner-mutate.py 源码核实：每个变体锚点计数校验(n!=1 则 exit 9)、替换前后 sha256 对比、finally 块里 write_bytes(orig_bytes) 恢复、还原后再比 sha256，逻辑自洽；scripts/runner.py 当前内容未处于变异态（compare() 等判据行完整），与「最终 sha256==原始」的声明一致。D2(rc)+D3(FAIL行文本) 两类独立观察已够 E2，叠加「还原后复跑全绿」的反证满足 E3。唯一瑕疵（不影响达标，降级为 nonblocking）：DELIVERY 把 src_sha256_before/after 这一组哈希也计成第三个独立 D 类别（D1），但那组哈希实际证明的是「变异确实发生了」这一前提，不是「测试真的变红」这个结论本身的观察——D2+D3 已经单独够格，这个标注不影响结论但归类不够精确。"
+    },
+    {
+      "id": "C7",
+      "type": "judgment",
+      "status": "fail",
+      "claimed_strength": "E1",
+      "strength_met": false,
+      "evidence": "DELIVERY 自己写的可反驳条件是「若 NODES/w_write.json 的 node_diff 与 DIFF.json 矛盾，C7 就塌」。我没找到那种矛盾，但找到了同等级别的塌陷：runs/_harness/{overclaim,underclaim,honest,cmdfail}/NODES/*.json 这几份被 DELIVERY 指名要我自己核的「证据包」，打开后内容与它们各自场景该证明的结论（超报被抓/少报被抓/只读硬拦/cmd真跑失败）直接相反。验收官自己核的时候，核出来的是反证，不是正证——判断类条目的门槛就是「打开后站得住」，这个没站住。"
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "what": "DELIVERY 引用的 5 个 fixture 证据包里有 4 个（runs/_harness/{overclaim,underclaim,honest,cmdfail}）当前处于『被变异测试写脏、未重跑恢复』的状态，内容与 DELIVERY 的描述相反",
+      "why": "违反 C2/C3（underclaim 一侧）/C4（反向一侧）/C7：这些证据包被 DELIVERY §二①b 明确点名为 C2/C3/C4 的『正向证据』，并被 §六 要求验收官自己核（C7 的判据）。实际打开后：overclaim 目录显示 checks.overclaim=[]/ok=true（应为超报被点名/FAIL）；underclaim 目录显示 checks.underclaim=[]/ok=true（应为少报被点名/FAIL）；honest 目录的 s_recon.permission_mode=\"workspace-write\"（kind=scout，应为 read-only）；cmdfail 目录 cmd_accept=[]（该图 accept.run 是 exit(1)，应记 exit_code=1/ok=false）。根因：runner-mutate.py 的 5 个变异步骤分别借用了同名 run-id（'overclaim'/'underclaim'/'honest'/'cmdfail'）跑真实的 runner.py（当时处于被改坏的状态），测试完只把 scripts/runner.py 源文件的字节还原，却没有重跑 harness 把这几个 run-id 目录的内容刷新回『未变异』的正确结果——只有 'oos' 这个 run-id 因为被 mutate.py 最后『还原后复跑』那一步顺带重跑而碰巧是对的。这不是功能代码的缺陷（我独立读过 compare()/run_cmd_accept() 源码，判据逻辑是对的，g3-live/probe-ro/probe-w 等未被污染的真实证据包也证明功能本身工作正常），而是交付包『留下的可核验证据』与『实际功能』不一致——对一份以『验收官能自己核』为核心卖点的交付物，这恰好打中了它自称的要害。DELIVERY 的『弱在哪』10 条里完全没提这个风险，是本该被第 4 轮自查抓到但漏掉的同类问题（它抓到过 rmtree 误删证据包，但没想到 mutate.py 本身也会留下脏证据）。",
+      "evidence": "runs/_harness/overclaim/NODES/w_write.json（declared=[\"notes.md\"], node_diff.changed_paths=[], checks.overclaim=[], ok=true）；runs/_harness/underclaim/NODES/w_write.json（declared=[], node_diff.changed_paths=[\"notes.md\"], checks.underclaim=[], ok=true）；runs/_harness/honest/NODES/s_recon.json（kind=scout, permission_mode=\"workspace-write\"）；runs/_harness/cmdfail/NODES/w_write.json（cmd_accept=[]，对照 fixtures/graphs/g4-cmdfail.json 的 accept.run=\"node -e \\\"process.exit(1)\\\"\"）；对照组 runs/_harness/oos/NODES/w_write.json 是正确的（out_of_scope=[\"OFF-LIMITS.md\"], ok=false），证明只有这一个 run-id 被 mutate.py 的收尾步骤带正了。"
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "C6 把 src_sha256_before/after（证明『变异真的发生了』这一前提）也算成支撑『变异对照真的会红』这个结论的第三个独立 D 类别，严格说那组哈希观察的是另一件事（变异是否执行），不是结论本身；不影响 C6 已经靠 D2(rc)+D3(FAIL行)+反证够格 E3，只是归类可以更精确"
+    },
+    {
+      "id": "N2",
+      "what": "DELIVERY §二③『盘上核对：...runs/probe-w 之后内容为 probe-from-workspace-write』这句现在打不开了——tasks/DAG-2026-11-06/fixtures/sandbox/PROBE.txt 当前在工程里不存在（Glob 全工程未命中 **/PROBE.txt）。不影响 C1 判定，因为 runs/probe-w/NODES/w_probe.json 的 tool_result 原文（Get-Content 回读结果 \"probe-from-workspace-write\\r\\n\"）与 DIFF.json 本身已经是独立、仍可打开的证据；但『盘上核对』这句现在是一个查无实据的断言，应改成指向 JSON 产物而不是『盘上』，或者重新跑一次该探针留一份可核的磁盘状态"
+    }
+  ],
+  "rework_brief": "1) 修 runner-mutate.py（或 runner-harness.py）：让 5 个变异步骤不要借用 'overclaim'/'underclaim'/'honest'/'cmdfail' 这几个会被 DELIVERY 当正向证据引用的 run-id——改用专用前缀（例如 '_mut-overclaim'）跑变异测试，或者在 mutate.py 全部变异结束、源码确认还原后，对这 4 个场景各补一次 `runner-harness.py --only X` 把 runs/_harness/{overclaim,underclaim,honest,cmdfail} 重新跑成『未变异』的正确结果（honest 场景需确认 s_recon.permission_mode 变回 read-only，cmdfail 场景需确认 cmd_accept 记到 exit_code=1/ok=false）。2) 重新验证：Read 打开这 4 个目录下对应的 NODES/*.json，确认 checks/ok/permission_mode/cmd_accept 字段与 DELIVERY declaration 一致后再提交。3) DELIVERY『弱在哪』补一条：说明 runner-mutate.py 对共享 run-id 的副作用，以及后续谁要重跑这些脚本时的正确顺序（先跑 harness 留正向证据，再跑 mutate，再补跑一遍对应场景刷新证据）。4) N2：把『盘上核对』那句改成指向 NODES/w_probe.json 的 tool_result 原文，或者重新生成一次 probe-w 的磁盘产物。改完后 C2/C3/C4/C7 这四条、以及受其牵连的 B1 需要重新核验。",
+  "escalate_question": "",
+  "reviewer_notes": "我只有 Read/Grep/Glob，没有执行 python/node，DELIVERY 里贴的全部终端输出文本（①①b②③~⑥的 stdout）本身我无法独立复现，只能核对代码逻辑与留存在磁盘上的证据包是否自洽；真实 headless 证据（g3-live/probe-ro/probe-w）独立核验通过，未受 B1 影响。decisions/self/self-20261107-01.md 里的 mtime 对照表我没有工具可查文件实际 mtime，按契约要求对这部分内容记 unverified，不计入本次裁决依据。"
+}

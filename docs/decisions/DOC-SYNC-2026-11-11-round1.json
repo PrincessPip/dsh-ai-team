@@ -1,0 +1,51 @@
+{
+  "unit": "DOC-SYNC-2026-11-11",
+  "round": 1,
+  "date": "2026-11-11",
+  "reviewer": {
+    "model": "claude-opus-5.5",
+    "channel": "claude -p（Claude 订阅通道）",
+    "note": "当时通道可用；同一晚稍后（第 2 轮送审）该账号被 Anthropic 人机验证拦住，原文 REVIEW-round2-EGRESS-FAILED.txt。"
+  },
+  "verdict": "rework",
+  "score": 0.8,
+  "blocking": [
+    {
+      "id": "B1",
+      "what": "K1 写明「引擎失败与超时也必须生成」，DELIVERY §一.3 也说「判据全部有守护」，但这条一个守护用例都没有。T53 名为「跑到一半被杀」，假引擎实际是 exit 0 正常退出；T54 走的是越界分支。",
+      "evidence": "把 scripts/fire-chief.py 里 write_machine_artifacts(...) 改成 `... if code != EXIT_CALL else []`，跑 selftest.py --fire m7_skip_on_call_fail.py → RESULT=ALL_PASS，54/54",
+      "must_fix": "加两条用例：假引擎 exit 1、假引擎挂住被 --timeout 杀，各自断言 rc=3 且三件存在、TRANSCRIPT 含 status=started 那条；变异台加 m7 这一格。改完把 DELIVERY §一.3 的说法改实。"
+    },
+    {
+      "id": "B2",
+      "what": "fire-artifacts 登记的 §五 那处副本按整张表抽 token（含「内容」列），删掉 TRANSCRIPT.log 那一行时，VERIFY.md 行里的引用会把它补回集合，闸门照样判 OK。",
+      "evidence": "镜像中删掉 INC-TEMPLATE.md 里以 \"| `TRANSCRIPT.log` |\" 开头的行 → doc-sync rc=0，copy #1 仍抽到 4 项。对照组删 VERIFY.md 行 → rc=1。",
+      "must_fix": "只抽第一列（加一个按行首 \"| `xxx` |\" 抽取的 token 类型，或把 locate 改成只圈第一列）；selftest-doc-sync 加「删一行、但别处还引用它」的反证；mutate-doc-sync 加对应的一格。"
+    }
+  ],
+  "nonblocking": [
+    {"id": "N1", "what": "登记表字段类型错（file 是数字、locate 是列表）时抛未捕获异常，Python 退出码 1，与 MISMATCH 撞码。这违反 doc-sync.py:40「登记表不合法一律 exit 2」。", "evidence": "r_file_int → TypeError: unsupported operand type(s) for / rc=1；r_locate_list → TypeError ... unhashable type: 'list' rc=1"},
+    {"id": "N2", "what": "机器缺件那条报法（「fire-chief.py 的 bug」）没有任何断言。m2（缺件只按工人那件算 exit 6）存活。", "evidence": "m2_only_worker_missing_counts 跑 selftest 全绿；selftest.py 与 mutate-fire-chief.py 里都搜不到「的 bug」/ machine_missing"},
+    {"id": "N3", "what": "引擎失败和机器缺件同时发生时，exit 3 把脚本 bug 盖掉了，stderr 只报「引擎调用失败」。", "evidence": "探针 H：rc=3，TRANSCRIPT.log ABSENT，META missing=[\"TRANSCRIPT.log\"]"},
+    {"id": "N4", "what": "三处旧副本没跟上新分工：TRIGGER-POLICY.md:189-190 / FIRE-CHIEF.md:105 / INC-TEMPLATE.md:213-214。", "evidence": "Grep 原文见各行"},
+    {"id": "N5", "what": "INC-TEMPLATE.md §5.6 的第 2 条路是「缺 VERIFY.md 时……写进 VERIFY.md 越界观察」，与同节「禁止事后造文件」自相矛盾。", "evidence": "INC-TEMPLATE.md:201-203 vs :207"},
+    {"id": "N6", "what": "空的 VERIFY.md（0 字节）也是 exit 0。K4 把这算作设计内，但台子上没有用例把这个行为钉住。", "evidence": "探针 G：VERIFY.md present 0B，rc=0"}
+  ],
+  "per_k": {
+    "K1": "PASS", "K2": "PASS", "K3": "PASS", "K4": "PASS", "K5": "PASS", "K6": "PASS",
+    "K7": "PASS", "K8": "FAIL", "K9": "PASS", "K10": "FAIL", "K11": "PASS", "K12": "PASS"
+  },
+  "new_findings": [
+    "locate 命中多个区域时取并集：同表头的第二张旧表能补回被删的项",
+    "同一区域内的交叉引用会掩盖删行（B2）",
+    "登记表类型错时抛异常退出 1，与 MISMATCH 撞码（N1）",
+    "exit 3 盖掉机器缺件（N3）",
+    "三处旧副本（N4）",
+    "T53 名字写「被杀」，实际测的是 exit 0 的半截事件流"
+  ],
+  "disposition": {
+    "action": "八条全修；台子 50→58 例、变异台 26→35 格、闸门自验 18→23 例、闸门变异 11→13 格",
+    "next": "第 2 轮送审；但订阅通道当晚被账号验证拦住，改走 OpenRouter 按量通道"
+  },
+  "raw": "tasks/DOC-SYNC-2026-11-11/REVIEW-raw.txt"
+}

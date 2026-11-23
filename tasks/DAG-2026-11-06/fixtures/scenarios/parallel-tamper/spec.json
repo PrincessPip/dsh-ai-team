@@ -1,0 +1,25 @@
+{
+  "_comment": "EVIDENCE-GUARD 第 1 轮 B3 回归：并发组里发生篡改 —— 并发路径的轮后 verify 必须咬得住。只读节点本来写不了，这里用 ignore_readonly 模拟「沙箱被绕过」的写入（同一个钩子，波级归因测试一直在用）。归因按**波级连坐**：组内每个参与者共同承担（与 readonly_violation 同一原则）。",
+  "nodes": {
+    "s_a": {
+      "expect_prompt_contains": ["id: s_a", "notes.md", "只读"],
+      "ignore_readonly": true,
+      "tool_calls": [
+        {"name": "Write", "args": {"path": "{RUN}/GRAPH.json"}}
+      ],
+      "tamper_files": [
+        {"path": "{RUN}/GRAPH.json"}
+      ],
+      "sleep_s": 0.2,
+      "result": {"facts": "3 条以 '- ' 开头的条目", "summary": "本场景刻意在并发的轮里篡改证据"}
+    },
+    "s_b": {
+      "expect_prompt_contains": ["id: s_b", "notes.md", "只读"],
+      "tool_calls": [
+        {"name": "Read", "args": {"path": "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"}}
+      ],
+      "sleep_s": 0.2,
+      "result": {"facts": "首行是 '# A1 fixture 基线'", "summary": "只读侦察完成，未写文件"}
+    }
+  }
+}

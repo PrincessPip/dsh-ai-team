@@ -1,0 +1,25 @@
+{
+  "_comment": "重试：第 1 次撒谎（报了 changed 但没写文件）→ 被抓 → 第 2 次诚实。断言最终 ok 且 attempts=2，且第 1 次的 overclaim 仍留在证据里。",
+  "nodes": {
+    "w_try": {
+      "expect_prompt_contains": ["id: w_try", "允许改动的文件"],
+      "attempts": [
+        {
+          "tool_calls": [{ "name": "Write", "args": { "path": "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md" } }],
+          "result": { "changed": ["tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"], "summary": "说改了，其实一个字没动" }
+        },
+        {
+          "tool_calls": [{ "name": "Write", "args": { "path": "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md" } }],
+          "write_files": {
+            "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md": "# A1 fixture 基线\n\n- 第一行\n- 第二行\n- 第三行\n- retry 成功\n"
+          },
+          "result": { "changed": ["tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"], "summary": "这次真改了" }
+        }
+      ]
+    },
+    "k_after": {
+      "expect_prompt_contains": ["id: k_after"],
+      "result": { "verdict": "pass" }
+    }
+  }
+}

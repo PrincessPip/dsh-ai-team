@@ -1,0 +1,102 @@
+{
+  "v": 1,
+  "plan_id": "plan-a1-fixture-g-evidence",
+  "budget": {
+    "max_calls": 10
+  },
+  "nodes": [
+    {
+      "id": "s_recon",
+      "kind": "scout",
+      "do": "读 tasks/DAG-2026-11-06/fixtures/sandbox/notes.md，数出以 '- ' 开头的条目数，写进 facts。不写任何文件。",
+      "after": [],
+      "ctx": {
+        "read": [
+          "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+        ]
+      },
+      "out": [
+        "facts",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "facts 里必须写清 '- ' 条目数"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "abort"
+      }
+    },
+    {
+      "id": "w_write",
+      "kind": "work",
+      "do": "往 tasks/DAG-2026-11-06/fixtures/sandbox/notes.md 末尾追加一行 '- A1 fixture 写入行'。",
+      "after": [
+        "s_recon"
+      ],
+      "ctx": {
+        "read": [
+          "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+        ],
+        "from": [
+          "s_recon.facts"
+        ]
+      },
+      "writes": [
+        "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+      ],
+      "out": [
+        "changed",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "changed 恰好是 ['tasks/DAG-2026-11-06/fixtures/sandbox/notes.md']"
+        },
+        {
+          "type": "cmd",
+          "run": "node -e \"process.exit(0)\"",
+          "expect": "exit0"
+        }
+      ],
+      "on_fail": {
+        "retry": 1,
+        "then": "abort"
+      }
+    },
+    {
+      "id": "k_check",
+      "kind": "check",
+      "do": "只读核对：notes.md 最后一行是否为 '- A1 fixture 写入行'。verdict 只能是 pass 或 fail。",
+      "after": [
+        "w_write"
+      ],
+      "ctx": {
+        "read": [
+          "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+        ],
+        "from": [
+          "w_write.changed"
+        ]
+      },
+      "out": [
+        "verdict",
+        "notes"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "verdict 只能是 pass 或 fail"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "abort"
+      }
+    }
+  ]
+}

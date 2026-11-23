@@ -1,0 +1,47 @@
+{
+  "unit": "FIRE-CHIEF-2026-11-07",
+  "round": 3,
+  "date": "2026-11-07",
+  "trigger": "mandatory（#5 返工后）",
+  "channel": "claude -p --model opus --allowedTools Read,Grep,Glob,Bash (stdin prompt, 指路式)",
+  "verdict": "rework",
+  "confidence": 0.85,
+  "blocking": [
+    {
+      "id": "B1",
+      "what": "DELIVERY.md C9（原 :80-81）未被上一轮的「统一行号重核」覆盖：行号仍是旧的 `:277-278`（实为 `:283-284`），且理由仍只写「subagent 只有 openrouter 一条路由」。",
+      "why": "契约 §三 要求 pass = 全部 pass。R2-N2 是工人对自己修复的事实性声明（「0 miss」），事实上是假的，按 §二·五 应判 fail。这同时是同一误导措辞的第三次出现（第 1 轮 TRIGGER-POLICY、第 2 轮 FIRE-CHIEF、第 3 轮 DELIVERY），而工人在 DELIVERY §八 自己写了「『我说我扫过了』不能算证据」。",
+      "evidence": "DELIVERY.md:80 理由；DELIVERY.md:81 `:277-278`；TRIGGER-POLICY.md:283-284 才是那两行；decisions/FIRE-CHIEF-2026-11-07-round2.json:15 已给出 :283-284，:28 却声称 0 miss"
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "「29 对精确替换、0 miss」只写在 round2.json:28，DELIVERY 没有替换清单也没有命令输出，按 §二·五 是 E0。",
+      "disposition": "fixed",
+      "how": "改成可复现核对：脚本把 DELIVERY 里每一处行号引用对应的实际行内容打印，落盘 tasks/FIRE-CHIEF-2026-11-07/LINENO-CHECK.txt（49 处，OUT_OF_RANGE=0）"
+    },
+    {
+      "id": "N2",
+      "what": "TRIGGER-POLICY.md:375 的 v2.0.1 写「验收官 N2 / N4」没写轮次，有歧义（N2 = 第 1 轮，N4 = 第 2 轮）。",
+      "disposition": "fixed",
+      "how": "改成 R1-N2 / R2-N4"
+    },
+    {
+      "id": "N3",
+      "what": "TASK.md:37 C9 的验收标准仍用单一理由，照着任务书核的人会被带回旧口径。",
+      "disposition": "fixed",
+      "how": "C9 已加注「理由扩为两条」；TASK 冻结不改"
+    }
+  ],
+  "criteria": [
+    { "id": "R2-N1", "status": "pass", "evidence": "FIRE-CHIEF.md:45-50 两条硬事实；与 TRIGGER-POLICY.md:152-154 / :283 一致" },
+    { "id": "R2-N2", "status": "fail", "evidence": "见 B1：自称 0 miss 而实际漏了 C9" },
+    { "id": "R2-N3", "status": "pass", "evidence": "INC-TEMPLATE.md:19 改成「本单上限……不是额度闸」" },
+    { "id": "R2-N4", "status": "pass", "evidence": "TRIGGER-POLICY.md:375 补了 v2.0.1（措辞歧义见 N2）" },
+    { "id": "R3-NEW", "status": "fail", "evidence": "DELIVERY.md C9 仍只写单一理由，与 TRIGGER-POLICY.md:150-156 / FIRE-CHIEF.md:49 冲突 —— 同一误导措辞第三次出现" }
+  ],
+  "verdict_inconsistency_resolved": "验收官本轮主动纠正了第 2 轮的不一致：criteria 判 fail → 进 blocking → verdict 判 rework，并在 reviewer_notes 里说明「这次我让裁决严格跟随 criteria，没有再犯那个不一致」。第 2 轮那个不自洽仍待伙伴裁定是否补契约规则，它没有代为拍板。",
+  "worker_accepts": "all",
+  "worker_comment": "B1 判得对，没有辩解空间。最难看的一点：我在 round2.json 里报了一个假的「0 miss」，而它恰好是我在 DELIVERY §八 自己写下「『我说我扫过了』不能算证据」之后的下一轮。已把『精确替换 N 处』这类 claim 的举证要求（清单 + 核对输出落盘）写成教训。"
+}

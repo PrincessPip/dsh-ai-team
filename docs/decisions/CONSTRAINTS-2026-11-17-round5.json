@@ -1,0 +1,166 @@
+{
+  "verdict": "escalate",
+  "confidence": 0.99,
+  "readonly_enforcement": "snapshot_only",
+  "evidence_root": "%USERPROFILE%/AppData/Local/Temp/constraints-r5-independent-a2hayqxq",
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "probe.py：从第四轮事件记录还原的9个反例及4个自造反例，单独无标签运行均exit 1/NO-PROVENANCE；加E-001后exit 0。但相邻独立列表项会继承前一项标签：adjacent-clauses抽取2条、registered=2、exit 0；插入空行的对照为exit 1。完整输入输出见probe-results.json。",
+      "judgment": "[判断类，E1] 语义分类已移除，但标签没有可靠绑定到具体条款；仍存在无需给产品禁令显式标错标签就能放行的路径。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "probe.py将建议器改为恒返回None，13个无标签反例的退出码和登记结果均不变；含“只读”的反例仍被拒。scripts/constraints-check.py:695「\"suggestion\": suggest_exemption(text, registry)」只构造违规信息。M32接入建议器后准确使T20/T22/T25/T28/T30变红。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "probe.py：未知E/I标签均exit 1/UNKNOWN-ID，proposed及空字符串quote均exit 1/NOT-APPROVED，缺guidance和X-001均exit 3；但豁免ID改为Evil、Invalid、E001或I_001，仍exit 0。scripts/constraints-check.py:275「if e[\"id\"][0] not in (\"E\", \"I\"):」仅检查首字母，未满足E-/I-前缀要求。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立集合核对：681→763，新增82、移出0，round5-plan路径登记0条；本轮六份改动文档的27个baseline命中全部能在前像找到同文，未发现本轮新增文本混入。T35及M21验证带标签行不登记；独立tag-baseline亦写入0条。见baseline-audit.json、baseline-changed-scope.json。",
+      "scope": "按简报限定，仅核提供的文件及baseline字面；其他单元的历史源文件未验证。"
+    },
+    {
+      "id": "C5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立复跑SELFTEST为61/61、exit 0；MUTATE机器JSON为32格全部OK，所有实际红集与预期集合完全相等，void=0，含M10/M15/M26–M32。全套结果已落盘，外层打印随后遇GBK编码错误；另用UTF-8复跑M32，干净镜像61/61、M32准确命中5例、child exit 0。见MUTATE-independent.txt及M32-exit-confirmation.json。",
+      "scope": "通过仅说明既定变异有效，不代表覆盖本次新增缺陷。"
+    },
+    {
+      "id": "C6",
+      "type": "fact-consistent",
+      "status": "unverified",
+      "claimed_strength": "E2",
+      "strength_met": false,
+      "evidence": "make-preimages-round5.py --verify实际exit 0、12份失败0份；独立计算12份SHA256全部匹配清单。仅损坏TEMP测试副本中的一份前像后，--verify实际exit 1。见preimage-hashes.json、preimages.txt及preimages-negative.txt。",
+      "judgment": "[判断类，E1] 前像内容完整性和严格校验成立；清单及交付自述不能独立证明“先落前像再改代码”的历史顺序。",
+      "subresults": {
+        "content_integrity": "pass",
+        "strict_verification": "pass",
+        "historical_order": "unverified"
+      }
+    },
+    {
+      "id": "C7",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立--defs输出defs=6、violations=0、exit 0；直读注册表及AGENTS/TRIGGER定义一致。T61改坏定义被拒，M22使该负例准确变红。见defs.txt及MUTATE-independent.txt。"
+    },
+    {
+      "id": "C8",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "T09–T14、T56–T59复跑通过，M01–M09准确命中预期红集；独立对照禁限词、前置边界、长度阈值、排除目录及四项抽取正则，均与第五轮前像一致。见baseline-changed-scope.json。",
+      "scope": "仅证明要求中的抽取行为未回退；既有漏抽取边界保留。"
+    },
+    {
+      "id": "C9",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立失败输出包含原因、改法、原则及全部10项豁免；T41替换guidance后输出随之改变，M23–M25准确命中相关断言。原样与建议器置空的对照只改变建议文案；suggest_exemption在返回ID前检查表内存在性。见probes/plain-13/output.txt和MUTATE-independent.txt。"
+    },
+    {
+      "id": "C10",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "inventory原文/by及无效出处registered=false、日志append、条目用量和列表查询均通过。但stats-repro.py两次实际扫描同一句，将行尾标签E-001改为I-001后，runs=2、两项用量各1，drift却为{}；标签改放上一行的对照能检测漂移。见stats-real-history.json及stats-previous-line-control.json。"
+    },
+    {
+      "id": "C11",
+      "type": "fact-consistent",
+      "status": "unverified",
+      "claimed_strength": "E2",
+      "strength_met": false,
+      "evidence": "已独立生成并阅读checker-diff.txt，核对DELIVERY.md §5.7：最终版本删除语义分类器，抽取词表、扫描范围及排除规则未增加例外，本轮新草案也未进入baseline。材料未包含三次草案调整期间的连续版本或执行记录。",
+      "judgment": "[判断类，E1] 最终改动未发现针对自有文本新增的判据例外；不能从两个端点证明中间过程始终未改判据，也不能据此判断作者动机。",
+      "subresults": {
+        "final_change_traceability": "pass",
+        "intermediate_edit_history": "unverified"
+      }
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "claim": "无标签的独立条款能借用相邻条款或引用块中的标签放行。",
+      "why": "违反C1及“只能靠显式标错ID误放行”的交付声明；这是标签归属问题，修复不需要恢复语义词表。",
+      "evidence": "probe.py的adjacent-clauses输入为“- 不冒称通过。[C:E-001]\\n- 禁止复制任何产品副本。”，exit 0且两条均登记为E-001；加入空行后exit 1。quoted-tag也exit 0。scripts/constraints-check.py:671「tag = TAG_RE.search(text) or TAG_RE.search(prev or \"\")」无条件继承上一行。"
+    },
+    {
+      "id": "B2",
+      "claim": "豁免ID校验未落实C3规定的E-/I-前缀。",
+      "why": "坏登记表被当成合法配置继续运行，现有T38/M19只覆盖首字母为X的情况。",
+      "evidence": "probe-results.json中registry-Evil、registry-Invalid、registry-E001、registry-I_001均exit 0；registry-X-001对照为exit 3。对应代码为scripts/constraints-check.py:275。"
+    },
+    {
+      "id": "B3",
+      "claim": "行尾标签改变会改变句式哈希，导致常用标注形式的依据漂移漏报。",
+      "why": "违反C10；T50用人工构造的相同哈希日志，未覆盖真实扫描中更换行尾标签的过程。",
+      "evidence": "运行外部stats-repro.py输出DRIFT_MISSED=True；E-001→I-001两次扫描后drift={}。scripts/constraints-check.py:736「digest(r[2])」将含标签原文作为哈希输入，:520按文件和该哈希归并。"
+    },
+    {
+      "id": "B4",
+      "claim": "C6与C11要求的历史过程断言仍缺独立可核证据。",
+      "why": "内容一致不能替代编辑顺序证据；按契约不能把未验证项计为通过。",
+      "evidence": "12份前像哈希匹配、最终diff可核，但PREIMAGES-ROUND5-SHA256.txt及DELIVERY.md:76「在改任何判据之前跑过」均未附能独立核对顺序的同期记录；三次草案调整的中间版本亦未随包提供。"
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "豁免条目制确实取消了语义自动放行，无需退回关键词分类；10项的scope/covers/not_covers对所列证据与实验用途有明确区分。",
+      "evidence": "已逐项阅读EXEMPTIONS-DRAFT.md及CONSTRAINTS.json，并对照inventory中82条新增baseline原文；其他单元缺源文件上下文，不能把旧分类器认定的82条全部追认为真实E/I。"
+    },
+    {
+      "id": "N2",
+      "what": "交付材料仍有数字与测试覆盖描述漂移。",
+      "evidence": "DELIVERY.md:34写baseline 766，:51写763，实际763；:55写检查器约560行，实际748行。T26–T28不是第四轮最后9个反例中的三条；M32的5个红例包含T30，不能称为T20–T28中5条。检查器与草案还引用不存在的T79。"
+    },
+    {
+      "id": "N3",
+      "what": "改动面扫描和注入预算通过；引用检查仍有一个示例引用未解析。",
+      "evidence": "changed.txt：6文件、34条、违规0；all.txt：所提供副本14文件、62条、违规0。budget.txt：正文50787、渲染51135、无省略截断、exit 0。cite.txt为exit 1，唯一UNRESOLVED是EXEMPTIONS-DRAFT.md:113的示例TASK.md:3，不支撑实际交付论断。"
+    },
+    {
+      "id": "N4",
+      "what": "已声明的边界继续保留：机器不核标签语义或原话真伪，抽取范围有限，历史条款靠baseline；本次不验证缺席单元或18GB主树。",
+      "evidence": "REVIEW-BRIEF.md §5、§7；本次独立扫描仅覆盖提供副本。另测空白字符串quote仍可通过，见probe-results.json的space-quote。"
+    }
+  ],
+  "rework_brief": "保留C方案。将标签绑定到明确条款，跨行支持只用于可识别的同一条款续行，禁止从另一列表项或引用块继承，并加入对应正反例及变异。严格检查E-/I-前缀，补Evil/E001/I_001等用例。漂移统计使用不含出处标签的条款身份，同时保存原文和实际by；以真实连续扫描验证行尾标签切换。补齐第四轮真正的9个反例并校正文档数字、测试编号。C6/C11补同期过程记录；无法补证时保留unverified，不追认历史。",
+  "escalate_red_line": [
+    4,
+    5
+  ],
+  "escalate_question": "[红线4、5] 多轮返工后仍有无出处条款放行路径，历史过程要求也缺证据。请决定历史验收范围：A，保留C6/C11全部要求，补同期记录后复审；B，明确将其收窄为最终内容与行为核验，历史顺序继续标未验证。两种选择均须修复B1–B3。",
+  "reviewer_notes": "送审树前后均432个文件，新增、删除、内容修改均0，重解析点0，见readonly-summary.json；这仅证明两次采样间净内容一致。所有夹具、变异和报告均位于外部TEMP，测试隔离六个目录变量，未调用网络或真实模型；首跑夹具目录tmp命中既有排除规则，改为scratch后复跑，未改被测断言或变异预期。完整变异报告先落盘，随后外层控制台打印编码失败，已独立解析32格结果并补核M32退出码。"
+}

@@ -1,0 +1,93 @@
+{
+  "verdict": "pass",
+  "confidence": 0.95,
+  "readonly_enforcement": "snapshot_only",
+  "scope": "仅验收 TASK.md 定义的检查点一 C1–C6，不代表全功能或生产发布通过。",
+  "evidence_root": "%USERPROFILE%/AppData/Local/Temp/edge-cp1-review-464cb74154754c8faea31b2d77d51c86",
+  "executed_tests": [
+    {
+      "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File <evidence_root>/implementation/run-test.ps1",
+      "output": "status=pass，passed=51，testExit=0",
+      "report": "evidence/cp1-1794775682138.json"
+    },
+    {
+      "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File <evidence_root>/implementation/run-extra.ps1",
+      "output": "8项补测全部通过，status=pass，testExit=0",
+      "report": "EXTRA-RESULT.json"
+    },
+    {
+      "command": "python -B scripts/cite-check.py --files tasks/EDGE-CDP-BROWSER-2026-11-16/DELIVERY.md --strict --out <evidence_root>/CITE-CHECK.txt",
+      "output": "named=4，anchored=4，OK=4，citeExit=0"
+    }
+  ],
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "actual_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立复测报告：starts-about-blank、重复启动拒绝、占用端口拒绝、profile保留及重启均通过；D1进程/profile状态与D2返回结果交叉。FINAL-PROCESSES.json：TEMP profile关联进程数为0；既有Edge PID37204、Chrome PID34836及创建时间与测试前一致。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "actual_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立复测实际监听127.0.0.1:6553归属PID14756；错PID、创建时间、exe、profile及非回环监听的合成反证通过，错实例/端口记录与真实磁盘篡改拒绝通过。补测tampered-endpoint-close-refused通过，拒绝关闭后原进程仍在。源码tasks/EDGE-CDP-BROWSER-2026-11-16/implementation/edge.mjs:147「async verify(record = this.#record)」已直读。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "actual_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立报告正文文件含标题“Edge CDP · 检查点一”、中文和随机nonce，不含HIDDEN_SENTINEL；未知tab拒绝。PNG签名断言通过，直接查看screen-09d96020-7054-4da6-81d1-82384bbee2fd.png确认中文页面真实渲染。补测标题精确匹配，display:none文本未进入正文；固定读取源码与untrustedPageContent=true支持页面注入字样仅作为数据。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "actual_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立复测URL允许/拒绝集合通过；真实跨源302导航被拒，redirect-trap-not-contacted通过。补测跨源图片trapHits=0，file和edge管理页导航返回URL_DENIED，about:blank导航成功。源码tasks/EDGE-CDP-BROWSER-2026-11-16/implementation/edge.mjs:174「const allow=allowedURL(request.url(),this.origin)」已直读；模块未暴露任意JS/CDP或凭据导出方法。"
+    },
+    {
+      "id": "C5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "actual_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立复测：断连观察拒绝、重连读取同一nonce、旧tab失效、关闭后进程/端口消失、profile保留重启、断连状态租期关闭均通过。补测清理结果listeners=[]、ownedPresent=false。源码test.mjs:50「INTERNAL_TEST_DEADLINE」与run-test.ps1:10「if (-not $p.WaitForExit(240000))」确认内部期限和外层截止存在；未实际触发超时强杀分支。"
+    },
+    {
+      "id": "C6",
+      "type": "judgment",
+      "status": "pass",
+      "claimed_strength": "E1",
+      "actual_strength": "E1",
+      "strength_met": true,
+      "evidence": "[判断类] 已直读源码及文档：implementation/README.md:3「不是已经注册的 DSH 工具，不是全功能正式发布」、README.md:35「请求拦截不是整浏览器网络防火墙」、DELIVERY.md:56「这里只证明短时功能与拒绝路径」。首次失败报告确有ERR_MODULE_NOT_FOUND及cleanupError=OWNER_MISMATCH；交付明确依赖、失败历史和未覆盖范围，未用shell退出0替代产品结果。上述相对路径均位于tasks/EDGE-CDP-BROWSER-2026-11-16。"
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "人工新页、worker、断连间隙及Edge后台流量不属于本轮隔离保证；正式接入前仍需补齐。",
+      "evidence": "tasks/EDGE-CDP-BROWSER-2026-11-16/implementation/README.md:35「只覆盖已经登记且连接中的页面」；与TASK及REVIEW-BRIEF限定范围一致。"
+    },
+    {
+      "id": "N2",
+      "what": "240秒超时强杀分支仅完成源码核查，未实测触发；未验证公网出口或长期稳定性。",
+      "evidence": "本次run-test.ps1正常完成，testExit=0；DELIVERY.md:35明确强杀分支未实测，DELIVERY.md:56明确不作长期稳定性断言。"
+    }
+  ],
+  "reviewer_notes": "工程内仅执行读取、检索和哈希核查；浏览器运行、补测脚本、profile及证据均位于上述TEMP目录。4个原始执行文件的副本哈希、复测报告哈希与输入源码全部一致，最终TEMP关联浏览器进程数为0。输入树前后完整快照及外层验收退出码由父级后核，本裁决不预签其结果。"
+}

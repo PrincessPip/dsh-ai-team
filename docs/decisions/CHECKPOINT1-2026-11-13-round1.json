@@ -1,0 +1,66 @@
+{
+  "verdict": "pass",
+  "confidence": 0.91,
+  "readonly_enforcement": "snapshot_only",
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "亲跑 run-checks.py targeted reviewer1 与 boundary reviewer1：12+3项全部符合预期。两种准备延迟均使旧版27/1、新版27/0；自洽伪造收尾时间为27/1，唯一失败是 started_at <= first attempt +2s。2秒容差未放宽，未追认首轮历史根因。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "定向复跑中缺ok、缺permission_mode及skip记录均出现对应FAIL，无KeyError；预期失败节点缺ok仍为6/1。test-probe-guard.py --tag reviewer1四场景符合预期：既有文件/目录哨兵保留，移除保护的变异破坏哨兵并被检出。所有测试在独立TEMP副本及隔离用户目录中执行。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "runtime-effort.py --verify退出0：两次真实插件调用的唯一cwd、thread、turn与日志存档一致，turn及sampling均为gpt-6.1-sol/high。只读核查安装插件的配置→provider→wire→turn/start传递；亲跑协议43/0、补丁5/0、兼容守卫6/0，含错误effort及补丁漂移反例。结论仅限客户端实际请求配置。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "核查四个生产入口的argv和requested元数据，岗位值符合合同。亲跑roles/mutate.py reviewer1：38 caught、0 MISSED、0 VOID，基线及38次恢复均通过完整八项测试；review测试实际核对落盘快照及文本元数据。原537/1和27/0历史输出SHA与PREPARE基线一致。"
+    },
+    {
+      "id": "C5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "亲跑完整runner为537/0，manager为191/0，Gate为284/0；经理守卫干净基线通过，两项变异准确拒绝。9份备份匹配基线，三个最终测试源码匹配交付SHA，四个生产入口及Gate匹配开工基线。本次审阅树1390个文件前后内容一致，added/deleted/modified均为空；完整扫描1532项、errors=[]。外层结束后生成的机器报告仍须成功，才能登记最终验收通过。"
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "旧runner-mutate全套1500秒超时，本次未重跑，不能记作60/60通过。生产runner/Gate未改，本轮必要定向反证通过，因此不阻塞此次收尾。"
+    },
+    {
+      "id": "N2",
+      "what": "早期三次测试触及真实用户目录探针且没有前像，历史影响无法追认；后续保护及隔离复跑通过不消除这项历史不确定性。"
+    },
+    {
+      "id": "N3",
+      "what": "证据强度采用账本第345–346行的“可执行类E3候选”声明；建议在DELIVERY中按C1–C5展开对应关系。引用检查refs=0，仅表示没有待检查引用，不代表引用覆盖完整。"
+    }
+  ],
+  "rework_brief": "",
+  "escalate_question": "",
+  "escalate_red_line": null,
+  "reviewer_notes": "独立复跑输出保存在 %USERPROFILE%/AppData/Local/Temp/checkpoint1-independent-review-kn4_eor6，审阅工程未修改，安装插件仅只读检查。未调用员工模型、未跑新GPT整链，也未验证服务端内部推理量或未来调用恒定性。本裁决须与外层随后发布的快照机器报告共同使用，任一失败均不得登记通过。"
+}

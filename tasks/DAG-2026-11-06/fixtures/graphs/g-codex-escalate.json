@@ -1,0 +1,29 @@
+{
+  "v": 1,
+  "plan_id": "plan-codex-escalate",
+  "budget": {
+    "max_calls": 4
+  },
+  "nodes": [
+    {
+      "id": "c_look",
+      "kind": "scout",
+      "do": "【台子专用图】这个节点由 `fixtures/fake-codex/codex.js` 扮演，不调任何模型。它首次不给 <RESULT>（判 fail），escalate 之后才给。",
+      "after": [],
+      "out": [
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "summary 非空"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "escalate": "integrate",
+        "then": "abort"
+      }
+    }
+  ]
+}

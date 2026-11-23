@@ -1,0 +1,120 @@
+{
+  "verdict": "pass",
+  "confidence": 0.94,
+  "readonly_enforcement": "snapshot_only",
+  "evidence_root": "%USERPROFILE%/AppData/Local/Temp/constraints-r8-independent-t67cp_5n",
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立复跑 T20–T29 通过；另测12组成对句子及32组跨块组合，无本行标签均exit 1，加E-001均exit 0。全部独立探针106/106符合预期，见probe.py、probes.json。",
+      "judgment": "[判断类，E1] 上轮跨块标签继承缺陷在本次测试中已关闭；判定仍不核标签语义。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "“全程只读，不改任何文件”命中建议器但exit 1；禁用建议器后仍exit 1。M32接入建议器后，实际红集与预期8例完全一致。见probes/sentence-11、probes/suggest-disabled及mutate.txt。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立未知E/I/P标签均exit 1/UNKNOWN-ID；proposed及空quote均exit 1/NOT-APPROVED；缺guidance及畸形id均exit 3。M15、M34红集准确匹配，见probes.json、mutate.txt。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "按路径与文本哈希核得baseline 681→763，新增82、移出0；草案登记0条，本单元DELIVERY的14条登记均在第5轮前像找到同文。本轮39个baseline命中均匹配第8轮前像；T35及M21通过。见baseline-audit.json和命令输出。",
+      "scope": "结论限于提供的文件；82条新增登记中62条缺源文件上下文，未追认其完整历史来源。"
+    },
+    {
+      "id": "C5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立运行constraints-selftest.py：68/68、exit 0；constraints-mutate.py：干净镜像全绿，34/34、void=0、exit 0。逐项解析确认全部实际红集等于预期，包括M10/M15/M32/M33/M34/M35。见selftest.txt、mutate.txt、mutate-summary.json。"
+    },
+    {
+      "id": "C6",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "独立SHA256重算12/12匹配清单；--verify退出0。逐份重算12项unified diff，全部与round8-diff.txt一致；另在临时夹具损坏一份前像，--verify退出1、失败1份。见audit.json、preimages.txt、preimage-negative.txt。",
+      "judgment": "[判断类，E1] 前像内容完整性与所列端点差异成立；不据此证明编辑先后顺序。"
+    },
+    {
+      "id": "C7",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "--defs独立运行exit 0、defs=6、violations=0；仅改坏临时副本的I定义后exit 1、violations=1。注册表三态定义与前像一致。见defs.txt、defs-negative.txt、audit.json。"
+    },
+    {
+      "id": "C8",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "T09–T14、T56–T59通过，M01–M09准确命中预期红集；独立围栏、缩进代码、引用、划线、词内假阳性和超长行探针均符合预期。AST核验抽取逻辑未变，见probes.json、mutate.txt、audit.json。"
+    },
+    {
+      "id": "C9",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立违规输出包含原因、改法、原则和全部10项豁免；移除I-005后不再建议该id。T41验证guidance随注册表改变，M23–M25准确命中断言。见probes/suggest-absent/stdout.txt、selftest.txt、mutate.txt。"
+    },
+    {
+      "id": "C10",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立inventory保留原文和by，未批准条目标记registered=false；真实连续扫描将E-001改为I-001后日志追加为2行，stats记录两项各1次及依据漂移。--list-exemptions列10项，M26–M31及M35通过。见inventory.jsonl、probes、stats-real.json、exemptions.txt、mutate.txt。"
+    },
+    {
+      "id": "C11",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "检查器、断言台、变异台去除docstring后的AST均与前像一致；豁免表10项逐项未变；--changed-from实跑7文件、48条、0违规，依据均为本行标签或baseline。另从实际CASES/MUTATIONS提取68/34个编号，现行引用无缺失，历史引用27处逐项复核；19处的文案误记见N1。见audit.json、changed.txt、inventory.jsonl、ids-audit.json。",
+      "judgment": "[判断类，E1] 最终实现未发现为本单元新增的放行例外；作者动机和中间编辑过程不作裁决。"
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "claim": "事实漂移尚未完全清理，但不改变本轮核心行为核验结果。",
+      "evidence": "REVIEW-BRIEF.md:92、DELIVERY.md:56写“历史编号19处”，独立核验及CITED-IDS-R8.txt实际均为27处；DELIVERY.md:84写“--stats的退出码是1”，独立实跑为0；REVIEW-CONTRACT.md:182写“三轮里其余判据都过了”，与第7轮裁决C1=fail不符。另scripts/constraints-selftest.py:13仍写“T36用变异M77”，实际T36是schema校验，现行变异表没有M77。"
+    },
+    {
+      "id": "N2",
+      "claim": "baseline生成仍读取上一行标签，可能漏登记本行无标签条款；属于保守误拒，不会产生无出处放行。",
+      "evidence": "scripts/constraints-check.py:659–661仍检查TAG_RE.search(r[3])。独立夹具“> 示例 [C:E-001]\\n- 禁止复制任何产品副本。”重建输出entries=0、skipped_tagged=1，随后扫描仍exit 1。见probes/baseline-adjacent/write.txt及after.txt。"
+    },
+    {
+      "id": "N3",
+      "claim": "验收结论限于提供的送审副本及已声明的抽取边界。",
+      "evidence": "副本--all实跑64条、0违规；不能替代18GB主树351文件、772条的独立复验。新增baseline中62条缺源文件上下文；标签语义、quote真伪及抽取范围外文本不由闸门验证。见all.txt、baseline-audit.json及REVIEW-BRIEF.md §5、§7。"
+    }
+  ],
+  "rework_brief": "",
+  "reviewer_notes": "历史编辑顺序保持unverified，history-order: out-of-scope，不列blocking；按v0.9只裁最终内容与行为。全部测试、变异、夹具和报告均在另建TEMP目录内执行，隔离六个目录环境变量，未调用网络或真实模型。送审树前后均479文件、598路径条目，新增、删除、内容及类型变化均0，重解析点0，见readonly-summary.json；此为采样核验，最终入账仍须合并外层验收入口的机器报告。"
+}

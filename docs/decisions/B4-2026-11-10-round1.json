@@ -1,0 +1,97 @@
+{
+  "verdict": "rework",
+  "confidence": 0.88,
+  "criteria": [
+    {
+      "id": "S1-K4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "RUN.json.parallel.groups[0].rounds[0].spans 手算 overlap=89.886/wall=92.664/serial=182.55；runner.py:1002-1004 逐节点打点，:409-417+:1607-1612 算 overlap，:1743 serial 是估算；tool_calls k_hash 19 / k_count 12；demoted=[]"
+    },
+    {
+      "id": "S2-N1",
+      "type": "fact-consistent",
+      "status": "fail",
+      "claimed_strength": "E2",
+      "strength_met": false,
+      "evidence": "acl-hits.txt 第 3 列：error 13（w_script 4/w_docs 2/integ 7）+ completed 6（integ 4、k_hash 1、k_count 1，都是结果文本里带出错误串）；只读节点 pwsh 40/40 completed（s_code 12/c_iface 4/k_hash 16/k_count 8）；runner.py:960-963 + :1272 因果成立"
+    },
+    {
+      "id": "S3-N2",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "k_hash/k_count result.verdict=fail；RUN.json.result=pass；runner.py 里 'verdict' 0 命中；compare() :1170-1179；并发路径 :1647-1653 只读 result.status；:2020/:2055"
+    },
+    {
+      "id": "S4-SAMPLES",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "RUN.json timeouts=[] deterministic_fail=[] skipped={}；7×a1 checks.fs_write_forbidden=[]、prompt_has_prev=False"
+    },
+    {
+      "id": "S5-PRODUCT",
+      "type": "fact-consistent",
+      "status": "fail",
+      "claimed_strength": "E2",
+      "strength_met": false,
+      "evidence": "INDEX.md 未变成立（FS-BEFORE/AFTER sha 72cdfa32、mtime_ns 一致）；但 NODES/integ.json:1698/:1704 cmd_accept 执行了打过 patch 的 review-index.ps1，exit 0，stdout 含 '### <unit>' 分组小节，和 DELIVERY.md:104-105「一次都没被真正执行过」矛盾"
+    },
+    {
+      "id": "S6-BOUNDARY",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "runner.py/dag.workflow.mjs/graph-rules.md/dag-gate.mjs/四套台子主树=副本 sha256，mtime 都早于 19:58；GRAPH R4→R5 结构 diff 只有 4 处（3 处路径替换 + _revised_by 追加）"
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "what": "N1 的计数和「谁中招」说错了：19 次里只有 13 次是真报错，k_hash/k_count 实为 0 次；s_code/c_iface 不是「没调用过 pwsh」，而是调了 12/4 次全部成功；w_script/w_docs 也没有「改用 edit」",
+      "why": "BRIEF §七 把「事实说错」列为返工条件；这又是 BRIEF §二 点名要核的结论，而且错误的理由（「只要调 pwsh 就死」）会把下一单元的修法引偏。实际分界线是 permission_mode：workspace-write 的 3 个节点全撞，read-only 的 4 个节点 40/40 成功",
+      "evidence": "tasks/B4-E2E-2026-11-10/DELIVERY.md:119-120（19 次、k_hash 1 / k_count 1）、:127（没调用过 pwsh）、:128（改用 edit）；runs/e2e-20261110-2005/ARTIFACTS/acl-hits.txt:4「count=19」以及 :14/:18/:144/:152/:186/:265 六条 status=completed；NODES/*.a1.json:10 permission_mode；NODES/s_code.a1.json 和 c_iface.a1.json 的 tool_calls 里 pwsh 12/4 次、tool_results 全 completed"
+    },
+    {
+      "id": "B2",
+      "what": "§六 说「脚本一次都没被真正执行过」是错的：integ 的验收命令执行了打过 patch 的 review-index.ps1，exit 0，stdout 里有分组小节，只是没带 -Write、没落到 INDEX.md 上；这也和本文件自己的 N4 矛盾，§一 第 3 条的根因归属（N1/N2）也跟着不准",
+      "why": "BRIEF §五 点名要核的结论出现事实错误；它把本轮唯一一份「分组渲染在真数据上能跑」的盘上证据说成没发生，也把产物缺失的原因从「N1 + N4（没带 -Write）」错写成了「脚本没跑」",
+      "evidence": "runs/e2e-20261110-2005/NODES/integ.json:1698「\"cmd_accept\": [」、:1704 stdout_tail 含 '### EXEC-CONSIST-2026-11-10' 与 'RESULT=OK rounds=58 units=26'；ARTIFACTS/review-index.after.ps1:169「[void]$Sb.AppendLine('### ' + [string]$Rows[0].Unit)」（改前脚本 0 处 '### '）；tasks/B4-E2E-2026-11-10/DELIVERY.md:104-105、:17、:152"
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "DELIVERY.md:101 的 review-index 字节数 6822→9312 不对，FS 快照和 ARTIFACTS 的 size= 都是 6739→9229"
+    },
+    {
+      "id": "N2",
+      "what": "DELIVERY.md:183 写「58 文件 / 18.9 MB」，实际是 66 个文件 / 19,923,697 字节；:190 把 verify-product.py 列在 ARTIFACTS/ 下，盘上没有"
+    },
+    {
+      "id": "N3",
+      "what": "INDEX.before.md 拷自主树，不是副本跑前状态，而且两份 ARTIFACTS 文件本身字节不同（头部不同）；「跑前跑后没变」应该引用 FS-BEFORE/FS-AFTER（sha、size、mtime_ns 都一致）"
+    },
+    {
+      "id": "N4",
+      "what": "DELIVERY.md:139 对终态判据的列举漏了 exit_code 和 res-None；另外应该点明 check 节点的 JSON 没有 status 键，所以 :1652 不会否决"
+    }
+  ],
+  "summary": "K4 并发是真的（span 实测、overlap 手算吻合、demoted 为空），N2 机制、§五 样本标注、改图边界也都核实成立。但两处 BRIEF 点名要核的事实说错了：N1 把 19 次「文本命中」当成 19 次报错，并且误称只读节点没调用过 pwsh（实际调了 40 次、全部成功，分界线是 workspace-write 权限档）；§六 说补丁后的脚本从没执行过，而 integ 的验收命令实际执行了它、输出了分组小节。两处都只是交付说明的文字错误，不需要重跑。",
+  "rework_brief": "只改 tasks/B4-E2E-2026-11-10/DELIVERY.md（必要时改 make-evidence.py 的计数口径），不动判据、不重跑：(1) §七 N1 :119-129 —— 把「19 次」改成「13 次真报错（w_script 4 / w_docs 2 / integ 7），另有 6 条只是结果文本里带出错误串（integ 4 次查 dsh 源码、k_hash/k_count 各 1 次读 integ.json）」；把「s_code/c_iface 没调用过 pwsh」改成按 permission_mode 分的事实：read-only 4 个节点 pwsh 40/40 completed，workspace-write 3 个节点的沙箱 pwsh 全部撞 ACL；删掉「改用 edit」，改成「patch 以文本形式放在 result.patch 里交出」；修法描述相应收窄到 workspace-write 路径。验证：python 按 callId 把 tool_calls.tool 与 tool_results.status 对一遍，输出落盘后引用。最好让 acl-hits.txt 的 count 只数 status=error。(2) §六 :104-106 —— 改成「打过 patch 的脚本被 integ.cmd_accept 执行过（exit 0，stdout 含 ### 分组小节，见 NODES/integ.json:1704），但没带 -Write，所以 INDEX.md 没重新生成」；§一 第 3 条根因改成「N1 + N4 导致产物缺失，N2 导致仍判 pass」。(3) 顺手修 N1-N3：字节数、文件数、ARTIFACTS 清单，「没变」改为引用 FS-BEFORE/FS-AFTER。改完重跑 cite-check --files 本单元。",
+  "escalate_question": "",
+  "reviewer_notes": "只跑了只读命令（python -I 读 JSON、sha256sum/wc/cmp/diff/grep/find/du/date），对象是主树和 %TEMP% 副本；唯一写入是本报告。K2 三套台子的数字不在 BRIEF 七节范围内，没有复跑。B1/B2 都是交付说明的文字错误，底层运行记录本身是一致可信的。",
+  "_meta": {
+    "unit": "B4-E2E-2026-11-10",
+    "round": 1,
+    "reviewer": "Opus 5.5（claude -p --model opus --allowedTools Read,Grep,Glob,Bash,Write）",
+    "report": "tasks/B4-E2E-2026-11-10/REVIEW-raw.txt",
+    "date": "2026-11-10"
+  }
+}

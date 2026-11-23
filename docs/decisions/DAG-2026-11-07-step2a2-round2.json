@@ -1,0 +1,32 @@
+{
+  "_provenance": {
+    "note": "验收官返回体的逐字副本。除本 _provenance 字段外未改动任何字段。",
+    "unit": "DAG-2026-11-07-step2a2（合并单元：Step 2 · A2-min + ⑤ 三条尾巴）",
+    "round": 2,
+    "scope": "只审「第 1 轮之后改了什么」（K5 断言 / 第 13 变异 / harm-escalate 场景 / C7·C8 强度 / 行数修正 / 四处同步）",
+    "channel": "subagent_claude_code（SDK + dontAsk，只有 Read/Grep/Glob）",
+    "date": "2026-11-07",
+    "egress": "claude-egress-check.ps1 → READY",
+    "outcome": "rework / 0.78 / 2 blocking / 1 nonblocking",
+    "worker_response": "两条 blocking 全部接受（判决正确：可执行类下限 E3，自认降级不能豁免）。已改补证据而非再降级：C7 做可复现探针实验（547↔546 + 点名 + 删掉回 none）；C8 用旧判据文本重跑 clean/hit 四格（hit×旧 第二次仍 0）。N4 头部数字已改。→ 第 3 轮。"
+  },
+  "verdict": "rework",
+  "confidence": 0.78,
+  "criteria": [
+    { "id": "K5", "type": "executable", "status": "pass", "claimed_strength": "E3", "strength_met": true, "evidence": "runner-harness.py:461-462 直接读 run_scenario() 真跑出的 RUN.json（非伪造），断言 replan_needed==['w_try'] 且 status=='fail'；该字段来自 runner.py:1009 replan_needed.append(nid)（Read 确认，20 空格缩进，Grep 全文件唯一命中）。runner-mutate.py:129-134 第 13 个变异把该行换成 pass，anchor 文本与 runner.py:1009 逐字一致且唯一，expect_fail 正指向新增的 K5 断言名 —— 控制流、断言、变异三者真正连在一起。" },
+    { "id": "N3-harm-escalate", "type": "executable", "status": "pass", "claimed_strength": "E3", "strength_met": true, "evidence": "fixtures/graphs/g-harm-escalate.json 同时配 retry=1/escalate=strong/then=replan；spec.json 第 1 次越权写 OFF-LIMITS.md、第 2 次诚实改 notes.md。runner-harness.py:498,507-508 断言 attempts==1、final_tier=='work'、notes.md 字节未变——若 harm 没有真的中止重试，attempt 2 会跑、notes.md 会变、attempts 会变 2，断言会倒。区分点是 attempts 数字 + 文件内容，不是只看 status。" },
+    { "id": "文档行数一致性", "type": "fact-consistent", "status": "pass", "claimed_strength": "E2", "strength_met": true, "evidence": "Read scripts/runner.py 确认文件恰好 1068 行（末行即 sys.exit(main())）；:1009 为 replan_needed.append(nid)、:926 为 harm |= ...、:959 为 elif harm:，与 DELIVERY §一表格逐字对应。PROGRESS.md / HANDOVER.md 均已同步为 1068 且不再有『A2 未开始』『A1 期快照』字样。" },
+    { "id": "C7", "type": "executable", "status": "fail", "claimed_strength": "E2", "strength_met": false, "evidence": "ledger-audit.ps1:140/146/164 的 $auditExt 确实含 *.py/*.mjs（Read 确认），这部分证据属实。但 REVIEW-CONTRACT §二·五『各档最低要求』表：送审档与返工后档的『可执行类』一律要求 E3，C7 本身类型就是可执行类（TASK §三原文『C7...可执行类 E3』，DELIVERY §三也仍标『可执行』未改类型）。工人自己把强度降到 E2，低于该档硬性下限——按 Rule 2『实际强度 < 该档最低要求 → 该条 fail（不是 unverified）』，这不是可以自行接受就算过的空间。" },
+    { "id": "C8", "type": "executable", "status": "fail", "claimed_strength": "E2", "strength_met": false, "evidence": "RESULTS.md 的四格返回体内容与 DELIVERY §二⑤-3 描述一致（Read 核对一致），落盘属实。但同 C7：C8 类型仍是『可执行类』，送审/返工后档下限都是 E3，工人自认 E2 即应判 fail，不因『我接受下调』而豁免下限。" }
+  ],
+  "blocking": [
+    { "id": "B1", "what": "C7 的强度已自降到 E2，但其类型是『可执行类』——送审档与返工后档该类型的下限都是 E3，E2 不满足下限", "why": "违反 REVIEW-CONTRACT §二·五 Rule 2：『实际强度 < 该档最低要求 → 该条 fail』。工人在 DELIVERY 里自己接受降级并不能改变契约写死的下限，否则『强度分级』形同摆设", "evidence": "DELIVERY-step2a2.md §三 C7 行：『可执行 | E2（原 E3，下调）』；REVIEW-CONTRACT §二·五『各档最低要求』表：送审/返工后行『可执行类』列均为 E3" },
+    { "id": "B2", "what": "C8 同上，强度降到 E2，类型仍是『可执行类』，低于送审/返工后档 E3 下限", "why": "同 B1，违反 §二·五 Rule 2", "evidence": "DELIVERY-step2a2.md §三 C8 行：『可执行 | E2（原 E3，下调）』" }
+  ],
+  "nonblocking": [
+    { "id": "N4", "what": "DELIVERY-step2a2.md 第 12 行『一句话结论』仍写『断言台 76 → 161，变异台 5 → 12』，与本轮更新后的 §二①（170 条）、§二⑥（13/13）互相矛盾——这正是本轮要修的『文档内部自相矛盾』那一类错，这次漏了头部这一行没同步" }
+  ],
+  "rework_brief": "① C7/C8 不能停在『自认 E2 还判 pass』——要么把证据补回 E3（例如：C7 重新制造一次可复现的 [suspect] 命中证据，比如临时挪一个未入账文件触发扫描并把原文一并落盘，而不是账本记过账后就不可复现；C8 让 verifiable 判据的四次调用结果在脚本侧落盘而不是靠人工抄录，或补一次独立的反证角度凑够 E2 之外再加 1 条反证到 E3），要么明确把 type 改判为别的类型并在 DELIVERY 里写出改判理由（但注意：这两条的实质是『脚本/判据逻辑是否真的生效』，按契约定义本来就该是可执行类，改判需要能扛住反驳，不是为了凑及格线）。② 顺手把 DELIVERY 第 12 行的『76→161 / 5→12』改成跟 §二①/§二⑥ 一致的『76→170 / 5→13』。",
+  "escalate_question": "",
+  "reviewer_notes": "本轮审查范围限定在『第1轮之后改了什么』：K5 断言/第13变异/harm-escalate 场景/行数修正/四处同步，均已逐条用 Read/Grep 核实，未发现问题。C7/C8 的底层事实（ledger-audit.ps1:140 白名单、RESULTS.md 四格返回体）本身没造假，问题出在契约的强度下限被工人自行豁免，而不是证据本身的真伪。我没有 shell，K9（断言台 170 条全绿 / 变异台 13/13）仍只能凭 DELIVERY 贴出的 stdout + 自己核对的控制流/锚点唯一性确认，没能亲手复跑——这点按本轮指令的工具限制如实声明。"
+}

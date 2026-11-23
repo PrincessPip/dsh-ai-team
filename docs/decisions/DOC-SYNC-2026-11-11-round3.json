@@ -1,0 +1,41 @@
+{
+  "unit": "DOC-SYNC-2026-11-11",
+  "round": 3,
+  "date": "2026-11-12",
+  "reviewer": {
+    "model": "openrouter/anthropic/claude-opus-5.5",
+    "channel": "openrouter-pay-per-token",
+    "note": "订阅通道被 Anthropic 账号级人机验证拦住（伙伴决定不做 KYC），与第 2 轮同一按量通道。",
+    "self_checks": "pwsh + python 可用；BRIEF §三 五条全部自己跑；镜像与输出在 %TEMP%\\r3\\；四套台子自己跑 60/60 · 23/23 · 36 格 caught=36 void=0 restored_green=True · 13/13；cite-check 6 文件 17/17 = 100% 锚定（未用 --fix）；外层救火 META fire_chief_exit=0、改动 5 全在白名单内、PRODUCT-SHA256 33 条逐条复核一致"
+  },
+  "verdict": "pass",
+  "score": 0.86,
+  "blocking": [],
+  "round2_items": [
+    {"id": "NB1", "closed": true, "evidence": "自造夹具 + 假引擎（mode=complete，工人自写四件）+ --skip-render → rc=6；三件 ABSENT；PRODUCT-SHA256 不含三件；META skip_render=true / written_by={}；python -O 同样 rc=6。绕路全失败：小写同名 / junction / hardlink 都被删且外部目标完好；同名目录 rc=1；文件锁 rc=6；竞态 9/9 rc=6。反证：去掉 unlink → 60 例里 T59 单独红；去掉 skip 标记 / 恢复假归属 → T59+T60 都红"},
+    {"id": "PRIORITY", "closed": true, "evidence": "engine_fail+skip → rc=3；breach+skip → rc=5"},
+    {"id": "X1", "closed": true, "evidence": "T60 在 selftest.py:755；删掉那条 print 的副本只红 T60"},
+    {"id": "X2", "closed": true, "evidence": "DELIVERY.md:123「弱在哪（必读 · 19 条）」，条目 1–19 连续"},
+    {"id": "X3", "closed": true, "evidence": "doc-sync.py:62 列 7 项 = TOKEN_EXTRACTORS 7 个键；docstring 之后的字节 sha 与 DOC-LOGIC-BEFORE.txt 一致"},
+    {"id": "X4", "closed": true, "evidence": "DELIVERY.md:168 第 19 条 N6 取舍"}
+  ],
+  "nonblocking": [
+    {"id": "N1", "what": "【收尾必修，不卡裁决】派单方处理越界观察①只补了 raw 文件，没同步 DELIVERY：§五 第 2 轮那节仍写「送不出去 / 211 字节」；§一·3 与 §三 仍写 58 例 / 35 格（实测 60 / 36）；AGENTS.md 同单元行也过时；账本说「已补」只对 raw 成立", "evidence": "REVIEW-round2-raw.txt 7837 B 01:31:59 vs DELIVERY.md:213 原句", "disposition": "已修（DELIVERY 三处 + AGENTS.md + 账本更正行）"},
+    {"id": "N2", "what": "产物目录换成 junction → unlink 删到 root 之外（rc=6、breach=0、不留痕）；fire-chief.py:1148 的 assert 是恒真式，不是判据；VERIFY.md 说「删除前校验产物父目录」说过头", "evidence": "%TEMP%\\r3\\probe4.py J1_swap_skip rc=6，victim 三件消失；J1n_swap_noskip 外部三件被覆写", "disposition": "记进 DELIVERY §七，建议下一单元修（realpath 复核 + assert 换显式 if）"},
+    {"id": "N3", "what": "产物目录预放同名目录 → unlink 抛 PermissionError 未捕获 → rc=1（不在码表里），META 与 PRODUCT-SHA256 都没写；所以「必然 exit 6」严格说不成立", "evidence": "probe.py A1_dirtrap_skip / A1O rc=1 PermissionError；probe2 A1n_dirtrap_noskip rc=1 Errno 13", "disposition": "记进 DELIVERY §七；§四·14 已记明边界"},
+    {"id": "N4", "what": "VERIFY.md 引用 0% 锚定（31 NOANCHOR）；派单方跑火后改了 selftest.py 头部导致三处行号漂 5 行，盘上无跑火时原像", "evidence": "cite-check --files VERIFY.md --strict → anchored=0 NOANCHOR=31", "disposition": "不改（救火产物原样记录）；教训记进 DELIVERY §五 第 3 轮"},
+    {"id": "N5", "what": "【既有，越出本轮】call_engine 不杀进程树：工人可起 detached 子进程在引擎退出后继续写盘，正常路径下 rc=0 而伪造件覆盖已渲染三件", "evidence": "probe.py A4n_race_noskip rc=0，PRODUCT-SHA256 与盘上三件 sha 不一致", "disposition": "记进 DELIVERY §七"}
+  ],
+  "new_findings": [
+    "N2：junction 换目录可删到 root 之外；:1148 的 assert 恒真，-O 下跳不跳都不是判据",
+    "N3：同名目录 → 未捕获异常 rc=1，META 与 PRODUCT-SHA256 都没写",
+    "N1：派单方文档未收尾（第 2 轮那节 + 台子数字 + AGENTS.md）",
+    "越界观察②③④已处理：DELIVERY.md:186 已标注「只会让结果更红」是错的；selftest.py:18-22 已更正；DELIVERY.md:58-59 已改成 1162/1177"
+  ],
+  "reviewer_side_effects": {
+    "reported_by_reviewer": "probe 用 importlib 加载 selftest.py，在工程里写出 tasks/FIRE-CHIEF-FIX-2026-11-11/__pycache__/selftest.cpython-314.pyc（01:52:31）；它没删（删也是改动），报上来由派单方定",
+    "disposition": "派单方已清理该目录（含更早的 mutate-fire-chief.cpython-314.pyc）；只有字节码，无源码改动"
+  },
+  "notes": "本单元的最终结论。四套台子、NB1 的修法与绕路、优先级、四条 nonblocking 全部由验收官自己跑命令复现。本机建不了文件符号链接（EPERM），只测了 junction 与 hardlink。",
+  "raw": "（裁决原文由验收官通过消息提交；结构化裁决即本文件，逐字保留其 JSON 内容）"
+}

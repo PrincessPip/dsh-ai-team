@@ -1,0 +1,112 @@
+{
+  "verdict": "pass",
+  "confidence": 0.98,
+  "readonly_enforcement": "snapshot_only",
+  "evidence_root": "%USERPROFILE%/AppData/Local/Temp/astra-review2-independent-uxqiekh8",
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "EXTRA-RESULT.json：普通完整日志放行，native、隐藏native历史、损坏、未知版本、空scope、错根和链接拒绝；两类守卫反例及恢复成立。ACL-CHECK.json、ACL-BYTES-CHECK.json：三次均0→1(EPERM)→0，严格恢复且字节不变。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "parent-none-stdout.txt、parent-zstd-stdout.txt：普通/native在auto=false下各实际执行一个工具，恢复请求无新compaction；unknown/torn拒绝且请求、工具均为0。SUITE-CHECK.json含Basic正对照。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "FAULT-CHECK.json：none/zstd各8个故障边界、16个worker退出0；flush确认失败未落盘时拒绝，已落盘完整提交时可恢复执行工具。PHYSICAL-DISK-CHECK.json另核明文物理记录及拒绝后的SHA。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "FAULT-CHECK.json：写入与恢复PID均不同，使用真实SessionStore/JSONL和AgentLoop.resume；不完整事务拒绝且字节不变。两格式父级探针验证句柄重取；parent-migration-stdout.txt确认回调进入、取消发生在发布前。"
+    },
+    {
+      "id": "C5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "EXTRA-RESULT.json：普通scope放行、native拒绝；当前surface的native数量1→0后仍以NATIVE_HISTORY拒绝。SUITE-CHECK.json的核心生命周期及Basic回归通过；预检不执行回滚。"
+    },
+    {
+      "id": "C6",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "SUITE-CHECK.json：physical变异精确失败3项、preflight变异精确失败1项，恢复通过；异常组pass/completed=false。EXTRA-RESULT.json记录两类独立反例及原字节恢复；KILL-RESULT.json确认中途终止后成功标记仍为false，Job清理已验证。"
+    },
+    {
+      "id": "C7",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "SUITE-CHECK.json：核心10项含strict types全部exit0。migration-types-stdout.txt：正常读取exit0，seq/header/integrity写入各exit2且唯一TS2540；EXTRA-RESULT.json另验data.turn读取、写入及运行时TypeError。MODIFIED-CHECK.json的8项前后SHA均匹配；ROUND1-PRODUCT-CHECK.json确认2434个候选文件与首轮一致。"
+    },
+    {
+      "id": "C8",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "COMMANDS.json：全部正式入口exit0；SUITE-CHECK.json逐项核11组、53个worker及清理。package-proofs-process.json对应缺件/漂移均在启动worker前拒绝，恢复通过。FINAL-CHECK.json：5372个复制输入、5372个源文件、8144个external及15191+33个保护文件零漂移；正式快照函数收取的前后快照完整，5374个文件净diff空，31份进程回执cleanup_verified=true。"
+    }
+  ],
+  "policy_review": {
+    "type": "judgment",
+    "status": "pass",
+    "claimed_strength": "E1",
+    "strength_met": true,
+    "evidence": "tasks/ASTRA-NATIVE-SAFETY-2026-11-15/INTERFACES-v2.md:7「也不支持自动修复/卸载 opaque。」；:11「部署另需停写和独占清点，CLI 不证明全机安全。」；candidate-v2/native-engine.mjs:83「NATIVE_EXPLICIT_RANGE_REQUIRED_2A」保留目标compactNow拒绝。策略未将Basic称为opaque可用回滚，未承诺活跃写入下的TOCTOU安全。"
+  },
+  "prior_round_resolution": {
+    "id": "B1",
+    "status": "resolved",
+    "evidence": "ACL-CHECK.json：两个全新TEMP scope及原test-acl入口共三次exit0；initial为D:，before/after为D:AI，normalizationOnlyAI=true、beforeSddl==afterSddl、aclRestored=true。ACL-BYTES-CHECK.json独立核对三份日志字节一致；首轮失败保留。"
+  },
+  "blocking": [],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "依赖仍绑定本机installed包，不能据此宣称可跨机器独立部署。",
+      "evidence": "CORE-SOURCE-MANIFEST.json的portable=false；FINAL-CHECK.json核对8144个external哈希。"
+    },
+    {
+      "id": "N2",
+      "what": "引用检查覆盖有限。",
+      "evidence": "CITE-CHECK.txt：strict exit0，1个named锚OK、4个LONE；未据此声称全部源码引用已机器锚定。"
+    }
+  ],
+  "executed_commands": [
+    "在evidence_root/tree：python -B tasks/ASTRA-NATIVE-SAFETY-AUDIT-2026-11-15/run-suite.py → exit0",
+    "同目录：python -B tasks/ASTRA-NATIVE-SAFETY-AUDIT-2026-11-15/run-parent.py --source tasks/ASTRA-NATIVE-SAFETY-2026-11-15/candidate-v2 → exit0",
+    "上述run-parent加 --compression zstd → exit0",
+    "上述run-parent加 --modes cancel-migration migration-readonly → exit0",
+    "python -B tasks/ASTRA-NATIVE-SAFETY-AUDIT-2026-11-15/test-acl-temp.py → exit0",
+    "python -B tasks/ASTRA-NATIVE-SAFETY-AUDIT-2026-11-15/test-acl.py --journal-root <本轮parent-none生成的probe/ordinary绝对路径，见COMMANDS.json> → exit0",
+    "python -B tasks/ASTRA-NATIVE-SAFETY-AUDIT-2026-11-15/test-migration-types.py → exit0",
+    "python -B tasks/ASTRA-NATIVE-SAFETY-2026-11-15/package-proofs-v2.py → exit0",
+    "python -B scripts/cite-check.py --files <四份交付文档，完整参数见COMMANDS.json> --strict --out <外部TEMP>/CITE-CHECK.txt → exit0",
+    "python -B <evidence_root>/extra.py → exit0；独立反例、隐藏native及嵌套只读检查通过",
+    "python -B <evidence_root>/kill.py → exit0；中途终止反例通过"
+  ],
+  "rework_brief": null,
+  "reviewer_notes": "原工程未修改，测试、变异、ACL操作和证据写入均在另建TEMP副本，最终进程查询未发现相关存活Node/Python测试进程。snapshot_only不能检测两次采样间写后还原或全盘树外写入，不是硬沙箱。未验证真实上游、生产发布、断电/fsync、任意副作用exactly-once、任意历史迁移、完整HMR/多模态及Zstd五类语义重编码矩阵，本裁决不授权这些范围。"
+}

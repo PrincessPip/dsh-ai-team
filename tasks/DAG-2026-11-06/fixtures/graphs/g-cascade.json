@@ -1,0 +1,67 @@
+{
+  "v": 1,
+  "plan_id": "plan-cascade-fixture",
+  "budget": {
+    "max_calls": 6
+  },
+  "nodes": [
+    {
+      "id": "w_bad",
+      "kind": "work",
+      "do": "读 tasks/DAG-2026-11-06/fixtures/sandbox/notes.md，把结论写进 summary，不改文件。",
+      "after": [],
+      "ctx": {
+        "read": [
+          "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+        ]
+      },
+      "writes": [
+        "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+      ],
+      "out": [
+        "changed",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "summary 里必须说清 notes.md 有几条 '- ' 条目"
+        },
+        {
+          "type": "cmd",
+          "run": "node -e \"process.exit(0)\"",
+          "expect": "exit0"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "replan"
+      }
+    },
+    {
+      "id": "s_indep",
+      "kind": "scout",
+      "do": "只读侦察：数 tasks/DAG-2026-11-06/fixtures/sandbox/notes.md 里以 '- ' 开头的条目数，不写任何文件。",
+      "after": [],
+      "ctx": {
+        "read": [
+          "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+        ]
+      },
+      "out": [
+        "facts",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "facts 里必须写清 '- ' 条目数"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "replan"
+      }
+    }
+  ]
+}

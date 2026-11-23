@@ -1,0 +1,13 @@
+{
+  "_comment": "第 2 轮验收官 B4 的反例 (b)。同波两个只读节点，s1 失败且 then=abort。串行：s1 失败触发 abort → s2 被 skipped、agent_calls=1。并行（不退化时）：s2 已经和 s1 同轮起跑并判 ok、agent_calls=2 —— 结果随调度方式变。所以这一组必须整组退回串行。",
+  "nodes": {
+    "s1": {
+      "expect_prompt_contains": ["id: s1"],
+      "result": { "status": "fail", "summary": "故意失败并 abort" }
+    },
+    "s2": {
+      "expect_prompt_contains": ["id: s2"],
+      "result": { "facts": ["本来会成功"], "summary": "成功" }
+    }
+  }
+}

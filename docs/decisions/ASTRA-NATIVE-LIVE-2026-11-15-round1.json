@@ -1,0 +1,124 @@
+{
+  "verdict": "pass",
+  "confidence": 0.95,
+  "readonly_enforcement": "snapshot_only",
+  "evidence_roots": {
+    "E": "%USERPROFILE%/AppData/Local/Temp/astra-independent-review-mm8ymvl9",
+    "R": "%USERPROFILE%/AppData/Local/Temp/native-live-offline-copy-6uh3zl9o",
+    "A": "R/tasks/ASTRA-NATIVE-LIVE-AUDIT-2026-11-15"
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "两份产品各2434文件SHA全部匹配；check-run重跑71/71通过。已直读正式Service、native-plugin及request-admission调用链；独立篡改prepared.context.contextWindow后，formal_prepared_auto_admission失败，恢复后通过。见E/independent-hashes.json、E/independent-counterexamples.json。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "重算压前估计552123、retained估计117412；默认479600/100000/65536未改。独立解析三份raw请求与SSE：仅首请求末项为compaction_trigger，后两请求opaque完全一致；物理解码核对retained身份、顺序和SHA通过。opaque损坏及retained SHA损坏均命中指定失败项；单独改变raw字节触发raw_request_2失败。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立解析两份SSE答案，各8字段，值及类型精确匹配；首续答明文不含三个旧随机答案，恢复请求包含首次答案，与披露一致。保存答案损坏反例被拒绝，恢复后通过。见E/independent-live-summary.json及A/artifacts/proof-1794697773702306300/RESULT.json。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "新进程通过真实后端重新读取first物理快照与最终Zstd日志，均complete；resume-audit事件与first解码一致，事务、文件SHA检查通过。原first PID37892退出后才启动resume PID37416。独立追加半帧测试退出码为0→1→0，损坏时报告recovery-required，三次读取均未改变日志字节。见E/independent-physical-tests.json。"
+    },
+    {
+      "id": "C5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "rehearse实跑8/8符合预期：clean=3笔、bad-sse=1笔、budget-full=0笔、existing-lock=0笔、injected-exception=2笔；源漂移、依赖漂移及缺失均在worker启动前拒绝。liveLockUnchanged=true、sourceDrift=[]，所有进程自然退出。已读发送前持久扣预算、canonical scope拒绝及内外超时代码；未运行live入口。"
+    },
+    {
+      "id": "C6",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立重跑live核验71/71、live反例及恢复13/13、offline反例及恢复14/14，离线冒充live被拒绝。另造raw字节变化、物理快照缺失、prepared元数据错误三个反例，均拒绝且恢复后通过；核验器无写手grader导入。见E/independent-counterexamples.json。"
+    },
+    {
+      "id": "C7",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "全量核对BUNDLE 4990项、sourceInputs 4988项、external 26065项、PRELIVE 5251项，全部无漂移；送审及新副本INPUTS均仅路径映射且SHA关系正确，新副本4930文件无漂移。重新扫描保护范围23611文件，changed/added均为空；依赖错误SHA与缺失反例均拒绝。见E/independent-hashes.json、E/independent-boundary.json。"
+    },
+    {
+      "id": "C8",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "已读初始pass/completed=false及完成条件代码，实跑失败场景保持拒绝；两份历史失败回执仍为pass=false。HTTP_PROXY与HTTPS_PROXY实测均为http://127.0.0.1:<PROXY-PORT-TUNNEL>。送审树前后快照均完整，5232项，added/deleted/modified全部为空；保护范围无新增或修改。见E/snapshot-result.json。"
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "claim": "MTIME门禁仍有203条历史嫌疑，不代表全仓干净；本轮两个目录无suspect，仅有已登记目录覆盖警告。",
+      "evidence": "读取GATES/MTIME.txt并独立计数：historicalSuspectRows=203，currentUnitMtimeSuspects=[]；其他五项门禁退出码均为0。"
+    },
+    {
+      "id": "N2",
+      "claim": "超时强杀路径未实测；恢复续答不构成第二次独立盲记忆试验。",
+      "evidence": "本轮进程回执均forcedKill=false；独立解析第三请求确认重放首次答案，与STATE.resumeDisclosure一致。此限制已在交付中披露。"
+    }
+  ],
+  "executed_commands": [
+    {
+      "command": "python -B tasks/ASTRA-NATIVE-LIVE-AUDIT-2026-11-15/make-offline-copy.py --report E/copy-report.json",
+      "result": "exit=0；建立独占副本R，4930文件。"
+    },
+    {
+      "command": "在R运行 python -B tasks/ASTRA-NATIVE-LIVE-AUDIT-2026-11-15/rehearse.py",
+      "result": "exit=0，8/8通过；A/artifacts/rehearsal-1794697751729274900/RESULT.json。"
+    },
+    {
+      "command": "在R运行 check-run.py --root tasks/ASTRA-NATIVE-LIVE-2026-11-15/artifacts/live（python -B）",
+      "result": "exit=0，71/71；A/artifacts/parent-1794697749303878400/VERIFY.json。"
+    },
+    {
+      "command": "在R运行 prove-evidence.py --root <live副本> --export <本轮live EXPORT.json>（python -B）",
+      "result": "exit=0，13/13，sourceUnchanged=true、mirrorRestored=true。"
+    },
+    {
+      "command": "在R对rehearse返回的cleanRoot运行 check-run.py --offline，再以相应EXPORT运行 prove-evidence.py --offline（均python -B）",
+      "result": "均exit=0；反例及恢复14/14，包含offline-not-live。"
+    },
+    {
+      "command": "python -B scripts/cite-check.py --root R --files <两个单元全部5份Markdown> --strict --out E/CITE-CHECK.txt",
+      "result": "exit=0，named=3、OK=3、LONE=0。"
+    },
+    {
+      "command": "python -B -：独立SHA与路径映射核对、raw/SSE解析、三个证据反例、Zstd半帧反例及保护范围扫描",
+      "result": "所有核对符合预期；报告保存在E/independent-*.json，测试写入仅发生在另建TEMP副本。"
+    },
+    {
+      "command": "python -B -：调用review-snapshot.snapshot和diff进行前后核对",
+      "result": "beforeComplete=true、afterComplete=true、errors=[]；added=[]、deleted=[]、modified=[]。"
+    }
+  ],
+  "reviewer_notes": "先读TASK与代码、回执，再读DELIVERY，未调用其他评审。未新增真实请求，未修改送审工程、原工程、生产配置、锁或预算；全部测试产物保存在另建TEMP。裁决仅覆盖本轮C1–C8，不扩展为生产部署、长期质量或硬沙箱保证。"
+}

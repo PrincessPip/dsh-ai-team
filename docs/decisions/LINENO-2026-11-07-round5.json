@@ -1,0 +1,105 @@
+{
+  "verdict": "rework",
+  "confidence": 0.85,
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "D2+D3 + counterproof, all from my own runs in temp fixtures (--root <mktemp>). H1: target `key = \"alpha beta gamma\" end`. With the target unchanged the new tool says OK=1. After changing the quoted part it says GONE, anchor captured whole. The original tool from the fire chief's backup (%TEMP%/firechief-LINENO-backup-091929/cite-check.py) cuts the anchor to 'key = ' and reports WEAK. H2: the target has a \\x0c in line 1 and the anchor is on line 3. New tool: OK. Original tool: DRIFT now_at=[4]. --fix: a CRLF file citing `a11.md:2`. After the fix, cmp -l shows exactly 1 changed byte, at offset 13 ('2'→'4'). The filename a11, the anchor and the \\r\\n are untouched, and a rerun gives OK=1."
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "I ran `python scripts/cite-check-harness.py` → checks=61 failed=0, EXIT=0. I ran `python scripts/cite-check-mutate.py` → defined=18 void=0 ran=18 caught=18, and every line reads 'N 条红，命中预期' with no [VOID]. Counterproof: `cite-check-harness.py --tool <backup original cite-check.py>` → checks=61 failed=4. The 4 red checks are exactly three 内含引号 checks (H1) and one 换行口径 form feed check (H2). The H1/H2 fixes are therefore locked by both assertions and mutants (M15/M16), not just claimed."
+    },
+    {
+      "id": "C3",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "The new section is at `REVIEW-CONTRACT.md:139`「### 引用锚定（v0.6 新增 · 2026-11-07）」. It contains the write-side rule (:146), the verdict table (:160-167), and both boundaries: :171「锚 OK ≠ 论断成立」 and :173「锚串是逐字快照」. The same fact appears in a second, independent place: the changelog row at the end of §七 「| v0.6 | 2026-11-07 | **§二·五 新增「引用锚定」**」."
+    },
+    {
+      "id": "C4",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "`TRIGGER-POLICY.md:257`「### 送审前置：引用自检 `cite-check`（v2.1 新增 · 2026-11-07）」 lists three criteria (all five failure verdicts at 0 / no new NOANCHOR / output written by --out), plus 只查本单元 and HIST:自声明豁免. Second place: the header at :3 and the changelog row at :405「| v2.1 | 2026-11-07 | **加「送审前置：引用自检 `cite-check`」**」, both consistent with it."
+    },
+    {
+      "id": "C5",
+      "type": "fact-consistent",
+      "status": "fail",
+      "claimed_strength": "E2",
+      "strength_met": false,
+      "evidence": "Contract version: title v0.6 matches the last changelog row (v0.6) ✅. Self-check count: LESSONS.md:30「## 二、八条自检」 has 8 items, and AGENTS.md says 「**八条**可当场执行的自检」 ✅. Ledger row ❌: the tier column of decisions/self/ledger.md:164 says both 「**送审 · 已派救火队长**（1 rework + 3 escalate…」 and 「第 1 轮 `rework` 0.86 / 3 blocking 已修，待第 2 轮」, which contradict each other. In the same row, :166「→ `OK=6 / LONE=11 / HIST=2`，退出码 **0**」 doesn't match the current gate output (OK=10/LONE=14/HIST=2 in the CITE-CHECK.txt artifact, and EXIT=1 on my live run). So AGENTS.md todo 8 and the ledger row still disagree."
+    },
+    {
+      "id": "C6",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "I ran `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ledger-audit.ps1` → `[suspect] none` / `RESULT=LEDGER_OK`, EXIT=0 (D2+D3). Ledger row :164 now lists INC.md, VERIFY.md and FIRECHIEF-raw.txt. Reverse case (D1 mtime ordering): VERIFY.md:59 records RESULT=LEDGER_SUSPECT before those two files were added. VERIFY.md has mtime 09:29:45 and ledger.md 09:31:21, and the audit turns OK only after the ledger entries are added. Caveat: this reverse case is a recorded state, not something I reproduced myself; reproducing it would require writing a file."
+    },
+    {
+      "id": "C7",
+      "type": "judgment",
+      "status": "pass",
+      "claimed_strength": "E1",
+      "strength_met": true,
+      "evidence": "[判断类] I checked DELIVERY.md:108-115 「**未做**（已在 `AGENTS.md` 待办 8、`DESIGN.md` §五 点名）」. All five gaps are named in order: .json scan scope / range double anchors / DRIFT_SECTION / anchors for live docs / alias table. DELIVERY.md:4 says 「**不声称「以后不会再漂」**」. Grepping for '根治完成' finds 0 claims of completion."
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "what": "The gate currently fails (EXIT=1), and the gate artifact CITE-CHECK.txt is stale: it was generated before AGENTS.md was changed.",
+      "why": "This violates completion criterion INC §三 「`cite-check` 闸门 `EXIT=0`」 and TRIGGER-POLICY §三 criterion 1 (GONE must be 0). The artifact claims OK=10, but a live rerun gives GONE=1. That is the failure-history pattern again: what is declared is more than what is actually true. It is also the same stale-sync blocking type as round 4, just in a new place.",
+      "evidence": "Running `python scripts/cite-check.py --files TASK.md DELIVERY.md REVIEW-CONTRACT.md TRIGGER-POLICY.md decisions/LESSONS.md AGENTS.md --strict --out <temp>` gives EXIT=1 and `[GONE] tasks/LINENO-2026-11-07/DELIVERY.md:93 `AGENTS.md:36` anchor='断言 53 条 + 变异 14/14' now_at=[]`. Diffing against the artifact: the artifact has `[OK] 10`, the live run has `[OK] 9 / [GONE] 1`. The cause is the timestamp order: CITE-CHECK.txt at 09:31:11.52, AGENTS.md at 09:31:21.58 (AGENTS.md:36 changed to 「断言 61 条 + 变异 18/18」). As a result, the C5 table row at DELIVERY.md:93 (「❌ **救火队长改动后变旧**（53/14 → 61/18）」) now describes a state that no longer exists. These three files changed after the fire chief finished (FIRECHIEF-raw.txt 09:30:03): AGENTS.md, ledger.md and TASK.md, all at 09:31:21 within about 20 ms of each other. I attribute this to the worker's follow-up batch edit, not to the fire chief."
+    },
+    {
+      "id": "B2",
+      "what": "The ledger row for this unit still has a self-contradictory tier column and still states old gate numbers. This is round 4's B3'' item (5), which nobody has fixed.",
+      "why": "It fails C5 (「`AGENTS.md` 待办 8 与账本行不矛盾」). The fire chief correctly reported this without fixing it, because the ledger is off-limits to it. Fixing it is the worker's job.",
+      "evidence": "decisions/self/ledger.md:164: the tier column contains both 「**送审 · 已派救火队长**」 and 「第 1 轮 `rework` 0.86 / 3 blocking 已修，待第 2 轮」. :166「闸门 … → `OK=6 / LONE=11 / HIST=2`，退出码 **0**」 doesn't match the actual output (artifact: OK=10/LONE=14; live: EXIT=1)."
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "Did the fire chief stay within its whitelist? Yes, as far as I could verify. Between 09:18 and 09:30, only whitelisted files changed: scripts/cite-check{,-harness,-mutate}.py, DELIVERY.md and VERIFY.md (FIRECHIEF-raw.txt is the captured stdout). find ~/.dsh shows no changes in that window apart from session/hud files. Backup directory %TEMP%/firechief-LINENO-backup-091929 (09:19:29) holds the 5 files it was about to change. All existing files in tasks/LINENO-2026-11-07/ are still present. Limitation: without version control, 'deleted nothing' can only be checked against the list of files that exist; a file that was deleted and never listed would not show up."
+    },
+    {
+      "id": "N2",
+      "what": "VERIFY.md itself does not pass the gate: GONE=2 (`AGENTS.md:36` anchor 53/14 at :94 and :309), NOANCHOR=6, UNRESOLVED=10 (fixture paths like doc.md, t.py, x11.md). VERIFY is not one of the 6 gated files, but the historical refs should get the HIST: prefix and the fixture paths should be marked as fixtures, so this report doesn't keep producing errors whenever someone scans it."
+    },
+    {
+      "id": "N3",
+      "what": "The three defects the fire chief found but left unfixed (VERIFY §3.3) are still open. --fix on a comma list `:30,25` only rewrites the first number and leaves the second one stale. Chinese filenames are truncated to `.md` (reported as UNRESOLVED). Bare filenames ignore the citing document's directory. The first one is a silent partial fix that falls under C1's 「--fix 只改行号数字」 behaviour. I did not reproduce it myself. It should be queued for the next unit with an assertion and a mutant."
+    },
+    {
+      "id": "N4",
+      "what": "TASK.md §四's expected values were changed to 61/18 by the worker at 09:31:21, after the fire chief had finished. Moving the acceptance bar after delivery is allowed in this case, because the numbers went up. Even so, the change should be recorded in DELIVERY as a separate row ('TASK expected values updated on date X'), so the change isn't silent."
+    },
+    {
+      "id": "N5",
+      "what": "INC §八 said 「当前 `RESULT=LEDGER_OK`」 when the ticket was written, but it was already SUSPECT at that point (VERIFY.md:63). The fire chief's tool-call count (~30) also went over the INC estimate of ≤12. It recorded this honestly, and no gate depends on it."
+    }
+  ],
+  "rework_brief": "1) In DELIVERY.md:93 (C5 table, the 断言/变异计数 row), rewrite the current state: AGENTS.md now reads 61/18, so change the row to ✅ and re-anchor to the current AGENTS.md:36 text 「断言 61 条 + 变异 18/18」. If you want to keep the old state, put it on a separate line with the HIST: prefix and label it as the value at the time. 2) Fix ledger row 164 following the ledger's own correction convention (append a correction row or reduce the cell to a single sentence): the tier column keeps only the current state (送审 · 救火产物第 1 轮验收 rework), and the gate result at :166 changes to the actual output of step 3. 3) Make sure every edit to AGENTS/ledger/DELIVERY is done first, then run `python scripts/cite-check.py --files tasks/LINENO-2026-11-07/TASK.md tasks/LINENO-2026-11-07/DELIVERY.md REVIEW-CONTRACT.md TRIGGER-POLICY.md decisions/LESSONS.md AGENTS.md --strict --out tasks/LINENO-2026-11-07/CITE-CHECK.txt`. Required result: EXIT=0 with GONE/AMBIG/SELF/WEAK/UNRESOLVED all 0, and the CITE-CHECK.txt mtime must be later than all 6 input files and ledger.md. 4) Rerun ledger-audit → RESULT=LEDGER_OK. 5) grep DELIVERY.md and ledger.md:164-166 for '53 条|14/14|OK=6|待第 2 轮'. Every remaining hit must be labeled as the value at the time or prefixed with HIST:.",
+  "escalate_question": "",
+  "reviewer_notes": "Everything I ran was read-only: the harness, the mutant bench, cite-check (output --out to a mktemp directory, never with --fix in the repo), ledger-audit, ls/find/grep/sed/cmp/od, plus cite-check --fix on my own temp fixtures. I did not modify any repo file. The fire chief's own work holds up: no boundary violations found, H1/H2/H3/H4 are real and locked by assertions and mutants, and the new harness turns exactly 4 checks red against the original tool. Both blocking items come from worker-side edits made after the fire chief finished (around 09:31): stale sync in the ledger row, and the gate artifact being generated before AGENTS.md was edited. I attributed these by timestamps only; I have no record of who actually ran those edits.",
+  "unit": "LINENO-2026-11-07",
+  "round": 5,
+  "date": "2026-11-07",
+  "trigger": "救火产物验收（伙伴点名救火）"
+}

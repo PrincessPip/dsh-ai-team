@@ -1,0 +1,94 @@
+{
+  "v": 1,
+  "plan_id": "plan-a1-fixture-g-check-verdict",
+  "budget": {
+    "max_calls": 10
+  },
+  "nodes": [
+    {
+      "id": "w_write",
+      "kind": "work",
+      "do": "往 tasks/DAG-2026-11-06/fixtures/sandbox/notes.md 末尾追加一行 '- A1 fixture 写入行'。",
+      "after": [],
+      "ctx": {
+        "read": [
+          "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+        ]
+      },
+      "writes": [
+        "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+      ],
+      "out": [
+        "changed",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "changed 恰好是 ['tasks/DAG-2026-11-06/fixtures/sandbox/notes.md']"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "replan"
+      }
+    },
+    {
+      "id": "k_verdict",
+      "kind": "check",
+      "do": "只读核对：notes.md 最后一行是不是 '- A1 fixture 写入行'。verdict 只能是 pass 或 fail。",
+      "after": [
+        "w_write"
+      ],
+      "ctx": {
+        "read": [
+          "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+        ],
+        "from": [
+          "w_write.changed"
+        ]
+      },
+      "out": [
+        "verdict",
+        "notes"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "verdict 只能是 pass 或 fail"
+        }
+      ],
+      "on_fail": {
+        "retry": 1,
+        "then": "replan"
+      }
+    },
+    {
+      "id": "k_down",
+      "kind": "check",
+      "do": "只读复核：k_verdict 判完之后再看一遍同一行，确认它没被改。",
+      "after": [
+        "k_verdict"
+      ],
+      "ctx": {
+        "read": [
+          "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+        ]
+      },
+      "out": [
+        "verdict",
+        "notes"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "verdict 只能是 pass 或 fail"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "replan"
+      }
+    }
+  ]
+}

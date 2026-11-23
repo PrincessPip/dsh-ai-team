@@ -1,0 +1,27 @@
+{
+  "round": 2,
+  "task": "tasks/P1-2026-11-06-STRENGTH",
+  "trigger": "mandatory",
+  "verdict": "escalate",
+  "confidence": 0.83,
+  "criteria": [
+    { "id": "C1", "status": "pass", "claimed_strength": "E1", "strength_met": true, "evidence": "E0–E3 每级都是可对照动作，无形容词式判据；判断类上限 E1 与此条自身等级一致。" },
+    { "id": "C2", "status": "fail", "claimed_strength": "E2", "strength_met": false, "evidence": "工人称『三个不同段落』，但三者全部落在同一个 ### 观察类别（D）小节内，不满足契约『≥2 个不同文件或不同章节』。C2 本质是定性判断，应标 [判断类] 上限 E1；改标事实一致类并声称 E2 = 虚标。实达 E1。" },
+    { "id": "C3", "status": "pass", "claimed_strength": "E3", "strength_met": true, "evidence": "契约 + AGENTS.md 两文件各自明文给出 ≥30 分钟；反证 grep『10 分钟』均为『不算数/错误结论』语境，0 个正面引用。" },
+    { "id": "C4", "status": "pass", "claimed_strength": "E3", "strength_met": true, "evidence": "契约四行×三类型门槛表 与 TRIGGER 三档×三类型门槛列逐项一致；反证 grep『命中 #1』『送审全部』无旧口径残留。" },
+    { "id": "C5", "status": "pass", "claimed_strength": "E2", "strength_met": true, "evidence": "§二·五 硬规则第 2 条 与 §五 新增条分处两个顶层章节。" },
+    { "id": "C6", "status": "pass", "claimed_strength": "E1", "strength_met": true, "evidence": "三条可反驳回答经核对属实：判断类不被逼上 E3；全部可用 Read/Grep 核；D5 与 E2(a) 已区分。" },
+    { "id": "C7", "status": "pass", "claimed_strength": "E1", "strength_met": true, "evidence": "§零/§三/§五/§六 结构与条目数未被削弱；JSON 只增两字段未删；DELIVERY 如实承认『非 git，只能给对照不能给 diff』。" },
+    { "id": "C8", "status": "pass", "claimed_strength": "E2", "strength_met": true, "evidence": "双向引用存在；变更记录各一条（契约 v0.4 / 策略 v1.4）。" },
+    { "id": "C9", "status": "pass", "claimed_strength": "E1", "strength_met": true, "evidence": "四问逐一有具体引用：类型终裁、D5/E2(a)、窗口取较大值、两条绕法处置。" }
+  ],
+  "blocking": [
+    { "id": "B1", "what": "C2 强度虚标：把本质是判断类的条目标成事实一致类并声称 E2，支撑证据是同一小节内部的三个子句，不是契约要求的『≥2 个不同文件或不同章节』。", "why": "违反 §二·五 硬规则 2 与 §79–83 明文禁止的手法（拿同段落子句充当独立位置）。与第 1 轮 B1 同源，只是换到『判断类 vs 事实一致类』这条新分界线上——说明终裁机制必须真正被执行。", "evidence": "REVIEW-CONTRACT.md 观察类别小节（同上）对照 DELIVERY C2 证据栏与位置独立性门槛原文" }
+  ],
+  "nonblocking": [
+    { "id": "N1", "what": "REVIEW-CONTRACT.md 标题仍写 v0.2，与变更记录 v0.4 不一致（文档卫生）。" }
+  ],
+  "rework_brief": "只改 DELIVERY C2 一行：类型改 [判断类]、强度降 E1；证据改成单次直读式可反驳引用（列出该小节四项要素齐全），不得再把同一小节内的表格/规则句/示例拆成『三个不同段落』。若确认改动只限这一处，可不经整轮返工，在下一次提交里连带标注修订说明。",
+  "escalate_question": "三类型规则修复本身扎实（B1/B2 均已验证修复），唯一实质问题落在 C2：工人把一个判断类条目包装成事实一致类，用同一小节内的子句充当『跨位置』证据凑 E2，与第 1 轮 B1 操作手法同源。按 §六，第 2 轮仍判出需返工的问题应升级。请伙伴选：(a) 认定孤立标注失误，批准第 3 轮返工只改 C2 一行；(b) 认定这是『强度自证』环节的反复模式，后续改为验收官先行标注类型、工人再对照；(c) 接受规则框架已达标，整体 pass 但附书面整改要求。",
+  "reviewer_notes": "C1/C3–C9 均为直接读原文核实，C4 交叉表比对与 C3/C4 反证 grep 自己复现过，非转述工人说法。未独立复核 ledger-audit.ps1 脚本逻辑与 mtime 输出真实性（无法执行命令），仅确认 ledger 7 行与声明一致。工人对『非 git』限制如实挑出而非掩盖，此处理方式诚实。"
+}

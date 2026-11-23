@@ -1,0 +1,29 @@
+{
+  "_comment": "EVIDENCE-GUARD C6（原 F12-b）：work 节点写到副本外（$USERPROFILE 顶层）→ escape_writes 记下来。**只记录、不进 harm**，所以节点仍然判 ok —— 别的进程也在写 TEMP，把它当 blocking 会让真图永久失败。",
+  "nodes": {
+    "s_recon": {
+      "expect_prompt_contains": ["id: s_recon", "notes.md", "只读"],
+      "tool_calls": [
+        {"name": "Read", "args": {"path": "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"}}
+      ],
+      "result": {"facts": "notes.md 里有 3 条以 '- ' 开头的条目", "summary": "只读侦察完成，未写文件"}
+    },
+    "w_write": {
+      "expect_prompt_contains": ["id: w_write", "允许改动的文件"],
+      "tool_calls": [
+        {"name": "Write", "args": {"path": "{HOME}/eg-escape-probe.txt"}}
+      ],
+      "write_files": {
+        "{HOME}/eg-escape-probe.txt": "EVIDENCE-GUARD C6 fixture：这一行证明员工写到了副本外。\n"
+      },
+      "result": {"changed": [], "summary": "本场景刻意只写副本外"}
+    },
+    "k_check": {
+      "expect_prompt_contains": ["id: k_check", "只读"],
+      "tool_calls": [
+        {"name": "Read", "args": {"path": "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"}}
+      ],
+      "result": {"verdict": "pass", "notes": "内容没变"}
+    }
+  }
+}

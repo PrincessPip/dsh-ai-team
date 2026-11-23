@@ -1,0 +1,111 @@
+{
+  "_comment": "DESIGN §8 Step 0 的验收集具：一张 8 节点图，用来跑 dry-run 核对波次。2026-11-06 按 DESIGN §8 的描述重建（原图只存在于当时的对话里，已丢；依赖形状 analyze → scaffold → {test_parse, test_validate, test_render} → integration → run_and_coverage → review 照原文）。写成 dry-run 夹具，不含任何真实落地意图。",
+  "v": 1,
+  "plan_id": "fixture-2026-11-06-summary-tool",
+  "base_rev": null,
+  "budget": { "max_calls": 30, "max_usd": 3 },
+  "hot_files": ["package.json", "pnpm-lock.yaml", "AGENTS.md", "decisions/self/ledger.md"],
+  "nodes": [
+    {
+      "id": "analyze",
+      "kind": "scout",
+      "do": "读 review-index.ps1 与 3 个样本裁决 JSON，产出事实包：输入结构、字段清单、缺失字段、边界情况，每条带 file:line",
+      "ctx": { "read": ["scripts/review-index.ps1", "decisions/INDEX.md", "decisions/P1-2026-11-06-WARN.json"] },
+      "after": [],
+      "out": ["facts"],
+      "accept": [{ "type": "assert", "rule": "facts 里每条结论都带 file:line，且不出现「大概 / 应该 / 可能」这类未验证措辞" }],
+      "on_fail": { "retry": 1, "then": "replan" },
+      "critical": true
+    },
+    {
+      "id": "scaffold",
+      "kind": "work",
+      "do": "按事实包搭 src/summary/ 骨架：index.ts 导出 parse / validate / render 三个入口（空实现即可，签名按事实包），导出签名写进 iface",
+      "ctx": { "read": ["scripts/review-index.ps1"], "from": ["analyze.facts"] },
+      "after": ["analyze"],
+      "writes": ["src/summary/index.ts"],
+      "out": ["iface", "patch", "patch_targets"],
+      "accept": [
+        { "type": "cmd", "run": "pnpm vitest run src/summary --reporter=dot", "expect": "exit0" },
+        { "type": "assert", "rule": "grep -c 'export ' src/summary/index.ts >= 3" }
+      ],
+      "on_fail": { "retry": 1, "escalate": "integrate", "then": "replan" },
+      "critical": true
+    },
+    {
+      "id": "test_parse",
+      "kind": "work",
+      "do": "按 iface 写 parse 的单元测试：合法 JSON、空对象、缺 status、非法 status 四种输入",
+      "ctx": { "from": ["scaffold.iface"] },
+      "after": ["scaffold"],
+      "writes": ["src/summary/parse.test.ts"],
+      "requests": ["package.json"],
+      "out": ["patch", "patch_targets"],
+      "accept": [{ "type": "cmd", "run": "pnpm vitest run src/summary/parse.test.ts", "expect": "exit0" }],
+      "on_fail": { "retry": 1, "then": "replan" }
+    },
+    {
+      "id": "test_validate",
+      "kind": "work",
+      "do": "按 iface 写 validate 的单元测试：必填字段缺失、类型不对、未知字段三种拒绝路径",
+      "ctx": { "from": ["scaffold.iface"] },
+      "after": ["scaffold"],
+      "writes": ["src/summary/validate.test.ts"],
+      "out": ["patch", "patch_targets"],
+      "accept": [{ "type": "cmd", "run": "pnpm vitest run src/summary/validate.test.ts", "expect": "exit0" }],
+      "on_fail": { "retry": 1, "then": "replan" }
+    },
+    {
+      "id": "test_render",
+      "kind": "work",
+      "do": "按 iface 写 render 的单元测试：表格列顺序、空输入、转义三种情形",
+      "ctx": { "from": ["scaffold.iface"] },
+      "after": ["scaffold"],
+      "writes": ["src/summary/render.test.ts"],
+      "out": ["patch", "patch_targets"],
+      "accept": [{ "type": "cmd", "run": "pnpm vitest run src/summary/render.test.ts", "expect": "exit0" }],
+      "on_fail": { "retry": 1, "then": "replan" }
+    },
+    {
+      "id": "integration",
+      "kind": "integrate",
+      "do": "按 scaffold → test_parse → test_validate → test_render 的顺序逐个打 patch，每打一个跑一次对应测试；打完把 changed 列出来",
+      "ctx": { "from": ["scaffold.patch", "test_parse.patch", "test_validate.patch", "test_render.patch"] },
+      "after": ["scaffold", "test_parse", "test_validate", "test_render"],
+      "join": "all",
+      "writes": ["src/summary/index.ts", "package.json"],
+      "out": ["changed", "notes"],
+      "accept": [
+        { "type": "cmd", "run": "pnpm vitest run src/summary", "expect": "exit0" },
+        { "type": "scope", "rule": "changed ⊆ writes" }
+      ],
+      "on_fail": { "retry": 1, "escalate": "integrate", "then": "replan" },
+      "critical": true
+    },
+    {
+      "id": "run_and_coverage",
+      "kind": "check",
+      "do": "跑全量测试 + 覆盖率，报 verdict：覆盖率 < 80% 或有用例失败记 rework，否则 pass",
+      "ctx": { "read": ["src/summary/"] },
+      "after": ["integration"],
+      "out": ["verdict", "notes", "artifacts"],
+      "accept": [
+        { "type": "cmd", "run": "pnpm vitest run --coverage", "expect": "exit0" },
+        { "type": "assert", "rule": "覆盖率行包含 100.00 或 marks：三文件各自 statements >= 80%" }
+      ],
+      "on_fail": { "retry": 0, "then": "replan" },
+      "critical": true
+    },
+    {
+      "id": "review",
+      "kind": "check",
+      "do": "对着 writes 与 accept 复核 integration 的落地范围，抽样看 3 个用例是否真的测了东西，出 verdict",
+      "ctx": { "from": ["integration.changed", "run_and_coverage.verdict"] },
+      "after": ["run_and_coverage"],
+      "when": { "ref": "run_and_coverage.verdict", "op": "eq", "val": "pass" },
+      "out": ["verdict", "notes"],
+      "accept": [{ "type": "review", "rule": "抽样 3 个用例：断言是否真的能失败（不是 assert(true) 式的空测）" }],
+      "on_fail": { "retry": 0, "then": "replan" }
+    }
+  ]
+}

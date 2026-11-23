@@ -1,0 +1,78 @@
+{
+  "verdict": "rework",
+  "confidence": 0.98,
+  "readonly_enforcement": "snapshot_only",
+  "evidence_root": "%USERPROFILE%/AppData/Local/Temp/n1-independent-audit-pcd4t1dp",
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "validation.json：3239 个包文件、3234 个复制来源、3235 个源输入全部 SHA 匹配，无链接；三份保护适配文件重新生成后字节一致。但按简报运行复制树 selftest.py，exitCode=1，无法完成规定复现，见 B1。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "本轮 selftest 内实际执行 run-local.py proof --root <clean-package 内 live 绝对路径>：exit0、9/9、16 份镜像恢复；计数及重复 ID 反例精准命中。verify-live.py：exit0、53/53；对复制 dry 目录运行：exit1、52/53，仅 evidence mode 失败。新日志位于 review-copy/tasks/ASTRA-NATIVE-N1-2026-11-15/selftest-1794676906275627000/。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立 TEMP 假源探针使用 SHA 已核对的原 collector，13 项通过：缺 baseline、helper/config SHA 错、源不可用均拒绝；真实新增文件仅进入 added，错预期 SHA 仅命中目标；各次恢复通过。见 independent-fixture.json。这是另行验证保护实现，不代表交付 selftest 完成。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "简报指定四文件 strict 命令 exit0；删除 TEMP 中 checker 原件或 ledger 配置分别 exit1，恢复 exit0。另行非空引用实测 OK/GONE/OK，退出码 0/1/0，见 independent-cite-and-adapter.json。"
+    },
+    {
+      "id": "C5",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "boundary-independent.json：父级 BEFORE 的 10338 文件 changed=[]、added=[]，原 collector 的 7078 文件通过。final-integrity.json：送审树 3355 文件无新增或内容变化，3235 源输入、10338 保护文件、TEMP 冻结输入均无 SHA 漂移；proof 的错误保护 SHA 反例精准失败并恢复。"
+    },
+    {
+      "id": "C6",
+      "type": "fact-consistent",
+      "status": "fail",
+      "claimed_strength": "E2",
+      "strength_met": false,
+      "evidence": "规定的复制树 selftest 实际退出 1，留下的 RESULT.json 却为 pass=true、仅12项；与完整24项验证的复现要求不一致。范围及非可移植、非硬沙箱声明符合实现，但不能抵消 B1/B2。"
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "claim": "selftest 在规定的送审副本布局下复制了错误的 collector，必需复现中途崩溃。",
+      "why": "违反 C1 的入口依赖闭包及 C6 的复现一致性。",
+      "evidence": "selftest.py:58「helper=fa/'prepare.py';shutil.copyfile(B['REPO']/'tasks'/AUDIT/'prepare.py',helper)」从复制树取得的是适配 launcher。执行 python -B <review-copy>/tasks/ASTRA-NATIVE-N1-2026-11-15/selftest.py <clean-package>，18.54秒后 exit1；第59行运行假源 helper 报 RuntimeError: N1 adapter SHA mismatch。完整回执见 independent-selftest.json 与 independent-selftest.log。"
+    },
+    {
+      "id": "B2",
+      "claim": "selftest 异常退出后仍留下顶层 pass=true 的不完整结果。",
+      "why": "违反 C6 的失败记录一致性，机器结果无法独立表达整套验证未完成。",
+      "evidence": "selftest.py:11「write(LOG/'RESULT.json',{'pass':all(r['pass'] for r in records),'checks':records})」只汇总已完成项；本轮进程 exit1，但 selftest-1794676906275627000/RESULT.json 为 pass=true、checks仅12项，缺少后续保护反例和最终完整性检查。"
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "指定四文件 cite 检查实际 refs=0；本轮已补做独立非空引用正反恢复验证。strict 成功仅证明引用形式，不证明论断内容。"
+    }
+  ],
+  "rework_brief": "修正 selftest.py 的假源 helper 来源：从 manifest/N1-SOURCE 明确绑定并验证 SHA 的原 collector，或已保留且验证 SHA 的 n1-original-prepare.py 复制，不再依赖复制树 B['REPO'] 下的适配 launcher。结果文件增加完成状态，仅全部检查完成才写 pass=true；异常路径记录 pass=false 和错误。用全新 TEMP 干净包复跑24项，并验证中途异常不会留下成功结果；保留本次失败记录，不修改历史保护源。",
+  "reviewer_notes": "所有写入仅发生于新建 TEMP 副本及假源；未修改正式送审树、真实保护源或交付脚本，未发送网络或模型请求。未重跑完整 build.py，核对了来源 SHA、生成适配结果及父级构建证据；已阅读两份 DELIVERY 和 OLD-REPRO。当前正式模型退出后的父级快照尚未产生，仍须父级收取；本轮净变化检查不证明写后还原或树外写入不可发生。"
+}

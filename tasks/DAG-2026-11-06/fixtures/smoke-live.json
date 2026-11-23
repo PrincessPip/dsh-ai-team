@@ -1,0 +1,54 @@
+{
+  "_comment": "真跑冒烟图（2026-11-06 Step 0 验收用）：3 个节点真调 deepseek-flash，加 1 个几乎必然被 when 跳过的节点。目的只有三个 —— ① 引擎接受 provider/model/schema/label/phase 这几个选项 ② 结构化输出真的会回填到下游任务卡 ③ when 不成立时走 skipped 而不是 fail。任务本身刻意极小，别拿它当功能交付。成本：3 次 deepseek-flash 调用（c2 多半不跑）。",
+  "v": 1,
+  "plan_id": "smoke-2026-11-06-step0",
+  "base_rev": null,
+  "budget": { "max_calls": 6, "max_usd": 2 },
+  "hot_files": ["package.json", "AGENTS.md"],
+  "nodes": [
+    {
+      "id": "s1",
+      "kind": "scout",
+      "do": "读 scripts/dag.workflow.mjs 的头部注释（前 40 行）与 args 解析那一段，报 3 条事实：args 支持哪些字段、dryRun 干什么、图从哪个参数进来。每条带 file:line",
+      "ctx": { "read": ["scripts/dag.workflow.mjs#L1-60"] },
+      "after": [],
+      "out": ["facts"],
+      "accept": [{ "type": "assert", "rule": "facts 里每个结论都带 scripts/dag.workflow.mjs:行号" }],
+      "on_fail": { "retry": 1, "then": "replan" },
+      "critical": true
+    },
+    {
+      "id": "s2",
+      "kind": "work",
+      "do": "按 s1 的事实包，写一行给 docs/dag-args.md 的 unified diff：新增一节「入口参数」，列出 args 支持的 4 个字段。只出 diff，不要落盘",
+      "ctx": { "from": ["s1.facts"] },
+      "after": ["s1"],
+      "writes": ["docs/dag-args.md"],
+      "out": ["patch", "patch_targets"],
+      "accept": [{ "type": "cmd", "run": "git diff --stat docs/dag-args.md", "expect": "exit0" }],
+      "on_fail": { "retry": 0, "escalate": "strong", "then": "replan" },
+      "critical": true
+    },
+    {
+      "id": "c1",
+      "kind": "check",
+      "do": "只看 s2 给的 patch：① 是否只动 docs/dag-args.md 一个文件 ② 是否真的列了 4 个字段 ③ 是否引用了 s1 的事实。三项都过记 pass，否则记 rework",
+      "ctx": { "from": ["s2.patch", "s1.facts"] },
+      "after": ["s2"],
+      "out": ["verdict", "notes"],
+      "accept": [{ "type": "review", "rule": "对照 patch 与 s1.facts 核三条，任一条判不准写 need_info" }],
+      "on_fail": { "retry": 0, "then": "replan" }
+    },
+    {
+      "id": "c2",
+      "kind": "check",
+      "do": "只有在 c1 判 escalate 时才需要：把 c1 的 rework 理由整理成返工清单",
+      "ctx": { "from": ["c1.notes"] },
+      "after": ["c1"],
+      "when": { "ref": "c1.verdict", "op": "eq", "val": "escalate" },
+      "out": ["notes"],
+      "accept": [{ "type": "review", "rule": "清单是否可直接执行" }],
+      "on_fail": { "retry": 0, "then": "skip" }
+    }
+  ]
+}

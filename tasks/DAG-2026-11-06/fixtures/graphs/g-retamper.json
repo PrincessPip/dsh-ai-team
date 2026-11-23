@@ -1,0 +1,107 @@
+{
+  "v": 1,
+  "plan_id": "plan-retamper-fixture",
+  "budget": {
+    "max_calls": 8
+  },
+  "nodes": [
+    {
+      "id": "w_bad",
+      "kind": "work",
+      "do": "读 tasks/DAG-2026-11-06/fixtures/sandbox/notes.md，把结论写进 summary，不改文件。",
+      "after": [],
+      "ctx": {
+        "read": [
+          "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+        ]
+      },
+      "writes": [
+        "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+      ],
+      "out": [
+        "changed",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "summary 里必须说清 notes.md 有几条 '- ' 条目"
+        },
+        {
+          "type": "cmd",
+          "run": "node -e \"process.exit(0)\"",
+          "expect": "exit0"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "replan"
+      }
+    },
+    {
+      "id": "s_indep",
+      "kind": "scout",
+      "do": "只读侦察：数 notes.md 里以 '- ' 开头的条目数，不写任何文件。",
+      "after": [],
+      "ctx": {
+        "read": [
+          "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+        ]
+      },
+      "out": [
+        "facts",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "facts 里必须写清 '- ' 条目数"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "replan"
+      }
+    },
+    {
+      "id": "w_bad2",
+      "kind": "work",
+      "do": "汇总前两个节点的结论，写进 summary。不改任何文件。",
+      "after": [
+        "w_bad",
+        "s_indep"
+      ],
+      "join": "any",
+      "ctx": {
+        "read": [
+          "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+        ],
+        "from": [
+          "s_indep.facts"
+        ]
+      },
+      "writes": [
+        "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+      ],
+      "out": [
+        "changed",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "summary 里要带上 '条' 这个字"
+        },
+        {
+          "type": "cmd",
+          "run": "node -e \"process.exit(0)\"",
+          "expect": "exit0"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "replan"
+      }
+    }
+  ]
+}

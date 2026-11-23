@@ -1,0 +1,202 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DAG 任务图（DESIGN §4）",
+  "description": "经理层产出的唯一中间产物。落盘后可校验、可 diff、可 dry-run、可复现。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["v", "plan_id", "nodes"],
+  "properties": {
+    "v": {
+      "type": "integer",
+      "enum": [1],
+      "description": "图格式版本，固定写 1"
+    },
+    "plan_id": {
+      "type": "string",
+      "description": "这张图的标识，形如 plan-YYYYMMDD-简短代号。事后要能对着同一份图点名（§3 ③ 人点头）"
+    },
+    "base_rev": {
+      "anyOf": [{ "type": "string" }, { "type": "null" }],
+      "description": "基线版本。本工程不是 git 仓库时写 null"
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "预算上限。max_calls 是「最多调几次 agent」（含重试与升档），不是「起几个 agent」—— 别按节点数填",
+      "properties": {
+        "max_calls": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "最多调几次 agent，含 on_fail.retry 的重试与 escalate 的升档。必须 >= 节点数（否则 Gate 拒收）；建议给到 Σ(1+retry+升档) 的最坏值"
+        },
+        "max_usd": { "type": "number", "minimum": 0 }
+      },
+      "required": ["max_calls"]
+    },
+    "hot_files": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "热文件：只有 integrate 节点能写，别的节点只能通过 requests 提"
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "description": "任务节点。互不依赖的节点会被并行调度",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "do", "accept", "on_fail"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "节点 id，全图唯一，小写字母/数字/下划线"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["scout", "contract", "work", "integrate", "check", "replan"],
+            "description": "scout=只读侦察并交事实包 / contract=定接口契约 / work=实施（只交 diff，不碰主树）/ integrate=本轮唯一写手 / check=只读核查 / replan=返工规划"
+          },
+          "do": {
+            "type": "string",
+            "description": "动词开头的一句话，说清这个节点做什么。会被原样放进任务卡"
+          },
+          "after": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "硬依赖的上游节点 id。空数组=起点节点"
+          },
+          "join": {
+            "type": "string",
+            "enum": ["all", "any"],
+            "description": "all=上游全部 ok 才跑（默认）；any=任一 ok 就跑，用于兜底/汇总"
+          },
+          "writes": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "本节点会改的文件（相对工程根）。两个节点写集有交集且互不为祖先 → 整张图被拒收"
+          },
+          "requests": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "想改热文件时在这里提请求，由 integrate 统一落"
+          },
+          "tier": {
+            "type": "string",
+            "enum": ["scout", "work", "integrate", "check", "strong"],
+            "description": "模型档位。不写就按 kind 取默认档，逐 kind 如下：scout→scout，work→work，contract→strong，integrate→strong，check→strong，replan→strong。可用值五个：scout / work / integrate / check 走 deepseek-flash（吞吐型），strong 走订阅通道 GPT-6.2-Astra（判断型，2026-11-23 由 DAG-MIXED-MODEL 单元加回；它 2026-11-12 被移除时指的是另一个模型 deepseek-v4-pro）"
+          },
+          "ctx": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "这个节点要读什么。只许写具体的文件行段或上游产物路径",
+            "properties": {
+              "read": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "要读的文件片段，形如 src/a.ts#L10-80"
+              },
+              "from": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "要接的上游产物，形如 n1.facts。引用的字段必须在上游的 out 里声明过"
+              }
+            }
+          },
+          "when": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "条件执行。只许对上游结构化输出的某字段做确定性判断，不许写 JS 表达式",
+            "required": ["ref", "op"],
+            "properties": {
+              "ref": { "type": "string", "description": "形如 n2.verdict" },
+              "op": { "type": "string", "enum": ["eq", "in", "exists"] },
+              "val": {
+                "anyOf": [
+                  { "type": "string" },
+                  { "type": "array", "items": { "type": "string" } }
+                ],
+                "description": "op=eq 用字符串；op=in 用字符串数组；op=exists 不用给"
+              }
+            }
+          },
+          "accept": {
+            "type": "array",
+            "minItems": 1,
+            "description": "验收标准。work 与 integrate 节点必须至少有一条 cmd 或 assert —— 纯文字验收会被 Gate 拒收。scope 断言必须能算出 allowlist（有 writes 或 allow_from），否则拒收",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["type"],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["cmd", "assert", "scope", "review"],
+                  "description": "cmd=跑命令看退出码 / assert=确定性断言 / scope=写集校验 / review=人工评审（只准出现在 check 节点）"
+                },
+                "run": { "type": "string", "description": "type=cmd 时要跑的命令" },
+                "rule": { "type": "string", "description": "type=assert/scope/review 时的规则。注意：scope 的 rule 只是说明文字，解释器不读；真正的 allowlist 由 writes + allow_from 算" },
+                "expect": { "type": "string", "description": "期望结果，如 exit0" },
+                "allow_from": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "description": "仅 type=scope：动态 allowlist 的来源，元素形如 s_code.allow_paths。只能引用祖先节点、且该字段必须是数组类（allow_paths / patch_targets / changed / artifacts / missing），并在上游 out 里声明过"
+                },
+                "allow_under": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "description": "仅 type=scope：路径前缀白名单（如 tests/、docs/），约束 allow_from 取到的动态路径；落在前缀外的会被剔除并按越界判失败"
+                },
+                "target": {
+                  "type": "string",
+                  "enum": ["human"],
+                  "description": "仅 type=review：这条评审断言由谁执行。现阶段只允许 human（伙伴 2026-11-23 决定：只验收代码，不实现多模态自动验收）。字段先留着，取值锁死在 human —— 将来接「由哪个验收模型看产物」时才放开"
+                }
+              }
+            }
+          },
+          "out": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["summary", "missing", "artifacts", "changed", "allow_paths", "facts", "iface", "patch", "patch_targets", "verdict", "notes"]
+            },
+            "description": "这个节点除了 status 之外还要交哪些字段。没声明的字段模型回不出来，下游也引用不到。要把路径清单交给下游的 scope 用，就声明 allow_paths。⚠️ 声明了 patch 的节点必须交 diff、不许落盘（DESIGN.md:203）：patch 目标写进 patch_targets，changed 只写实际落盘的文件（只交 patch 时是空数组）。⚠️ artifacts 当前产物是**字符串数组**（兼容既有图）；将来允许元素为 {path, kind}，kind ∈ image|audio|video|text，用来给生成类产物标类型 —— 字段结构本次不改，只在这里登记（DAG-MIXED-MODEL §3.4）"
+          },
+          "on_fail": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "失败怎么办。必须显式声明 —— 失败是静默的，不声明就会被悄悄吞掉",
+            "properties": {
+              "retry": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 3,
+                "description": "同档重试次数"
+              },
+              "escalate": {
+                "type": "string",
+                "enum": ["scout", "work", "integrate", "check", "strong"],
+                "description": "重试仍失败时升到哪个档。与 tier 同一张档位表：scout / work / integrate / check / strong。升到 strong 会真的换模型（deepseek-flash → 订阅 GPT），因为 runner 写 overlay 的判据是「本档模型 ≠ work 档模型」"
+              },
+              "then": {
+                "type": "string",
+                "enum": ["replan", "skip", "abort"],
+                "description": "最终处置：replan=标记需要返工 / skip=跳过 / abort=整张图停"
+              }
+            },
+            "required": ["then"]
+          },
+          "critical": {
+            "type": "boolean",
+            "description": "是否是关键路径节点（v1 只是标注，不影响调度）"
+          },
+          "tools": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "本节点可用的生成工具 id（占位，暂无实现；2026-11-23 DAG-MIXED-MODEL 只加字段不改 runner）。生成模型以「工具」身份进图，不以「引擎」身份 —— 见 tasks/DAG-MIXED-MODEL-2026-11-23/DESIGN.md §3.4。Gate 目前只登记、不校验具体工具名"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "verdict": "escalate",
+  "confidence": 0.98,
+  "readonly_enforcement": "snapshot_only",
+  "evidence_root": "%USERPROFILE%/AppData/Local/Temp/constraints-independent-r3-bmjcwsiz",
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立运行 evidence_root/independent-probes.py：前两轮原句现已拒绝，纯 E/I 正例仍通过；但 product_long、product_tail_long、product_reset 均错误返回 I、exit 0，e_status_bar、e_failure_button、e_log_button 均错误返回 E、exit 0。完整输入和输出见 probes/各用例/及 evidence/independent-probes.json。",
+      "judgment": "[判断类，E1] 保守分类增加噪音可以辩护，但按子句长度丢弃明确产品范围、按宾语中的关键词豁免界面限制，仍会放过真实 P 条款，不能宣称 fail-closed。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立探针：empty 返回 exit 2；unknown 返回 exit 1/UNKNOWN-ID；proposed、empty_quote 返回 exit 1/NOT-APPROVED；approved 返回 exit 0。M05–M08 均准确命中预期红集，见 evidence/mutate.txt。结论限于已抽取并分类为 P 的条款。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "unverified",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "运行机制达到 E3：baseline_original 返回 0，改措辞、新增条款、换路径均返回 1；带标签行重建 baseline 后数据行数为 0，删除标签后返回 1。独立集合核对：586→625 为新增79/移出40，623→625 为新增2/移出0，新增项与 CHANGED.txt 的交集均为空；但对应历史源文件全部缺席，不能确认其历史来源。见 evidence/document-audit.json、evidence/tagged-baseline.txt。",
+      "subresults": {
+        "baseline_runtime": "pass",
+        "counts_and_changed_scope": "pass",
+        "historical_source_authenticity": "unverified"
+      }
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立探针验证反引号、波浪线、四空格代码块、引用、划线、词内假阳性和超长行均为 prohibitions=0、exit 0；缩进列表返回 P、exit 1。M18–M21 实红分别为 T29/T30/T31/T32，与固定预期一致。见 evidence/independent-probes.json、evidence/mutate.txt。"
+    },
+    {
+      "id": "C5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "TEMP 副本复跑 selftest：40/40、exit 0；mutate：25/25、void=0、exit 0。M16 实红 T25/T27/T28/T37/T38；M17 为 T33；M24 为 T37；M25 为 T39；M22 为 T36；M23 为 T34。constraints-mutate.py:192「ok = set(got) == set(expect)」比较固定预期；断言另核退出码、消息及 baseline 数据行数。仅副本入口补回隔离环境继承，未改断言、变异或被测分类器；此通过不代表覆盖 C1 的新反例。"
+    },
+    {
+      "id": "C6",
+      "type": "fact-consistent",
+      "status": "fail",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "已独立生成并阅读分类器前后差异。新增的 PENDING_VETO_MAXLEN=8 及长子句清空分支缺少对应边界断言：仅将阈值改为8000，现有40例仍全部通过，见 evidence/threshold-coverage.txt。HANDOVER.md:76「M24 钉着正确行为」不能证明该长度边界；M24只删除范围传递。中间版本和所称16条误报原文仍未提供，其历史过程保持 unverified。",
+      "judgment": "[判断类，E1] 可证的是新增例外缺少所要求的断言覆盖，并实际造成漏检；不能据此推断作者的修改动机。",
+      "subresults": {
+        "final_change_test_traceability": "fail",
+        "intermediate_history": "unverified"
+      }
+    },
+    {
+      "id": "C7",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "python -B scripts/constraints-check.py --defs：exit 0、defs=6、violations=0；已直读 AGENTS.md:37–39、TRIGGER-POLICY.md:491–493 和注册表定义，均包含 I 的实验进程边界。T36 改坏定义后拒绝，M22 准确使 T36 变红。见 evidence/defs.txt、evidence/selftest.txt、evidence/mutate.txt。"
+    },
+    {
+      "id": "C8",
+      "type": "fact-consistent",
+      "status": "unverified",
+      "claimed_strength": "E2",
+      "strength_met": false,
+      "evidence": "两套前像各11份，SHA256、字节数、行数全部匹配清单；独立重算本轮差异为 +186/-89，与 ROUND3-DIFF.txt 一致。历史26483→19576 B瘦身仍缺移出前原文，不能确认逐字迁移。见 evidence/document-audit.json。",
+      "subresults": {
+        "current_preimages_and_changes": "pass",
+        "historical_verbatim_migration": "unverified"
+      }
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B1a",
+      "claim": "产品范围仍可因长度阈值或中间子句被丢弃，真实 P 条款无出处通过。",
+      "what": "上一轮原句已修复，但同义表达仍被归为 I。",
+      "why": "违反 C1；新增长度例外缺少 C6 要求的断言覆盖。",
+      "evidence": "scripts/constraints-check.py:223「if veto and len(clause) <= PENDING_VETO_MAXLEN:」及 :225 的长子句清空分支。独立输入「- 对于我们的产品，禁止复制任何文件。」得到 I=1、P=0、exit 0；对照「- 禁止复制我们产品中的任何文件。」得到 P=1、exit 1。行尾产品范围及中间长子句也复现漏检，见 probes/product_long、product_long_direct、product_tail_long、product_reset。"
+    },
+    {
+      "id": "B1b",
+      "claim": "证据动作与对象仍仅按关键词共现匹配，界面限制可以被当成 E。",
+      "what": "移除“隐藏”的单词豁免后，宾语中的“状态”“失败”“日志”仍可触发证据豁免。",
+      "why": "违反 C1；没有确认被限制的对象实际属于证据完整性。",
+      "evidence": "scripts/constraints-check.py:191「if e_act and E_OBJ_RE.search(clause):」直接返回 E。独立输入「- 禁止隐藏状态栏。」「- 禁止隐藏失败提示按钮。」「- 禁止隐藏日志导出按钮。」均得到 E=1、P=0、violations=[]、exit 0；「禁止隐藏按钮」正确拒绝。见 probes/e_status_bar、e_failure_button、e_log_button、e_button。"
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "交付数字仍有旧读数混用。",
+      "evidence": "DELIVERY.md:77 写 prohibitions=707、registered=625；SCAN-FINAL.txt:1 为709、628；HANDOVER.md:136 写707/625/625。TRIGGER-POLICY.md:521 仍写22例/14格，实际复跑为40例/25格。"
+    },
+    {
+      "id": "N2",
+      "what": "保留已声明范围限制，不能据此追认未验证部分。",
+      "evidence": "历史 baseline 来源、中间修改过程、历史瘦身逐字迁移未验证；quote 真伪及其与条款的对应关系不由当前检查器核验；默认扫描仅覆盖规定的 Markdown 范围。"
+    },
+    {
+      "id": "N3",
+      "what": "引用、改动面扫描和注入预算复跑通过。",
+      "evidence": "五份文档 cite-check：exit 0、OK=7、LONE=3；改动面扫描：files=5、violations=0；预算：body=49136、rendered=49484、omitted=[]、truncated=[]。见 evidence/cite-all-changed.txt、changed.txt、budget.txt。"
+    }
+  ],
+  "rework_brief": "修复 classify() 对明确产品范围的长度截断和清空，使长短同义句、行尾范围及中间插入说明均保持正确分类；收窄 E 豁免，区分证据本身与含证据词的界面对象，不确定时按 P。将本轮六个漏检输入及正例加入固定断言和针对性变异；补充长度边界的覆盖证据，不能用 M24 代替。缺失历史证据继续标未验证，不事后重建冒充原件；同步交付读数。",
+  "escalate_red_line": [
+    4
+  ],
+  "escalate_question": "[红线 4；契约 §六] B1 连续返工后仍存在同类漏检。请选择继续按上述反例收窄自动豁免，或调整分类设计并重新明确验收边界；当前版本不能按通过交付。",
+  "reviewer_notes": "输入树前后均为375个文件，路径、类型、SHA256及大小核对新增/删除/修改均为0，见 evidence/readonly-summary.json；该结果仅证明采样间净状态一致。所有测试和证据写入均在新建TEMP目录，六个用户/临时目录变量已隔离，副本变异入口仅补回环境继承，被测分类器与输入文件字节一致。未调用网络或真实模型；外层验收入口最终机器报告仍须与本裁决一起核对。"
+}

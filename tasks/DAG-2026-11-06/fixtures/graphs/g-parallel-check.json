@@ -1,0 +1,125 @@
+{
+  "v": 1,
+  "plan_id": "plan-a1-fixture-g-parallel-check",
+  "budget": {
+    "max_calls": 10
+  },
+  "nodes": [
+    {
+      "id": "w_write",
+      "kind": "work",
+      "do": "往 tasks/DAG-2026-11-06/fixtures/sandbox/notes.md 末尾追加一行 '- A1 fixture 写入行'。",
+      "after": [],
+      "ctx": {
+        "read": [
+          "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+        ]
+      },
+      "writes": [
+        "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+      ],
+      "out": [
+        "changed",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "changed 恰好是 ['tasks/DAG-2026-11-06/fixtures/sandbox/notes.md']"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "replan"
+      }
+    },
+    {
+      "id": "k_a",
+      "kind": "check",
+      "do": "只读核对最后一行。两个只读核查同波并发，本节点判 pass。",
+      "after": [
+        "w_write"
+      ],
+      "ctx": {
+        "read": [
+          "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+        ],
+        "from": [
+          "w_write.changed"
+        ]
+      },
+      "out": [
+        "verdict",
+        "notes"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "verdict 只能是 pass 或 fail"
+        }
+      ],
+      "on_fail": {
+        "retry": 1,
+        "then": "replan"
+      }
+    },
+    {
+      "id": "k_b",
+      "kind": "check",
+      "do": "只读核对同一个文件的字节数。两个只读核查同波并发，本节点判 fail（模拟 B4 的 k_hash 形态）。",
+      "after": [
+        "w_write"
+      ],
+      "ctx": {
+        "read": [
+          "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+        ],
+        "from": [
+          "w_write.changed"
+        ]
+      },
+      "out": [
+        "verdict",
+        "notes"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "verdict 只能是 pass 或 fail"
+        }
+      ],
+      "on_fail": {
+        "retry": 1,
+        "then": "replan"
+      }
+    },
+    {
+      "id": "k_down",
+      "kind": "check",
+      "do": "只读复核：等上面两个核查都结束再汇总。任一上游没 ok 就别起跑。",
+      "after": [
+        "k_a",
+        "k_b"
+      ],
+      "ctx": {
+        "read": [
+          "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+        ]
+      },
+      "out": [
+        "verdict",
+        "notes"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "verdict 只能是 pass 或 fail"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "replan"
+      }
+    }
+  ]
+}

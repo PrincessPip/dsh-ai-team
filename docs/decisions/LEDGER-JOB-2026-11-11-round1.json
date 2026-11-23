@@ -1,0 +1,112 @@
+{
+  "verdict": "rework",
+  "confidence": 0.84,
+  "criteria": [
+    {
+      "id": "K1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "Both scripts start with EF BB BF; param -Path (default decisions/self/ledger.md) / -Baseline / -WriteBaseline. Exit codes: 0 with baseline, 1 without, 2 on the bench cases file-not-found / invalid-utf8 / schema-mismatch (my run TESTS=25 FAILED=0)."
+    },
+    {
+      "id": "K2",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "Seven-form state machine and its header comment are present. But the disposition-row identifiers are missing 补登, which TASK §一 lists: fixture '补登 · 漏记的单元' → exit 1, FIELD3_INVALID. Ledger lines 190–192 (补登) are counted as row.tier only because the unanchored R_TIER matches '属送审'."
+    },
+    {
+      "id": "K3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "Mutant M2 (orphan check disabled) turns both orphan cases red (my run). Real ledger: 171–188 are judged orphans."
+    },
+    {
+      "id": "K4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "My run on the real ledger: rc=1, 19 [VIOLATION] = FIELD3_INVALID line=170 + ORPHAN_CONTINUATION line=171..188; no line-56 report; probe sp2 (' | ' inside field 4) rc=0; mutant X1 (split limit removed) caught by accept-field4. Whether 170 is real debt is an open dispute, see B2."
+    },
+    {
+      "id": "K5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "With -Baseline scripts/ledger-check-baseline.txt: rc=0 'new=0 known=19'. Bench case baseline-new-violation-still-red is green; mutants M5 and X6 both turn it red."
+    },
+    {
+      "id": "K6",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "25 cases: accept forms / 2 orphans / DATE_ROW_MALFORMED, ROW_FIELD_COUNT, FIELD3_INVALID, ROW_FIELD4_EMPTY / 4 baseline cases; TESTS=25 FAILED=0, exit 0."
+    },
+    {
+      "id": "K7",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "cmp of the first 279 lines of the main ledger vs %TEMP%/ai-team-job-20261111-101037/decisions/self/ledger.md → identical (sha 7e3425e3…); ledger-audit.ps1 sha c3360fc3… matches k_guard's record; BOM EF BB BF on both scripts."
+    },
+    {
+      "id": "K8",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "My run with mutate-ledger-check.py --root %TEMP%\\lj-review\\mirror: defined=9 void=0 ran=9 caught=9 restored_green=True; each mutant's red set covers its expect_red. My 7 extra mutants: 6 caught, X7 (CR not stripped) survived."
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "what": "The new TRIGGER-POLICY.md §二 v2.2 rule text contradicts the checker's actual behaviour: it lists 补登 as a disposition marker but the code doesn't recognise it, and it says the 「不送审（…）」 form is judged FIELD3_INVALID but in practice only a field 3 with no other tier word anywhere is judged that way",
+      "why": "This is a newly added rule in a judgment-class file. People appending to the ledger by this rule will be wrongly flagged (补登) or let through (没送审 / 未经送审 / 不送审（但按留存记）). The real ledger's 190–192 pass by accident. K2 fails.",
+      "evidence": "My fixture probes (mirror scripts/ledger-check.ps1 -Path <fixture>): '补登 · 漏记的单元' rc=1 FIELD3_INVALID; '没送审' rc=0 row.tier=1; '未经送审' rc=0; '无需送审' rc=0; '不送审（但按留存记）' rc=0. Python on the real ledger: field 3 of 190/191/192 starts with '补登 · 非本工程交付…', and R_TIER first matches at offset 34/34/29 ('属送审')."
+    },
+    {
+      "id": "B2",
+      "what": "Q1's diagnosis that 'the criterion was wrong, not the product' rests on a one-sided summary of the node records: k_real's substantive reason for fail (line 170 is a legitimate form misjudged; c_spec §8 predicted 0 and counted 170 as a tier row) is never answered, and c_spec is described as having 'proactively disclosed' when it only predicted 0",
+      "why": "The brief itself requires 'don't trust my summary'. In the originals, k_real.a1.json result.notes item (4) states verbatim that 'line 170 is a legitimate form misjudged as a violation', while DELIVERY §四 #3 says there were no legitimate forms misjudged. Combined with B1 (non-delivery 170 fails while non-delivery 190–192 pass), '170 is real debt' is an unresolved spec ambiguity, and result=fail cannot be recorded purely as a criterion defect.",
+      "evidence": "runs/job-20261111-1010/NODES/k_real.a1.json result.notes (4): '判定 fail：line 170 属于「合法形态被误判成违规」…c_spec §8 自己预测 0 条'; c_spec.a1.json result.iface §8: '预测：0 条违规，退出码 0' and '其余 129-17=112 条含 免检/留存/送审 之一；按 row.tier 接受'."
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "The run times in REGRESS.txt / DELIVERY §六·5 / §八·6 can't be true: they say the red run was at 13:55 and the green at 12:03, but the file mtimes are REGRESS-HARNESS.txt 12:02:36 and REGRESS-HARNESS-1203-clean.txt 11:40:37, and my `date` read 12:10 at review time. Correct the times and the file name."
+    },
+    {
+      "id": "N2",
+      "what": "Q5: the non-fake:true run that couldn't be identified is codex-inproc (\"fake\": false), and decisions/CODEX-ENGINE-2026-11-11-round3.json cites it as evidence. CLEANUP.txt's guard evaluated False and the deletion went ahead anyway. runs/_harness/ was regenerated at 12:00–12:03 (50 entries), so DELIVERY's 'now points to directories that don't exist' is untrue: the old references silently resolve to new content. Add a note to DELIVERY, and from now on cleanups should stop and print the offending item when the guard is False."
+    },
+    {
+      "id": "N3",
+      "what": "Q4: the conclusion holds but the reason is wrong. In an append-only ledger, earlier line numbers never shift; 75→57 was a continuation count, not line numbers. The real advantage of sha keys is that edited history turns red again. The 'only the one already registered' wording in TRIGGER-POLICY §二 is inaccurate (the baseline has 19 entries)."
+    },
+    {
+      "id": "N4",
+      "what": "Baseline integrity: the .txt file is not audited by ledger-audit, and -WriteBaseline can absorb every current violation at any time. 'Not an exemption channel' depends on hand-review (send-review #2) only. Already disclosed in §六·4; listed here only to note it weakens claim 1 of Q6."
+    },
+    {
+      "id": "N5",
+      "what": "Bench gap: removing the CR strip (mutant X7) leaves all 25 cases green. A CRLF ledger would then change line_sha256 and invalidate the whole baseline, and no case covers this."
+    },
+    {
+      "id": "N6",
+      "what": "Q7: my run of runner-harness in a full mirror without runs/ gave checks=523 failed=0, which supports 'no dependency overlap with this unit's product'. The main-tree red is likely tied to runs/ state or concurrency and is still unidentified. REGRESS.txt says 'did not change tasks/DAG-2026-11-06/', but you did manually restore fixtures/sandbox/notes.md; state that precisely."
+    }
+  ],
+  "rework_brief": "1) R_DISP/R_TIER: either add 补登 to R_DISP, or remove 补登 from TRIGGER-POLICY §二 v2.2 lines 84/91 and from TASK §一 (pick one, keep both sides consistent). Also decide whether R_TIER is anchored to the start of field 3 (after stripping **); if not, delete the policy claim that the 「不送审（…）」 form is always FIELD3_INVALID. Add bench cases '补登 · x' (no tier word), '没送审', '不送审（但按留存记）' with expected values, and add one mutant per case to mutate-ledger-check.py. Re-run the real ledger and report any new numbers (if 190–192 change category or new violations appear, regenerate the baseline with -WriteBaseline and list every entry in DELIVERY). 2) DELIVERY §一.3 / §四#3 / §五.2 and the brief's Q1: quote k_real.a1.json result.notes (4) and c_spec §8 verbatim, then either rebut them point by point or change result=fail to 'outdated criterion + unresolved spec ambiguity'; delete the claim that c_spec 'proactively disclosed'. 3) Correct the REGRESS/DELIVERY run times to file mtimes (11:40 / 12:02) and rename REGRESS-HARNESS-1203-clean.txt. 4) Add N2's facts to DELIVERY §六·5. How to verify: bench FAILED=0, mutation bench catch=N/N void=0, real-ledger output + -Baseline rc=0, cite-check on this unit's files 100%.",
+  "reviewer_notes": "Actions outside read-only: all writes went to %TEMP%\\lj-review\\ (mirror / mirror2 / rh-mirror / fixtures / output files); the runner-harness run in rh-mirror also used the external sandbox root %LOCALAPPDATA%\\ai-team-sandbox. On the main tree I only ran the read-only scripts ledger-audit.ps1 and cite-check.py (--out to TEMP). I did not run runner-harness on the main tree (it writes to runs/_harness), so the root cause of the main-tree red is unverified."
+}

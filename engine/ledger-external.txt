@@ -1,0 +1,26 @@
+# External audit roots for ledger-audit.ps1 (v3)
+#
+# One path per line; '#' starts a comment line. '~' expands to %USERPROFILE%.
+# A path may be a DIRECTORY (scanned recursively) or a single FILE.
+#
+# Only *.ps1 *.json *.yml *.yaml *.md are audited under these roots.
+# *.log is excluded ON PURPOSE: logs are append-only noise and would flag
+# every single run. If a log file must be tracked, it belongs in the ledger's
+# files column for humans, not in this audit.
+#
+# Keep this list SHORT. Every root added here is scanned on every run.
+# Add a root when the ledger starts recording objects outside the project.
+#
+# NOTE (2026-11-06): the two patch files below are DIFFERENT files. Do not
+# confuse them -- until this date only the first was listed, so the file the
+# ledger kept recording changes to was never actually audited:
+#
+#   ~/.dsh/cordis.patch.yml               563 B, tiny home-level patch
+#   ~/.dsh/profiles/web/cordis.patch.yml  111 KB, the PROFILE patch that holds
+#                                         subagent-model-selection-settings.allowedModels
+#
+# ~/.dsh/AGENTS.md is the layer-1 resident memory file, edited every session.
+~/.dsh/scripts
+~/.dsh/cordis.patch.yml
+~/.dsh/AGENTS.md
+~/.dsh/profiles/web/cordis.patch.yml

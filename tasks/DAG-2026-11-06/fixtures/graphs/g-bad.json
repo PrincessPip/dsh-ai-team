@@ -1,0 +1,28 @@
+{
+  "v": 1,
+  "plan_id": "plan-a1-fixture-bad",
+  "budget": {
+    "max_agents": 8
+  },
+  "nodes": [
+    {
+      "id": "s_recon",
+      "kind": "scout",
+      "do": "坏图样本：budget 用了 v2 已拒收的旧字段名 max_agents，Gate 必须 REJECTED。",
+      "after": [],
+      "out": [
+        "facts"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "这条永远不该被执行 —— 图在 Gate 阶段就该被拒"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "abort"
+      }
+    }
+  ]
+}

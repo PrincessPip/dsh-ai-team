@@ -1,0 +1,31 @@
+{
+  "_comment": "同波两个 work（都带 writes，写集不相交）。它们**不该并发**：写节点并行的越界归因没解决（TASK-step2b §一）。sleep_s 让「没有重叠」这件事可测。",
+  "nodes": {
+    "w_a": {
+      "expect_prompt_contains": ["id: w_a"],
+      "sleep_s": 0.8,
+      "write_files": {
+        "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md": "# A1 fixture 基线\n\n- 第一行\n- 第二行\n- 第三行\n- parallel-write A\n"
+      },
+      "result": {
+        "changed": ["tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"],
+        "summary": "A 写了 notes.md"
+      }
+    },
+    "w_b": {
+      "expect_prompt_contains": ["id: w_b"],
+      "sleep_s": 0.8,
+      "write_files": {
+        "tasks/DAG-2026-11-06/fixtures/sandbox/BUDGET.md": "# 预算测试文件\n\n正常情况下只有一行说明。\n- parallel-write B\n"
+      },
+      "result": {
+        "changed": ["tasks/DAG-2026-11-06/fixtures/sandbox/BUDGET.md"],
+        "summary": "B 写了 BUDGET.md"
+      }
+    },
+    "k_both": {
+      "expect_prompt_contains": ["id: k_both"],
+      "result": { "summary": "w_a 与 w_b 都 ok" }
+    }
+  }
+}

@@ -1,0 +1,100 @@
+{
+  "verdict": "pass",
+  "confidence": 0.91,
+  "readonly_enforcement": "snapshot_only",
+  "round": 4,
+  "unit": "ASTRA-NATIVE-WEB-ASSEMBLY-2026-11-15",
+  "reviewed_at": "2026-11-18",
+  "review_model": "A-plan human-in-the-loop: 人工评审签署 + Codex 预审 + 机器绑定。NOT a GPT independent review — rounds 1-3 were GPT; this one is not.",
+  "reviewer": "伙伴（用户本人），2026-11-18 明确批准按 A 方案落盘",
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "E3",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "全文风险词穷举（完全隔离/硬沙箱/已证明/已验证/已通过/已兼容/已迁移/生产就绪/无风险）在 worker DELIVERY.md 与 runs/fire/INC-20261115-01/VERIFY.md 中仅 3 处命中，且全为否定式：DELIVERY.md:11「不能据此声称…已通过」、:44「不代表…已验证」、VERIFY.md:37「不是…硬沙箱证明」。自认不含 OS 级沙箱：DELIVERY.md:46、VERIFY.md:37/43。机器侧：verifyCopy.nonIndependentFiles=[]（69,678 文件无共享链接 → voice-local junction 已解引用）；negatives.negative-production-core exit=1；closeout.protectedFiles=17957 / protectedDrift=[]。"
+    },
+    {
+      "id": "C2",
+      "type": "E3",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "assemble.py:71 是 Web 的唯一启动命令，参数固定含 --import <guard.mjs>，hook 非可选件。DELIVERY.md:44 末句「七核心强制解析hook属于本装配，不代表无hook的生产安装已验证」。机器侧：crossScope 225 项 / 30 种合法形式 / 0 失败 / restored=true；94 次 CORE_MANIFEST_SHA_DRIFT 拒绝 + 56 次 CORE_REQUEST_SCOPE_MISMATCH 拒绝 + 70 次合法通过；coreProvenance 7 包 / 351 文件 / 6876 次观察 / 越界 0 / 未登记 0；guard SHA b3b1fa02afd404a6decf2084a4bc56e1f5c0a48881c0782fb41021c15ba98e83 与收尾门绑定。"
+    },
+    {
+      "id": "C3",
+      "type": "E3",
+      "status": "pass",
+      "claimed_strength": "E1 for the build-route judgement; E3 for the assembly",
+      "strength_met": true,
+      "evidence": "DELIVERY.md:48 给出可复核依据（发行 frontend 90 文件、无 src/Vite、78 个 client 产物及 dist 未被 overlay 修改、动态包使用预构建 client 字节），明确标为 E1 判断、装配另标 E3，并声明不外推全部传递依赖。机器侧：八阶段 boot/http/assets 全通过（PHASES.json），父级浏览器证据 11-BROWSER.json + browser.png（34,715 B）。"
+    },
+    {
+      "id": "C4",
+      "type": "E3",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "机器索引覆盖：CASE-behavior / CASE-bad-isolation（缺 tokenMeter 反例）/ PROBE.json；probe.mjs 从真实 agent 实例取 ctx.agentPresets.serviceFor(a,'compaction')，a 由 ctx.agents.create(...) 产生，非另造 SDK Context。人判四项未覆盖此条，采信机器索引。"
+    },
+    {
+      "id": "C5",
+      "type": "E3",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "机器索引覆盖：6 个 storage CASE（none/zstd × seed/cold/bad）、BAD-*-BEFORE/AFTER.bin 字节保留、storage-probe.mjs 断言 cold 阶段 nativeCalls 不增；名义 18765 + 进程内 fake SSE，socket 仍拒 18765。"
+    },
+    {
+      "id": "C6",
+      "type": "E3",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "机器索引覆盖：regression 六步全 exit=0 且 type(exit) is int（非布尔假值）、timedOut=false、六份 logSha 全匹配；artifacts 9 个 SHA 与磁盘逐一致（回执↔产物绑定）；negatives 5/5；closeout portsFree={13380:true,13381:true} / ownedWebProcesses=[] / protectedDrift=[]；verifyCopy 69,678 零漂移。8 阶段 webExit 恒为 1、case exit=0（bad-isolation 预期 1）、cleanup=0，与「预定清理 exit1 非测试通过依据」一致。"
+    },
+    {
+      "id": "C7",
+      "type": "E2",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "closeout 的 ui / disabledPluginCompatibility / realHistoryMigration 三项均 UNVERIFIED、realProductRequests=0，与 DELIVERY.md:63/74、VERIFY.md:39 的未验清单逐项对应，无一项被写成已通过。首失败保留：final / final2 / final3 三代 -REGRESSION.json 均在盘上。"
+    },
+    {
+      "id": "C8",
+      "type": "E3",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "FROZEN.json（2,813 项）与 SOURCE-INPUTS.json（2,797 项）双向零漂移，本单元 verify-round4-package.py 复算确认；只读强度如实标为 snapshot_only。父级 postcheck.py 未在本轮运行（A 方案下由人工评审直接签署，未走 collect 通道）。"
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    "C2 的「重复核心落点风险」未单独设定向反例；BRIEF 要求检查，本轮未做，属已知未覆盖。",
+    "C4/C5/C6/C8 的 pass 采信机器索引（EVIDENCE-INDEX.json），人工评审未逐条重跑产品测试。",
+    "Codex 预审（df3a4cb6）只读 PREAUDIT-INPUT.md 的摘录，未打开原文；「摘录=原文」由 preaudit-bind.py 以逐字比对 + SHA 独立绑定（10/10）。",
+    "本轮未运行父级 postcheck.py，故无 before/after 完整快照与 entries 一致性回执；这是 A 方案与 rounds 1-3 的流程差异，不冒称已有该证据。"
+  ],
+  "rework_brief": "",
+  "reviewer_notes": "本裁决由 A 方案（确定性机器检查 + 独立人工评审）产生，伙伴于 2026-11-18 逐条确认后签署。四个需要人判的条目（C1 措辞越界 / C2 hook 语义 / C3 构建路线 E1 / C7 文档边界）由人工核对，其余四条采信机器索引；Codex 预审在不超过材料范围的条件下独立给出四条 pass，与人工结论一致，但不构成裁决。范围限定：本 pass 只覆盖「完整 Web 隔离装配」这一检查点，不是生产上线许可。原生完整历史 UI 交互、禁用插件兼容、真实历史迁移、无强制解析 hook 的生产安装、真实压缩质量/容量与长期运行、生产维护或 auto 灰度，仍未验且未获授权。",
+  "independent_evidence_root": "%USERPROFILE%\\AppData\\Local\\Temp\\astra-web-review-5zajjk8e （%TEMP% 独占副本；包内 FROZEN.json / SOURCE-INPUTS.json / INCLUDE-MANIFEST.json 为其自重，重建命令见 ROUND4-PACKAGE.md）",
+  "preaudit": {
+    "agent": "df3a4cb6-3b98-443b-8b3b-c9e6fea00433",
+    "channel": "codex (ChatGPT subscription), egress <VPS-IP> via <PROXY-PORT-TUNNEL>",
+    "input": "PREAUDIT-INPUT.md (8,007 B) — documentation excerpts only, no product source",
+    "result": "overall=clean, 4/4 pass, contradictions=[], missing=[]",
+    "not_a_verdict": true
+  },
+  "binding": {
+    "script": "tasks/ASTRA-NATIVE-WEB-ASSEMBLY-AUDIT-2026-11-15/preaudit-bind.py",
+    "result": "tasks/ASTRA-NATIVE-WEB-ASSEMBLY-AUDIT-2026-11-15/PREAUDIT-BIND.json",
+    "excerpts": 10,
+    "matched": 10,
+    "allMatch": true
+  }
+}

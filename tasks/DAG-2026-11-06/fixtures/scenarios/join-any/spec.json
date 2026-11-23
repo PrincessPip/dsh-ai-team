@@ -1,0 +1,20 @@
+{
+  "_comment": "join=any：w_skip 被 when 跳过（不给它 spec —— 真被调用就 exit 8），w_ok 正常跑，integ 的上游是「一个 skipped + 一个 ok」，join=any 应当照跑。",
+  "nodes": {
+    "s_gate": {
+      "expect_prompt_contains": ["id: s_gate", "只读"],
+      "result": { "verdict": "stop", "summary": "侦察判断不该走 w_skip 那条支线" }
+    },
+    "w_ok": {
+      "expect_prompt_contains": ["id: w_ok", "允许改动的文件"],
+      "write_files": {
+        "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md": "# A1 fixture 基线\n\n- 第一行\n- 第二行\n- 第三行\n- join any\n"
+      },
+      "result": { "changed": ["tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"], "summary": "追加了一行" }
+    },
+    "integ": {
+      "expect_prompt_contains": ["id: integ"],
+      "result": { "changed": [], "summary": "w_skip=skipped，w_ok 改了 notes.md" }
+    }
+  }
+}

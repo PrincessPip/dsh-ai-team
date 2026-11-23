@@ -1,0 +1,25 @@
+﻿{
+  "verdict": "pass",
+  "confidence": 0.85,
+  "criteria": [
+    { "id": "C1", "type": "fact-consistent", "status": "pass", "claimed_strength": "E2", "strength_met": true, "evidence": "TRIGGER-POLICY.md:95 写了「四件必须自含：不许写『见 DELIVERY』『同上』『详见某文件』——那是转指，不是证据。抽检时看到转指，按该件缺失处理」。变更记录 v1.6（:231）①与它一致。两处是同一事实，位置独立。" },
+    { "id": "C2", "type": "fact-consistent", "status": "pass", "claimed_strength": "E2", "strength_met": true, "evidence": "TRIGGER-POLICY.md:176-178 写明：「同类」=错的方向相同，都往低了判；判高了不算；提频后池 = 3 个交付单元；「连续两个池无错判」= 连续 6 个交付单元都没再判低。变更记录 :231 ③ 与之一致。" },
+    { "id": "C3", "type": "fact-consistent", "status": "pass", "claimed_strength": "E2", "strength_met": true, "evidence": "TRIGGER-POLICY.md:98 写明「账本自己所在的 decisions/self/ 不计入」，理由是否则每一行账本都算跨目录，默认内联永远不适用。变更记录 :231 ② 一致。" },
+    { "id": "C4", "type": "fact-consistent", "status": "pass", "claimed_strength": "E2", "strength_met": true, "evidence": "TRIGGER-POLICY.md:166（§五 正文）写了「更正行都不计入池……否则工人可以靠多加更正行稀释池」。ledger.md:9 的头部注释也写了。两处一致，且正文给了理由。" },
+    { "id": "C5", "type": "fact-consistent", "status": "pass", "claimed_strength": "E3", "strength_met": true, "evidence": "AGENTS.md:9 写「v1.2 → **v1.6**」，TRIGGER-POLICY.md:3 头部为「v1.6」，变更记录 :231 为 v1.6，三处位置独立且一致。反证：我 Grep 了 AGENTS.md 里的 v1.x，没有 `v1.2 → v1.3`。AGENTS.md:10 的 v1.5 是对首次抽检后果的历史叙述，不是当前版本的过期表述。PLAN.md、CLAUDE-SETUP.md、SECRETS-AND-LOGIN.md 里没有 v1.x 引用。" },
+    { "id": "C6", "type": "fact-consistent", "status": "pass", "claimed_strength": "E2", "strength_met": true, "evidence": "(1) 一致。ledger-audit.ps1:66 的 `-Include *.md,*.ps1,*.json,*.yml,*.yaml`，起点是 `$root`（:29，脚本目录的上一级）。政策 :76 的描述与它吻合，但没提 :67 排除了 node_modules 和 ledger.md。(2) 今天仍成立。源码只从 `$root` 往下扫，没有任何 `~/.dsh` 路径，政策 :77 的描述准确。(3) 定性基本成立：政策 :78-81 自己列了 mtime 可改写、账本可重建。但对「防疏忽」写得略重，因为有下面这些粗糙之处：:79 的 `$f.Name -eq $t` 让任意子目录的同名文件互相掩盖；目录 token（如 `decisions/`）整目录放行；:90 的日期核对只到天；账本本身被排除，所以改旧行扫不出来，ledger.md:27 的事故就是例证。政策没把这些写进覆盖范围段。" },
+    { "id": "C7", "type": "fact-consistent", "status": "pass", "claimed_strength": "E2", "strength_met": true, "evidence": "(1) 写文件：tunnel-watch.ps1:29 的 `[System.IO.File]::AppendAllText` 追加日志（:26-31 的 Write-Log），所以账本原写的「纯只读」不实。脚本头部 :8 的「Read-only」只是对隧道配置而言。(2) 发请求：:65 `curl.exe -s --max-time 12 -x http://127.0.0.1:$Port https://api.ipify.org`，由 :92 的 `if ($portOk)` 控制，所以「不发请求」不实。(3) 更正行（ledger.md:24）：说第 6 行「不发请求」描述不实，并引 `tunnel-watch.ps1:63-69` 每轮 curl，行号核实无误（curl 在 :65）。它漏了「写日志」，所以「纯只读」这半句没被更正，只在 18 行的文件列里间接披露了日志文件。结论：准但不全。DELIVERY :41 自己也承认漏了。" },
+    { "id": "C8", "type": "judgment", "status": "pass", "claimed_strength": "E1", "strength_met": true, "evidence": "[判断类] 答案具体、可被反驳，满足 E1。(1) 「见上文第 2 件」这类行内转指，字面上不在 :95 列的三个禁词里，而「同上」又只是举例；DELIVERY 建议的「各件独立成立、删掉其余三件仍能读懂」是更好的判据。我同意这是个真洞。(2) 反向利用提频：错判由抽检发现，制造错判只会让自己被抽得更密（池 3 抽 1 比池 5 抽 1 命中率高），所以得不偿失。真正能钻的是两处：:178 的「连续 6 个单元无错判」按工人自己切分的「交付单元」数，拆成多行廉价免检行就能快速凑够 6 个，恢复到 1/5 的频率；:176 的「累计 ≥2 次」没写累计窗口或是否因恢复而清零。DELIVERY 对第 2 问写「没想到干净的反制」，只给了推测，没给结论。" }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    { "id": "N1", "what": "TRIGGER-POLICY.md:95 的「自含」判据只列了三个禁词，没堵行内转指（「见上文第 2 件」）。建议改成「各件独立成立，删掉其余三件后仍能读懂这一件」（DELIVERY C8-1 已提）。" },
+    { "id": "N2", "what": "§五 :178「连续 6 个单元无错判」中的交付单元由工人自己划分，拆分可刷数。建议要求恢复频率前，这 6 个单元里至少含 N 个非免检行，或由验收官确认恢复。同时补充 :176「累计 ≥2 次」的计数起点和恢复后是否清零。" },
+    { "id": "N3", "what": "§二 的「覆盖范围」段（:74-81）没写：脚本排除 ledger.md 本身（改旧行扫不出来）、同名文件按文件名互相掩盖、目录 token 整目录放行、日期核对只到天、node_modules 排除。\u201c防的是疏忽\u201d略重，建议补一句「连疏忽也只防粗粒度的」。" },
+    { "id": "N4", "what": "ledger.md:18 的「纯只读」半句仍无更正。24 行只更正了「不发请求」和档位，漏了「写日志」。按规则「不回头改」，应再追加一条更正行。" },
+    { "id": "N5", "what": "无 git。ledger.md 旧行在 27 行事故后是否原样恢复，我只能靠账本自述，判不了。" }
+  ],
+  "rework_brief": "",
+  "escalate_question": "",
+  "reviewer_notes": "我读了 REVIEW-CONTRACT.md、TASK.md、TRIGGER-POLICY.md 全文、scripts/ledger-audit.ps1、ledger.md、~/.dsh/scripts/tunnel-watch.ps1、AGENTS.md（Grep 版本号）和 DELIVERY.md，另 Grep 了 PLAN.md、CLAUDE-SETUP.md、SECRETS-AND-LOGIN.md 的 v1.x 引用，没有改动或执行任何东西，也没跑命令。无 git 和 mtime，所以判不了旧账行是否被改过，也判不了 DELIVERY 里 mtime 对账输出的真伪，只核了脚本逻辑，这部分按工人侧证据处理。C8 是判断类，只给 E1。"
+}

@@ -1,0 +1,92 @@
+{
+  "verdict": "pass",
+  "confidence": 0.86,
+  "criteria": [
+    {
+      "id": "R-B1",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "自己用 python -I 读 NODES/*.a1.json，按 callId 对撞：error 13（w_script 4 / w_docs 2 / integ 7 = 6 pwsh + 1 workflow）+ completed 文本命中 6（integ 4 = grep×3 + read×1；k_hash/k_count 各 1，都是 pwsh 读 integ.json）；read-only pwsh 12/4/16/8 = 40/40 completed；workspace-write pwsh 17 次，15 error，12 ACL。与 DELIVERY.md:132-135、:148-149，ARTIFACTS/acl-hits.txt:4「error_count=13  text_only_count=6  total=19」，pwsh-calls.txt 全部一致；write 探针、零 edit、patch 2771/1357、integ edit=5 都核过"
+    },
+    {
+      "id": "R-B2",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "NODES/integ.json 顶层 cmd_accept[0] exit_code=0 ok=True，stdout_tail 9 行 '### '，末行 'RESULT=OK rounds=58 units=26 pass=27 rework=18 escalate=12 parse_failures=0'；review-index.before.ps1 '### ' 0 处，after.ps1 1 处；主树 decisions/INDEX.md '^### ' 0 处。DELIVERY.md:15-22、:114-118、:195 与此一致"
+    },
+    {
+      "id": "R-N1",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "ARTIFACTS/review-index.before.ps1:5「size=6739」、after.ps1:5「size=9229」，与 DELIVERY.md:111 一致"
+    },
+    {
+      "id": "R-N2",
+      "type": "fact-consistent",
+      "status": "fail",
+      "claimed_strength": "E2",
+      "strength_met": false,
+      "evidence": "os.walk runs/e2e-20261110-2005 → 67 files / 19925159 bytes，ARTIFACTS 9 件（含 pwsh-calls.txt）；DELIVERY.md:216-217「66 文件 / 19,923,697 字节」「8 个」、:224「8 件」漏列 pwsh-calls.txt、:244 同样是旧数；ledger.md:258 写「9 件」。nonblocking 级"
+    },
+    {
+      "id": "R-N3",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "FS-BEFORE.json / FS-AFTER.json 的 decisions/INDEX.md 都是 sha256 72cdfa32e9fd…、size 6650、mtime_ns 1794293366944258000；DIFF.json.modified = [AGENTS.md, scripts/review-index.ps1, tasks/P1-2026-11-06-LOG/DELIVERY.md]；与 DELIVERY.md:105-109 一致"
+    },
+    {
+      "id": "R-N4",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "DELIVERY.md:168-171 已补 exit_code、res is None 和「没有 status 键」；grep -c verdict scripts/runner.py → 0"
+    },
+    {
+      "id": "R-NEW",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "新错只有 X1/X2/X3 三处（都是 nonblocking，见 nonblocking 列表），结论与因果叙述没有新错"
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "DELIVERY.md:151-152「沙箱内 pwsh 基本全撞 ACL（w_script 5/6、w_docs 2/2、integ 8/9 失败）」把全部 error 都算成了 ACL；ACL 实为 4/6、2/2、6/9（合计 12，与 :149 一致），另 3 条是『sandbox escalation to \"danger-full-access\" requires approval, but no approval channel』×2（w_script call_01_O3ASCcAEBKBrNKt6ox7A5470、integ call_00_FqN4pomNvz5TxzbHm5uP2678）和『invalid arguments: \"sandbox_permissions\"』×1（integ call_00_pCPIiFRh28G39DJAzRDS9248）。建议改数，并把『员工试过升权、因为没有审批通道被拒』写进 N1，供下一单元参考"
+    },
+    {
+      "id": "N2",
+      "what": "DELIVERY.md:216-217 / :224 / :244 的证据包规模和 ARTIFACTS 清单还是第 1 轮的旧数：实测 67 文件 / 19,925,159 字节、ARTIFACTS 9 件，:224 漏列 pwsh-calls.txt；与 ledger.md:258「9 件」矛盾。加完文件之后要重新统计，别照抄验收官上一轮给的数"
+    },
+    {
+      "id": "N3",
+      "what": "ARTIFACTS/pwsh-calls.txt 的 acl_error_hits 字段含义不统一：workspace-write 节点数的是 status=error 的 ACL，k_hash/k_count 上的 1 却是 status=completed 的文本命中。建议拆成 acl_error / acl_text 两个字段（改 make-evidence.py）"
+    },
+    {
+      "id": "N4",
+      "what": "DELIVERY.md:108「从副本考的」是错别字，应为「拷的」"
+    }
+  ],
+  "rework_brief": "",
+  "escalate_question": "",
+  "reviewer_notes": "只跑了只读命令：python -I 读 NODES/RUN/FS/DIFF 的 JSON、os.walk 统计、ls/grep/head/sed，对象都是主树；唯一写入是本报告。cite-check 没有复跑，只读了 CITE-CHECK.txt 和它的 mtime。第 1 轮已 PASS 的 S1/S3/S4/S6 没有重审。",
+  "_meta": {
+    "unit": "B4-E2E-2026-11-10",
+    "round": 2,
+    "reviewer": "Opus 5.5（claude -p --model opus --allowedTools Read,Grep,Glob,Bash,Write）",
+    "report": "tasks/B4-E2E-2026-11-10/REVIEW-round2-raw.txt",
+    "date": "2026-11-10",
+    "note": "原报告 JSON 块的字符串值含未转义半角引号，本文件做了语法修复（只转义、不改字）"
+  }
+}

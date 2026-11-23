@@ -1,0 +1,85 @@
+{
+  "verdict": "escalate",
+  "confidence": 0.85,
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "**B2' (the `~/` form) is fixed, and I confirmed it myself.** Code: `scripts/cite-check.py:50`「NAMED = re.compile(r\"`?([A-Za-z0-9_./\\\\~\\-]*\\.(?:%s)):」 now includes `~`. `scripts/cite-check.py:140`「if name.startswith(\"~/\"):」 calls expanduser and does not fall into the in-project rglob. **My own fixture** (under %TEMP%, outside the repo, UTF-8/LF) used a fake USERPROFILE. The project had a same-named AGENTS.md whose content differed. The fake home's `.dsh/` held both `cordis.patch.yml` (a decoy) and `profiles/web/cordis.patch.yml`. ledger-external declared 3 `~/` entries. The doc had 9 citations. Results: `~/.dsh/AGENTS.md:7` → OK. `:2`, the unquoted `:3`, the range `:1-2`, and the backslash form `~\\.dsh\\AGENTS.md:5` → all DRIFT with now_at=[7]. That anchor exists only in the external file, so resolution is not pulled into the same-named project file. `~/.dsh/profiles/web/cordis.patch.yml:1` → DRIFT now_at=[4], not the decoy. `~/.dsh/NOPE.md:1` → UNRESOLVED. `~/` with a fake anchor → GONE. The bare `AGENTS.md:1` → still the project file, OK. **--fix**: `rewrote 5`, `[after-fix] GONE=1 OK=7 UNRESOLVED=1`. The diff shows only digits changed (2→7, 3→7, 1→4, 1-2→7-8, 5→7). With all digits stripped the before and after files are identical (True). Bytes went 752→752 (every change was one digit to one digit). CR count is 0. The `~` and the anchor text are untouched. Rerun exit code is 1 (GONE/UNRESOLVED remain, as expected). **Real environment**: `~/.dsh/AGENTS.md:3` and `.dsh/AGENTS.md:3` both give OK (round 3 gave UNRESOLVED). Together with the M12/M14 counter-evidence in C2, this meets E3."
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "I ran both myself. `python scripts/cite-check-harness.py` gives `checks=53 failed=0`, exit 0. `python scripts/cite-check-mutate.py` gives 14 `[CAUGHT]` lines and `defined=14 void=0 ran=14 caught=14`, exit 0. The new mutants: M12 'suffix check falls back to multi-candidate only' (1 red), M13 '--fix corrupts the anchor (changes the quotes)' (4 red), M14 'NAMED drops `~`' (1 red). These close round 3's N1/N2 and the mutant requirement in B2'. **One weakness (see N1):** harness case 27, `scripts/cite-check-harness.py:343`「(tmp / \"doc.md\").write_text(\"引用 `~/.dsh/AGENTS.md:1`「# ai-team」\\n\", encoding=\"utf-8\")」, uses the real home. The real line 1 is `# 银狼 · 常驻层`. I reran that case on its own: the verdict is **WEAK**. The assertion is only `\"[UNRESOLVED]\" not in out`, so the case also passes on WEAK or GONE. It has no fake USERPROFILE and no same-named project file, both of which round 3's rework_brief asked for. M14 is still caught because, without the `~`, the citation degrades to UNRESOLVED. The same-name disambiguation is backed only by my own fixture in C1, not by the repo's reproducible tests."
+    },
+    {
+      "id": "C3",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "REVIEW-CONTRACT.md mtime is 08:50:55, earlier than round 3, so it is unchanged. `REVIEW-CONTRACT.md:1`「# 验收契约 · v0.6」 matches the last change-log row `:248`「| v0.6 | 2026-11-07 | **§二·五 新增「引用锚定」**」. The two boundary items are at `:171`「**锚 OK ≠ 论断成立**」 and `:173`「**锚串是逐字快照**」. The verdict table at :160-167 has all ten verdicts, including LONE and HIST. I read all of it myself."
+    },
+    {
+      "id": "C4",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "TRIGGER-POLICY.md mtime is 08:50:24, unchanged since round 3 passed it. I ran the gate myself on the unit's 6 files (TASK/DELIVERY/contract/policy/LESSONS/AGENTS): `--strict` gives `OK=6 LONE=11 HIST=2`, exit 0. That matches `tasks/LINENO-2026-11-07/CITE-CHECK.txt` (09:10) line for line. I did not use `--out`, so I wrote nothing to the repo."
+    },
+    {
+      "id": "C5",
+      "type": "fact-consistent",
+      "status": "fail",
+      "claimed_strength": "E2",
+      "strength_met": false,
+      "evidence": "**Fixed this round:** `grep -c 大半 AGENTS.md` = 0. `AGENTS.md:33`「**行号漂移最小闭环已落地（2026-11-07，`LINENO-2026-11-07`）**」 and `AGENTS.md:219`「（**只解决「新增引用可核」，存量未动**）」 both hit. Contract v0.6 = last change-log row. `decisions/LESSONS.md:30`「## 二、八条自检」 matches `AGENTS.md:130`「**八条**可当场执行的自检」. Ledger row 164 now lists `REVIEW-round2/3-raw.txt` and `decisions/LINENO-2026-11-07-round{2,3}.json` (round 3 N3 fixed). `tasks/LINENO-2026-11-07/__pycache__` has been removed (N5 fixed). **Still not fixed:** round 3's B3' explicitly listed the items below, and rework_brief item 2 named them line by line. All are unchanged in DELIVERY.md (mtime 09:10, edited this round): (1) `tasks/LINENO-2026-11-07/DELIVERY.md:83`「`ledger.md` 本单元行（标「**尚未收工**」） | ✅」. Ledger row 164 has no '尚未收工', so this is still a false ✅ row in the C5 evidence table. (2) `DELIVERY.md:132`「# 期望 checks=49 failed=0」 and `:133`「# 期望 mutants=10 caught=10」. The actual values are 53 and 14. (3) `DELIVERY.md:14`「变异台（9 个变异」. (4) The C2 table at :45-57 lists only M1–M11, while :43 says `defined=14`. M12–M14 are not in the table. (5) The ledger row 164 tier column now reads「第 3 轮 `escalate` 已修，待第 4 轮；第 1 轮 `rework` 0.86 / 3 blocking 已修，待第 2 轮」. The old text was left in after the new text was put in front, so the row contradicts itself. Also, the task description says the round-3 handling is in the ledger and the notes, but the ledger has no B2'/B3'/`~`/expanduser record. DELIVERY has no round-3 handling section. The grep evidence file that rework_brief item 3 asked for does not exist (tasks/LINENO-2026-11-07/ has no new file)."
+    },
+    {
+      "id": "C6",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "I ran `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ledger-audit.ps1` myself: `[scan] 573 file(s) total (508 project + 65 external)`, `[suspect] none`, `RESULT=LEDGER_OK`, exit 0. The round-1 counter-example (`LEDGER_SUSPECT` when files were missing) is on record. The self-contradictory tier column is counted under C5."
+    },
+    {
+      "id": "C7",
+      "type": "judgment",
+      "status": "pass",
+      "claimed_strength": "E1",
+      "strength_met": true,
+      "evidence": "[判断类] The five gaps are named one by one at `DELIVERY.md:97-102`, and :105 says plainly that it cannot claim 'fully cured'. §三 :124/:125 add the basename fallback and the range-fix assumption. The top of AGENTS.md now reads '最小闭环已落地' and todo 7 reads '存量未动'. That removes the overstatement round 3 objected to. Now that `~/` is supported, the omission round 3 noted is moot."
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B3''",
+      "what": "(Carried over from round 3's B3', fixed only halfway again) The '大半' wording is gone, but four of the DELIVERY.md items that B3' and the rework_brief named line by line are untouched: the :83 '尚未收工' ✅, :132-133's 49/10, :14's '9 个变异', and the C2 table missing M12–M14. The ledger tier column also contradicts itself because the old text was left in. Meanwhile the submission says 'B3' fixed', there is no round-3 handling record, and the grep evidence file from rework_brief item 3 was not produced.",
+      "why": "C5 is a fact-consistency criterion at E2, so its evidence table cannot contain a false row (:83). Iron rule 2: saying 'fixed' without evidence counts as unverified. This is the **fourth round in a row** on this unit with a 'claims more was fixed than was' pattern on the documentation half (round 2 N6 → round 3 B3' → this round). The tooling half was fixed properly each time; the documentation half was fixed halfway each time. Rework_brief item 3 (grep every 'I changed X' claim and write the output to a file) existed to break this pattern, and it was not done.",
+      "evidence": "`tasks/LINENO-2026-11-07/DELIVERY.md:83`「标「**尚未收工**」） | ✅」 · `DELIVERY.md:132`「# 期望 checks=49 failed=0」 · `DELIVERY.md:133`「# 期望 mutants=10 caught=10」 · `DELIVERY.md:14`「变异台（9 个变异」 · `grep -n 'M12\\|M13\\|M14' DELIVERY.md` → 0 hits · `decisions/self/ledger.md:164`「待第 4 轮；第 1 轮 `rework` 0.86 / 3 blocking 已修，待第 2 轮」 · `ls tasks/LINENO-2026-11-07/` → no grep evidence file, and DELIVERY has no '第 3 轮处置' section."
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "Harness case 27 is too weak. It depends on the real `~/.dsh/AGENTS.md`, its anchor `# ai-team` does not match the real line 1 (verdict WEAK), and it asserts only 'not UNRESOLVED'. Suggestion: use a fake USERPROFILE plus a same-named AGENTS.md in the project, assert `[OK]` and that the resolved target is the external file, and add a mutant where the `~/` branch strips the prefix and looks up the project file (the current harness would not go red on it)."
+    },
+    {
+      "id": "N2",
+      "what": "DELIVERY §七's B4 row now reads `defined=14 void=0 ran=14 caught=14`, which is a later state written back into the round-2 handling table. That blurs which round fixed what. Suggest keeping each round's original numbers and recording later numbers in a new section."
+    }
+  ],
+  "rework_brief": "Documentation only. Do not touch code: (1) `DELIVERY.md:83`: change the ledger status to the actual ledger text, or delete the row's ✅ and write 'tier column corrected, see ledger:164'. (2) `:132-133`: change to `checks=53 failed=0` / `defined=14 void=0 ran=14 caught=14`. `:14`: change to '14 个变异'. (3) Add M12/M13/M14 rows to the C2 table. (4) Rewrite the ledger row 164 tier column as one current-state sentence (for example 'sent for review, round 4; rounds 1–3 rework/escalate/escalate handled'), with no leftover old sentences. (5) Add a §八 'round-3 handling' section to DELIVERY listing B2' (anchor `scripts/cite-check.py:140`「if name.startswith(\"~/\"):」), B3', and N1–N5. (6) Run `grep -n '尚未收工\\|checks=49\\|mutants=10\\|9 个变异' tasks/LINENO-2026-11-07/DELIVERY.md` (expect 0 hits) and `grep -c 'M14' DELIVERY.md` (expect ≥1), and write the raw output to `tasks/LINENO-2026-11-07/ROUND4-GREP.txt` with a command that writes the file directly.",
+  "escalate_question": "This is round 4 on the same unit. Per contract §六 it escalates automatically, and it already met TRIGGER-POLICY §二·五 'automatic B'. All tooling items are fixed and verified (C1/C2 pass at E3, and `~/` plus --fix held up against my adversarial fixture). The only remaining blocking item is about 5 stale lines in DELIVERY.md plus one ledger cell. Please choose: (A) The worker does a fifth round under the rework_brief above (documentation only, with the grep output written to a file), followed by a short check that covers only those 6 items. Cost: one cheap review. Benefit: rework_brief item 3 actually gets used once, as a mechanism rather than just a lesson. (B) Accept with conditions: you or the worker fix the 6 items, and the unit closes without another review, with the ledger noting 'documentation half closed by the partner'. Risk: the 'claims more was fixed' pattern on the documentation half gets no outside verification, for the fourth time in a row. (C) Accept as is and record the stale text as known residue. Not recommended, because the evidence table keeps a false ✅ row (:83), which conflicts with iron rule 2.",
+  "unit": "LINENO-2026-11-07",
+  "round": 4,
+  "date": "2026-11-07"
+}

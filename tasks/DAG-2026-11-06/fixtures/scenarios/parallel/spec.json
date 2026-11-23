@@ -1,0 +1,19 @@
+{
+  "_comment": "两个 scout 同波（g-parallel.json 的 wave0）。sleep_s 让它们真的重叠 —— runner 必须证明「区间重叠」而不是只证明「都跑完了」，后者串行也能满足。s_a/s_b 各带一条 300ms 的 cmd：并发的只有 agent 阶段，cmd 必须串行（K4）。",
+  "nodes": {
+    "s_a": {
+      "expect_prompt_contains": ["id: s_a", "只读，禁止写任何文件"],
+      "sleep_s": 1.2,
+      "result": { "facts": ["notes.md 有 3 行"], "summary": "A 完成" }
+    },
+    "s_b": {
+      "expect_prompt_contains": ["id: s_b", "只读，禁止写任何文件"],
+      "sleep_s": 1.2,
+      "result": { "facts": ["OFF-LIMITS.md 有 3 行"], "summary": "B 完成" }
+    },
+    "k_sum": {
+      "expect_prompt_contains": ["id: k_sum"],
+      "result": { "summary": "s_a 与 s_b 都 ok" }
+    }
+  }
+}

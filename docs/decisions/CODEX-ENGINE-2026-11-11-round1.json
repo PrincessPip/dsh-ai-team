@@ -1,0 +1,170 @@
+{
+  "verdict": "rework",
+  "confidence": 0.85,
+  "criteria": [
+    {
+      "id": "K1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "runner.py:1732「choices=[\"headless\", \"fixture\", \"codex\"]」；--engine bogus 被 argparse 拒（exit 2）；codex-smoke-2 真跑起来了，RUN.json.engine=codex。worker_argv 里的 die(2,'未知 engine') 从 CLI 走不到（argparse 先拦了），不影响判定"
+    },
+    {
+      "id": "K2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "runner.py:1375-1376 argv；单元断言 :461-471（ro==rw 逐字相同、末位 '-'、不带 --patch、不带 -s read-only）；镜像变异 4 格 argv 全部抓住；smoke-2 两个节点 argv 的实际落盘值与之一致（D3 代码 + D2 断言 + 反证 = 变异）"
+    },
+    {
+      "id": "K3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "runner.py:1073「def parse_events_codex(stdout):」；单元断言 :404-444，含真样本 5 次调用全部咬住、unparsed=0；--json 变异被抓；call 键集合与 headless 真记录 c_iface.a1.json 相同，result 键是超集（+exit_code）——TASK §五·1 原文要求『一致』，超集我判为可接受，见 N4"
+    },
+    {
+      "id": "K4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "台子 :419 extract_result 咬真样本；smoke-1 与 smoke-2 共 4 个 attempt 都是 result_found=True。取不到时的分支沿用旧路径。没有 K4 专属变异，但该判据 headless 早有覆盖，所以接受"
+    },
+    {
+      "id": "K5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "runner.py:231 judge_egress（rc / 无 JSON / NOT READY / port 脏值四处都 fail-closed）；:274 check_codex_egress（脚本缺失 die(4)）；:1803-1804 位置在 dry-plan 之后、建任何目录之前；台子 :478-510 含假脚本 rc=0+NOT READY → 4；镜像变异『只看退出码』被抓（failed=2）；smoke-2 RUN.json.egress={checked:true,port:<PROXY-PORT-TUNNEL>,result:READY,...}"
+    },
+    {
+      "id": "K6",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "proxy_url_for 本身有 4 条断言（:515-519）。但『子进程环境里真有代理』这一层**没有任何断言**：我在镜像里把 runner.py 中 env[k] = proxy_url 删掉，--only unit 仍是 167/0；grep 台子 HTTP_PROXY 0 命中。真跑记录里的 rec.proxy 是 runner 自己的变量值（属于自报），不是子进程看到的环境。另外 codex 走 TUN 也能成功，所以『跑通了』证明不了『走了代理』。D2 单元 + D3 代码只够 E2，缺反证"
+    },
+    {
+      "id": "K7",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "TASK K7 原文要求『每次 attempt 记 readonly_enforcement … RUN.json 里也能看见』。NODES/*.a1.json 里有，但 runs/codex-smoke-2/RUN.json grep snapshot_only 0 命中，RUN.json.nodes[] 只有 status/ok/attempts/final_tier/exit_code/deterministic_fail/escalate_ignored/timeout_attempts/why。台子只断言常量表（:472-475）；我删掉 rec 字段后 167/0 照样全绿。compare() 判据本身确实未动（readonly_violation 仍按 permission_mode=='read-only' 判，:1625）"
+    },
+    {
+      "id": "K8",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "两次真跑 4 个 attempt 的最终答案都带 <RESULT> 且能解析。『build_prompt 一字不改』我没有基线可以 diff（非 git 仓库），这半句只算 E1"
+    },
+    {
+      "id": "K9",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "escalate_ignored_reason 有 3 条单元断言（:522-525）。run_node→RUN.json.nodes[].escalate_ignored（runner.py:2060/:2624/:2701）这条路径**一次都没被执行过**：smoke 图没有 escalate，fixture 引擎也走不到 codex 分支。『节点仍重跑一次、RUN.json 可见』没有任何运行证据。只有 D2 单元 + D3 代码，没有反证"
+    },
+    {
+      "id": "K10",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "镜像全量 503/0（我自己跑的），--only unit 167/0；新增断言数 ≥14。主树上的 476/19 已定位为验收会话 stdout 文件被锁，与代码无关"
+    },
+    {
+      "id": "K11",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "镜像 mutations=55 caught=55 restored_green=True；5 个 codex 格各自 failed>0，expect_fail 点名了具体断言（runner-mutate.py:526-562）。TASK 第 ① 格原为 '-s read-only→workspace-write'，因设计改变被反转成『加回 -s read-only』，与 §二·1 一致，接受"
+    },
+    {
+      "id": "K12",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "runs/codex-smoke-2：exit 0，tool_calls 1+2，result_found，node_diff 由快照核出（w_edit changed=[SMOKE-TARGET.md]，s_look []）。D2 字段 + D1 快照 = E2(b)。同一配置只跑了 n=1（smoke-1 用的是另一套 argv）。按 §二·五 定级（回答 brief 第 4 问）：『2 节点 scout+work 在本机能跑通』E2；integ 多文件写 / check verdict / file_change / turn.failed 在 codex 上都是 E0"
+    },
+    {
+      "id": "D-HONESTY",
+      "type": "fact-consistent",
+      "status": "fail",
+      "claimed_strength": "E2",
+      "strength_met": false,
+      "evidence": "见 B2/B3：代码与 TASK 里还留着跟降级相反的强度断言；DELIVERY 说 cite-check 核了 §二 那张表，实际 anchored=0；smoke-1 result=pass 这件事没有披露"
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "what": "只读降级的『证据可见性』没做到 K7 自己定的标准，也没有传导到依赖『沙箱只读』的并行资格",
+      "why": "K7 原文要求 RUN.json 里也能看见；现在只有 NODES/*.a1.json 里有，台子也不咬这个字段（删掉照样全绿），等于又退回了『只在文档里』。另外 parallel_eligible（runner.py:472-488，注释 :476『沙箱 DSH_PERMISSION_MODE=read-only 是引擎层保证，模型骗不了它』）是 B1 波内并发的唯一资格依据；在 codex 下这个前提不再成立（只读节点实际拿的是 workspace-write），可它照样让只读节点并发，DELIVERY §五 一字未提。后果：并发组里一个节点写了文件，兄弟节点会读到被改过的内容。波级归因仍会把全组判成 readonly_violation（所以 fail-closed，这是我把它判成可修而不是 escalate 的原因），但这个前提失效属于未披露的降级",
+      "evidence": "grep snapshot_only runs/codex-smoke-2/RUN.json → 0；镜像变异 B（删 rec.readonly_enforcement）→ 167/0；runner.py:481 只看 kind 不看 engine"
+    },
+    {
+      "id": "B2",
+      "what": "代码与 TASK 里有 5 处文字仍断言『codex 只读是引擎层硬拦 / 用 -s read-only』，与实现相反",
+      "why": "brief 让我判的恰恰是『降级是否诚实』。现在降级藏得最深的地方是反过来的：读 runner.py 文件头的人会得出『codex 与 headless 同一个强度』的结论。这类事实一致性问题在送审档要求 E2，现在是自相矛盾",
+      "evidence": "runner.py:50「所以「只读节点」在 codex 上照样是引擎层硬拦。」；runner.py:1348「它要把「只读」表达成 **argv 里的沙箱档**（`-s read-only`）」（readonly 参数实际已无用）；runner.py:11「R3  只读节点在**沙箱层**设 `DSH_PERMISSION_MODE=read-only`（硬拦）」与 :17-18、:476 未按引擎限定；TASK.md:37「只读节点 → `-s read-only`（**引擎层硬拦，与 headless 同一个强度**）」（§二·1 虽有更正，§一 原句没有撤回也没有标注）"
+    },
+    {
+      "id": "B3",
+      "what": "DELIVERY 有两处陈述与证据不符：smoke-1 判了 pass 这件事被略过；『cite-check 直接核这张表』不成立",
+      "why": "(a) runs/codex-smoke-1/RUN.json.result = pass：那次 s_look 0 次工具调用、facts 是从 prompt 抄的，runner 照样判 ok。DELIVERY §一② 写『改完第二次 result=pass』，§四 把 smoke-1 叫『失败设计』，读者会以为第一次被判了失败。这个事实很关键：它说明 runner 的 result 分不清『真读了』和『从 prompt 抄』，smoke-2 的 pass 因此也不能单独证明 scout 真干了活（得看 tool_calls）。这正是『流程 pass ≠ 产物 pass』的老教训。(b) §二 说『cite-check --files 直接核这张表，见 CITE-CHECK.txt』，实测 named=0 anchored=0，这张表一条都没被机器核过；我手工 grep，其中一个锚 `if engine == \"codex\":` 在 runner.py 里出现 3 次，不唯一",
+      "evidence": "smoke-1 RUN.json result=pass、nodes.s_look.status=ok、s_look.a1 tool_calls=[] items_started=0；cite-check 输出 [cover] anchored=0 (0.0% of named)"
+    },
+    {
+      "id": "B4",
+      "what": "K6（代理真注入子进程）与 K9（escalate_ignored 进 RUN.json、节点重跑）在运行路径上没有任何会红的断言",
+      "why": "可执行类在送审档要求 E3。我的反证变异 A 证明：删掉注入那一行，全部台子照样绿；K9 的 run_node→RUN.json 路径从没被执行过。出口约束是 AGENTS.md 硬规则，『注入被回归删掉也没人发现』不可接受",
+      "evidence": "镜像变异 A → --only unit 167/0；grep 台子 HTTP_PROXY 0 命中；smoke 图无 escalate"
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "【brief 第 1 问】snapshot_only 降级本身我判为可接受（nonblocking），前提是 B1/B2 修完。理由：-s read-only 在本机读不到任何东西（PROBE-READONLY A/B 两组 0 条命令执行），给 codex 只读节点硬沙箱等于让它从 prompt 编答案（smoke-1 就是这样，而且还被判 pass），这比『能写但写了必红』更危险。建议在 Gate/runner 层加一条可选的 `--codex-readonly=refuse`，但不强求"
+    },
+    {
+      "id": "N2",
+      "what": "【brief 第 2 问】check_codex_egress(script=) 我判为硬拦成立：CLI 不暴露这个参数；能 import runner 的人本来就能直接构造 egress dict 去调 run_node，Python 层不存在真正的边界，这与 manager.py 那次 N1（CLI 能指向假脚本）不是同一个形状。剩余弱点：egress 只在起跑前查一次，长 run 中途隧道断了不会再核（子进程连死端口会失败，属于 fail-closed，可以接受，写进弱在哪即可）"
+    },
+    {
+      "id": "N3",
+      "what": "【brief 第 3 问】escalate_ignored 留痕够了，不必让节点 fail：升档在语义上是『再给一次机会』，换不了模型时退化成同档重试，并不违反契约。但 B4 要求它有运行证据；另外 kind=replan 的默认档就是 strong，codex 下每个 replan 节点首发都会带 escalate_ignored，措辞『请求的 strong』容易被误读成『升过档』，建议区分 default_tier 和 escalated"
+    },
+    {
+      "id": "N4",
+      "what": "TASK §五·1 要求 tool_results 键集合与 headless『一致』，实际是超集（+exit_code）。我接受，但 TASK/DELIVERY 应把『一致』改成『超集，下游只读公共键』"
+    },
+    {
+      "id": "N5",
+      "what": "readonly 节点 rec.permission_mode 记 'read-only'，而 codex 子进程实际是 workspace-write。DELIVERY §四 把『pmode 分别是 read-only / workspace-write』当正面证据。这个字段在 codex 下的含义是『请求的模式』，应改名或补一个 effective_sandbox 字段"
+    },
+    {
+      "id": "N6",
+      "what": "（单元外、早已存在）snapshot() 碰到被独占锁住的工作区文件直接抛 PermissionError，runner 不出 RUN.json；台子把它显示成 19 条看起来像回归的 FAIL。验收官的 claude -p stdout 只要重定向到 tasks/ 下，主树台子就必红。建议：sha256_file 失败时记成 unreadable 条目，不要崩；或者 brief 里规定验收输出落在工程树外"
+    },
+    {
+      "id": "N7",
+      "what": "PROBE-READONLY 只变了沙箱那一维，审批策略保持默认。所以『Windows 上 -s read-only 禁一切命令』严格地说是『本机 codex-cli 0.153.4 在默认审批策略下』，DELIVERY 的措辞说得太满了"
+    }
+  ],
+  "rework_brief": "1) B1：RUN.json 顶层加 \"readonly_enforcement\": READONLY_ENFORCEMENT[engine]，nodes[] 每项也带上；parallel_eligible 在 engine 的 enforcement != 'sandbox' 时返回 False（或者允许并发，但把原因写进 RUN.json.parallel.demoted / 新字段 eligibility_basis）——二选一，选了哪个就写进 DELIVERY §五。2) B2：改掉 runner.py:50、:1348 的 docstring，把 :11/:17/:476 限定为 headless/fixture；TASK.md:37 那句加『已被 §二·1 推翻』标注，或者改写。验收方法：grep '照样是引擎层硬拦' 与 'argv 里的沙箱档' 都 0 命中。3) B3：DELIVERY §一/§四 写明 smoke-1 的 RUN.json.result 也是 pass，以及这说明了什么（result 分不清真读和抄 prompt）；§二 把锚改成 cite-check 认的 `scripts/runner.py:N「锚」` 形式，然后重跑 cite-check，named/anchored 要 >0 且全部 OK；`if engine == \"codex\":` 换成唯一的锚。4) B4：台子加一个 codex 引擎的零成本集成用例——用 codex_bin 指向一个假 codex.js（node 脚本：把 process.env.HTTPS_PROXY 和 stdin 回显成 codex JSONL 的 agent_message + <RESULT>），并让 check_codex_egress 指向假 READY 脚本（或者在台子里直接调 run_node(engine='codex', egress={'port':N}, codex_bin=...)）。断言至少包括：子进程看到的代理 == http://127.0.0.1:N；rec.readonly_enforcement == 'snapshot_only'；一张带 escalate=strong 的图跑出来，RUN.json.nodes[x].escalate_ignored 非空且 attempts == 2。再给变异台加 2 格：删 env 注入、删 RUN.json 的 escalate_ignored，两格都必须被抓。5) 重跑全量 / unit / mutate（**在 %TEMP% 镜像或确保没有被锁的工作区文件时跑**），结果由命令直接写入。",
+  "escalate_question": "",
+  "reviewer_notes": "主树台子红是因为本会话的 stdout 文件 tasks/CODEX-ENGINE-2026-11-11/REVIEW-stdout.txt 被调用方锁住，绿色数字是在 %TEMP%\\rv-codex-mirror 里得到的（镜像保留未删，可复查）。我动过的东西：runs/_harness/**（台子产物）、runs/_harness/rvprobe-detcmd（定位用的单场景）、%TEMP% 下的镜像及其中 runner.py 的两次临时变异（已还原，sha256 与主树一致）、%LOCALAPPDATA%\\ai-team-sandbox 下 runner 自建的目录；scripts/ 与 tasks/ 下除本文件外一个字节没改。没跑 --engine codex 真跑，build_prompt『一字不改』没有基线可以 diff。",
+  "_provenance": "验收官 `claude -p --model opus --allowedTools Read,Grep,Glob,Bash,Write` 自己写入 `tasks/CODEX-ENGINE-2026-11-11/REVIEW-raw.txt`；JSON 块逐字未改。"
+}

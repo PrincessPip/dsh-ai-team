@@ -1,0 +1,122 @@
+{
+  "verdict": "rework",
+  "confidence": 0.97,
+  "readonly_enforcement": "snapshot_only",
+  "evidence_root": "%USERPROFILE%/AppData/Local/Temp/constraints-independent-review-ek5hlp47",
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立运行 independent-probes.py：普通无出处 P 返回 exit 1，纯 E/I 返回 exit 0；但 revoked_rx01、product_isolation_leak、mixed_p_e 三个应拒绝的反例均返回 exit 0。结果见 evidence/independent-probes.json。scripts/constraints-check.py:95「if E_RE.search(text):」及 :97「if I_RE.search(text):」按整行关键词直接放行。",
+      "judgment": "[判断类，E1] 当前取舍不可辩护：连 decisions/CONSTRAINTS.json 明确登记为 P 的 RX-01 原句都会漏检，已超出一般分类噪音。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立探针 empty_changed 返回 exit 2；unknown 返回 exit 1/UNKNOWN-ID；proposed、empty_quote 返回 exit 1/NOT-APPROVED；approved 返回 exit 0。交付断言 T01、T06–T08 和变异 M05–M08 均复现通过。代码依据 scripts/constraints-check.py:288「elif entry.get(\"status\") != \"approved\" or not entry.get(\"quote\"):」。本结论针对已被抽取并分类为 P 的条款。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立构造 baseline：baseline_original 返回 exit 0；baseline_reword、baseline_new_clause、baseline_move 均返回 exit 1/NO-PROVENANCE；全新文件 plain_p 也返回 exit 1。scripts/constraints-check.py:294「if f\"{path_s}|{digest(text)}\" in baseline:」确实同时绑定路径与规范化文本。分类漏检另计 C1。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立探针中反引号代码块、引用块、划线行、词内假阳性和超长行均正确忽略；但 tilde_code（~~~ 围栏）和 indented_code（四空格缩进代码）均返回 exit 1/NO-PROVENANCE。scripts/constraints-check.py:80「FENCE_RE = re.compile(r\"^\\s*```\")」仅识别反引号围栏，未覆盖简报 C4 所称代码块。"
+    },
+    {
+      "id": "C5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "TEMP 副本复跑：selftest exit 0、RESULT=24/24；mutate exit 0、RESULT=15/15、void=0，每格实际红集等于预期红集，见 evidence/selftest.txt 与 evidence/mutate.txt。scripts/constraints-mutate.py:141「ok = set(got) == set(expect)」比较固定预期；selftest.py:194「ok = proc.returncode == spec[\"expect_exit\"]」另核退出码和消息，未从被测结果反推预期。此结论仅证明这 15 格有效，不代表覆盖 C1/C4 的新增反例。"
+    },
+    {
+      "id": "C6",
+      "type": "fact-consistent",
+      "status": "unverified",
+      "claimed_strength": "E2",
+      "strength_met": false,
+      "evidence": "已读 E_RE、I_RE、PRESCRIPTIVE_RE，但送审包没有修改前的分类器及两次失败原文。tasks/CONSTRAINTS-2026-11-17/DELIVERY.md:93「原文见 `CONSTRAINTS-CHECK.txt` 的更早一轮输出」所指旧输出未提供，现存报告只有 violations=0。能够证明当前分类过宽，不能据此推断作者曾为迁就自身文本而加词。"
+    },
+    {
+      "id": "C7",
+      "type": "fact-consistent",
+      "status": "fail",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "三处并非逐字一致。decisions/CONSTRAINTS.json:15 明定「只约束实验进程，不得外溢成产品能力边界」；TRIGGER-POLICY.md:492 有相应边界；AGENTS.md:32 仅写「E/I 类自动成立」，未定义 E/I 或写出该边界。三份 classes 描述逐字比对均不相等，未满足简报 C7 的明确要求。"
+    },
+    {
+      "id": "C8",
+      "type": "fact-consistent",
+      "status": "unverified",
+      "claimed_strength": "E2",
+      "strength_met": false,
+      "evidence": "已验证现文件 19,576 B；真实渲染预算 exit 0、body=48072、rendered=48420、omitted=[]、truncated=[]，见 evidence/budget.txt。归档 §A 有所列历史内容，§B 实数 13 条；AGENTS.md:61–67 保留所要求的五类现行事实。但包内没有移出前的 AGENTS 原文，无法验证原大小 26,483 B 和迁移逐字一致；归档自称「逐字保留」不能代替前后对照。"
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "claim": "E/I 分类过宽，真实 P 条款可无出处通过。",
+      "what": "整行关键词匹配把技术路径限制当作证据或隔离条款。",
+      "why": "违反 C1；本功能要防止的已知原始问题仍可复现。",
+      "evidence": "decisions/CONSTRAINTS.json:54–59 将 RX-01 明确登记为 P；把其原句加列表标记放入全新文件，独立探针 revoked_rx01 得到 E=1、P=0、exit 0。另两例「不复制任何文件，产品永久禁用复制功能」「不改系统 DNS，不冒称通过」分别被判 I/E 并放行。"
+    },
+    {
+      "id": "B2",
+      "claim": "标准 Markdown 代码块仍会被当作规范条款。",
+      "what": "波浪线围栏与缩进代码块未被排除。",
+      "why": "违反 C4，会要求示例代码提供条款出处。",
+      "evidence": "运行 evidence_root 下 independent-probes.py，tilde_code、indented_code 实际 exit 1，预期 exit 0；完整输出保存在 probes/对应用例/output.txt。"
+    },
+    {
+      "id": "B3",
+      "claim": "三处 E/I/P 定义未达到约定的一致性。",
+      "what": "AGENTS 缺少 E/I 定义及 I 的实验进程范围限制，另两处定义文字也不同。",
+      "why": "违反 C7；不能把明确要求的逐字一致降为大意接近。",
+      "evidence": "AGENTS.md:30–32；TRIGGER-POLICY.md:491–493；decisions/CONSTRAINTS.json:6–20。"
+    },
+    {
+      "id": "B4",
+      "claim": "C6 与 C8 的历史断言缺少可核对的前像证据。",
+      "what": "无法确认分类器没有为过闸加词，也无法确认归档逐字保留。",
+      "why": "这两项不能按通过交付；缺证据不等于已证明篡改或丢失。",
+      "evidence": "DELIVERY.md:92–95 引用未提供的早期失败输出；归档文件:3 自称「逐字保留」，但送审包仅有归档后 AGENTS 和当前分类器。"
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "保留已声明边界：quote 真伪及与条款的对应关系未验证；默认扫描仅覆盖根 Markdown 和指定深度 tasks，decisions 归档不在默认面；未重跑 ledger/doc-sync/fire-chief 等无关测试。",
+      "evidence": "scripts/constraints-check.py:116–125、:288；REVIEW-BRIEF.md §4。"
+    },
+    {
+      "id": "N2",
+      "what": "交付文档仍混有旧读数，应标为历史或更新。",
+      "evidence": "TRIGGER-POLICY.md:515 仍写 22 例/14 格，实测为 24/15；DELIVERY.md:123 仍称预算余量 21 B，与 :99 及本轮实测余量 6,928 B 不符。"
+    },
+    {
+      "id": "N3",
+      "what": "本单元引用检查退出 0，但没有命名锚定引用，不能据此证明交付论断成立。",
+      "evidence": "evidence/cite.txt：files=5、refs=3、named=0、lone=3；LONE 按契约不阻塞。"
+    }
+  ],
+  "rework_brief": "收窄 E/I 自动放行条件，避免单个关键词豁免整行，并验证 I 仅约束实验进程；将 RX-01、产品复制限制及混合 E/P 条款加入固定断言和针对性变异，要求无出处时 exit 1，同时保留纯 E/I 放行。补齐波浪线围栏和缩进代码块识别及反例。统一三处 E/I/P 定义并补上 I 的范围边界。提供既有的修改前分类器、失败原文和移出前 AGENTS，以机器对照补齐 C6/C8；不得以事后重建冒充原始前像。",
+  "reviewer_notes": "原工程前后两次完整快照均为 231 项，新增/删除/修改均为 0，见 evidence/readonly-summary.json；这只证明采样间净状态一致。所有写入和测试均在独占 TEMP 目录，变异台仅补回子进程隔离环境变量，被测文件与原工程 SHA256 一致，未调用网络或真实模型。C6 历史变化和 C8 逐字迁移仍未验证，当前 rework 另有 B1–B3 的直接反证支持。"
+}

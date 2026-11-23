@@ -1,0 +1,98 @@
+{
+  "verdict": "pass",
+  "confidence": 0.93,
+  "readonly_enforcement": "snapshot_only",
+  "evidence_root": "%USERPROFILE%/AppData/Local/Temp/astra-independent-2b2-xeg60iom",
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "native-engine.mjs:19「if(this.auto)ctx.on('agent/pre-step',async(event,next)=>{」。副本执行 run-local.py lifecycle：9/9；阈值下仅 normal，pending/schema 跨线为 compact→normal。test-fixes 非目标路由仍正常执行工具且不压缩。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "已直读 native-meter.mjs。run-local.py meter：20/20、networkAttempts=0；缺失、负数、NaN、不完整及不一致 usage 均拒绝，密文长度变化不影响估价，恢复计量一致。opaque 明确为 output_tokens 代理，非精确 input 归因。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "native-engine.mjs:157「export function pressureThreshold(capacity,reservation,headroom=65536){」。run-2b2.py 六 worker 均 exitCode=0、forcedKill=false；479599/479600/479601、扩大输出预留、取消、重复触发、失败及不收缩反例通过。lifecycle 中失败或不收缩只发一次 compact，普通请求未放行。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "native-engine.mjs:162「export function selectNativeTail(session){」。verify-live.py 独立重算 retainedEstimatedTokens=117412；多工具边界保留两 call 和两 result。空历史、超大单条、无可压前缀反例通过，后者阻断请求。"
+    },
+    {
+      "id": "C5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "native-pruner.mjs:11「const protectedSeqs=new Set(selectNativeTail(session).tailSeqs);」。test-fixes 实际裁剪两个旧工具结果后重计量，仅发 normal，100K 尾区哈希不变；直接 pruneSession 保护固定 retained，非目标路由仍使用普通裁剪。父级真实工具保护及可裁对照通过。"
+    },
+    {
+      "id": "C6",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "继承43回归通过；test.mjs、negative.mjs、negative-worker.mjs 与 COPIED-BASELINE 哈希一致。NEGATIVE-RESULT.json：八种坏 journal 恢复均 requests=0、executions=0，另有坏边界反例。独立恢复 worker PID12040：pass=true、requests=2、executions=1；自动再压维持唯一 active checkpoint。"
+    },
+    {
+      "id": "C7",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "journal-safety.mjs:31「if(resume&&turn)throw nativeError('NATIVE_INTERRUPTED_TURN');」。已核内部 WeakMap owner 与事务守卫。合法当前 turn 自动压缩成功；任意 open-turn、未闭合事务、坏 usage、retained 篡改及伪造 bypass 标记均被拒绝。取消及提交后 flush 失败反例通过。"
+    },
+    {
+      "id": "C8",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "副本执行 verify-live.py：53/53、networkRequests=0；独立压前估计552226、保留117412。原始三笔 SSE、预算及物理 journal 一致；两进程17932→3648自然退出，预算3/4，两答案八字段精确匹配，并核对原请求事实及纠正。对离线演练执行默认真实核验返回 exit1，唯一失败为证据模式不符。"
+    },
+    {
+      "id": "C9",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "已读独立核验器，未导入工人 grade。亲跑 proof 的基线、计数破坏/恢复、重复响应ID/恢复五项通过，失败检查各精准命中目标；另以只读 check_files 补验错误 SHA，结果 true→false→true 且仅命中指定文件。独立 SHA256 比较确认16个证据镜像文件全部恢复原字节；完整 proof 入口故障列于 N1。"
+    },
+    {
+      "id": "C10",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立 SHA256 重算：SOURCE-MANIFEST 3209文件零差异，PRELIVE-CODE 1644文件零差异；保护检查7078文件 changed=[]、added=[]，错SHA反例精准拒绝。送审树前后3213文件，added=[]、removed=[]、changed=[]。strict cite-check exit0，三份文档无行号引用；不将此视为内容证明。"
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "claim": "送审副本的完整 proof 命令缺少依赖，不能直接完成全部检查。",
+      "evidence": "run-local.py proof 返回 exit1、checks=5、FileNotFoundError。prepare.py:11 的 collect() 读取送审树未包含的 tasks/ASTRA-NATIVE-2B1-AUDIT-2026-11-14/BOUNDARY-BASELINE.json。本次已通过源工程同一函数只读补验保护基线及SHA反例，并独立确认镜像恢复，因此不构成验收证据缺口。",
+      "recommendation": "完善送审打包或显式配置只读保护源路径，并补齐 cite-check.py，使简报命令可直接复现。"
+    }
+  ],
+  "reviewer_notes": "先查任务书、源码及运行证据，再核 DELIVERY；全部落盘测试和变异均在另建 TEMP 副本，未修改送审树或源工程，未发送真实模型请求。结论限于本次隔离文本/工具检查点，不覆盖生产发布、长期稳定性、完整fsync或真实任务质量。前后哈希仅证明无净内容变化，正式父级机器后快照及清理回执仍须归档，不能外推为硬只读。"
+}

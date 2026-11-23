@@ -1,0 +1,58 @@
+{
+  "unit": "EVIDENCE-GUARD-2026-11-10",
+  "round": 1,
+  "at": "2026-11-10T13:5x+08:00",
+  "reviewer": "claude -p --model opus（带 shell，订阅通道）",
+  "channel": "CLI（--allowedTools Read,Grep,Glob,Bash）",
+  "egress": "READY（<VPS-IP>，<PROXY-PORT-TUNNEL>）",
+  "verdict": "rework",
+  "confidence": 0.85,
+  "raw_report": "tasks/EVIDENCE-GUARD-2026-11-10/REVIEW-round1-raw.txt",
+  "blocking": [
+    {
+      "id": "B1",
+      "what": "C1 的 SCOPE_EXCLUDED_PATH 只匹配路径第一段；而 runner 是「任意段命中 EXCLUDE_DIRS」。lib/runs/out.json / src/__pycache__/m.pyc / tools/node_modules/a.js 全部 Gate OK，但 runner 完全跳过它们（连轻量指纹都没有）",
+      "why": "C1 判据未达成，F6 仍在",
+      "evidence": "验收官复现：dag-gate 对 writes [lib/runs/out.json, src/__pycache__/m.pyc, tools/node_modules/a.js] → OK (0 error / 4 warn)；runner 口径在 scripts/runner.py:525",
+      "worker_accept": true,
+      "fix": "excludedTopOf 改成任意段命中；补一个嵌套排除区的对照案例"
+    },
+    {
+      "id": "B2",
+      "what": "篡改被检测到之后，manifest 里的失配记录不被清理/隔离 —— 后续每个节点在起跑前复核时都会再次命中，并被记成**它自己**的 evidence_tampered（不可洗 harm）",
+      "why": "冤枉无关节点；一次篡改会静默转成整轮伤害且归错人",
+      "evidence": "验收官用 g-evidence + 并行只读节点 x_indep 复现：x_indep FAIL evidence_tampered: GRAPH.json, GRAPH.json（且重复列出两次）",
+      "worker_accept": true,
+      "fix": "manifest 引入 known_bad 隔离：只报「新发现」的篡改并在落盘后不再重复；两次 verify 结果按 path 去重"
+    },
+    {
+      "id": "B3",
+      "what": "并发路径的 verify_evidence() 零测试覆盖 —— 把 run_parallel_unit 里两处调用都删掉，全量断言台仍 365/0",
+      "why": "可执行类要求 E3；BRIEF §三·3 明确要求两条路径都核；与 E2EFIX B3 同一失败模式",
+      "evidence": "验收官在镜像里删掉两处调用 → RESULT checks=365 failed=0",
+      "worker_accept": true,
+      "fix": "新增并发篡改场景（parallel-tamper），断言并发组内的 evidence_tampered 真的会响"
+    },
+    {
+      "id": "B4",
+      "what": "C7 要求 C1–C6 每条都有「弄坏它就变红」的变异格；交付的变异台只有 C2/C3/C4，C1/C5/C6 没有，且 C5/C6 的缺口没披露",
+      "why": "C7 判据按字面未达成",
+      "evidence": "runner-mutate.py 的 MUTATIONS 列表；验收官自己写的等价变异（去掉 TEMP 重定向 / 清空 escape_writes / 去掉 SANDBOX 豁免 / startsWith 版 C1 / 禁用 C1）全部变红",
+      "worker_accept": true,
+      "fix": "补 3 格（C1 Gate 侧 / C5 / C6），并把台子扩成能改 dag.workflow.mjs 并跑 harness.mjs"
+    }
+  ],
+  "nonblocking": [
+    {"id": "N1", "what": "§一 的 F13 行过度声称：改**别的 run** 的证据并把 mtime+size 复原，抓不到（C4 只覆盖本 run 已登记文件）", "fix": "§一 与 §六 加这条边界"},
+    {"id": "N2", "what": "BRIEF §三·5 引用了 MUTATE.txt 里的 restored_green=False，但交付的 MUTATE.txt 已被绿的那次覆盖，文件里没有这个串", "fix": "改成「我自己的观察，无落盘证据」并指明机制"},
+    {"id": "N3", "what": "计数错：5 个场景不是 4（escape-writes 漏列）；§六 8 条不是 7；§八 标题写 C1 应为 C8", "fix": "全部改正"},
+    {"id": "N4", "what": "DELIVERY 没有逐条强度声明（只有账本里一句总括 E3）；§九「副本验证」没有落盘 artifact", "fix": "加逐条强度表 + 用 make-evidence 生成 GATE-FIXEDCOPY.txt"},
+    {"id": "N5", "what": "SCOPE_EXCLUDED_PATH 的文案说「runner 的快照跳过这个目录」，现在 runs/ 是轻量跟踪；.mjs 注释引用 scripts/runner.py:95 无锚且行号已漂（EXCLUDE_DIRS 在 :98）", "fix": "改文案 + 注释改成 :98 带逐字锚"},
+    {"id": "N6", "what": "escape-writes 场景会往真实 $USERPROFILE 写探针（finally 已清）；REVIEW-raw.txt 是一次失败的 claude -p 调用", "fix": "第 1 轮报告改名 REVIEW-round1-raw.txt；探针清理保持"}
+  ],
+  "c8_reviewed": {
+    "verdict": "7 处全过（N1–N5 源码在位、mutate-exec 6/6、N6 两处文档订正都在）",
+    "note": "验收官明确：这一项不影响 C1–C6 的裁决"
+  },
+  "disposition": "四条 blocking 全部接受并返工；六条 non-blocking 全部修。返工后重送第 2 轮。"
+}

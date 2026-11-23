@@ -1,0 +1,97 @@
+{
+  "_provenance": "本文件是 subagent_claude_code 返回体的逐字副本（round 1，2026-11-06，trigger: mandatory）。除本字段与 trigger/channel 两个归档元数据外，其余字段未做任何增删改。验收官本轮未输出 reviewer_notes 字段，故此处不填。",
+  "verdict": "rework",
+  "confidence": 0.72,
+  "trigger": "mandatory",
+  "channel": "subagent_claude_code",
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "scripts/dag.workflow.mjs:265 (EDGE_SELF) 和 :275 (FROM_UNDECLARED) 的判据与文案都存在（Read 确认）；但 tasks/DAG-2026-11-06/fixtures/contrast-cases.json 的 9 个案例（Read 全文）和 harness.mjs:28-38 的 EXPECT 表都不含 EDGE_SELF / FROM_UNDECLARED 任何变体（Grep 'EDGE_SELF|FROM_UNDECLARED' 命中 0 处）。另外 dag.workflow.mjs:219-223 的『比 DESIGN 严一条』规则（integrate 也要 cmd|assert）在 contrast-cases.json 里同样零覆盖（Grep 'integrate' 命中 0 处）。即：C1 列出的 9 类死规则中，至少 2 类（加上额外 1 条自加的严格规则）只有 D3（源码读）单一观察维度，没有任何执行证据（连工人侧 harness 都没跑过），达不到可执行类 E3 的门槛（需 ≥2 类观察 + 反证）。TASK.md 自己的『你能核的』① ② 两条我都核实成立（判据/文案齐全；rejected/agents_started:0 分支结构上确实在任何 agent() 调用之前），但 C1 的标题结论『每条死规则都真的会咬』覆盖不全，不能整体判 pass。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "scripts/dag.workflow.mjs:575-608：dry-run 分支在 `if (dryRun) {...}` 内部完全没有 `agent(` 调用，且在第 624 行 `const { byId, ids } = V;`（执行器真正启动处）之前就 return（D3）。harness.mjs:91-109 对 8 节点真图断言 `agents=0`/`calls=0`；:112-123 对 9 个对照案例跑 dry-run 且假 agent 一被调就抛错（结构确认，D2）；:124-133 额外验证 Gate 拒收时真跑模式 `agents_started=0`/`calls=0`（反证：同一 harness 真跑分支 calls 非零，见 happy/retry/escalate 等场景），证据结构完整，三个条件都满足 E3 门槛。实际执行结果（checks=85 failed=0）本身我跑不了 node，按工人侧证据处理，但源码结构与测试代码本身的存在性已由我直接 Read 确认，不是转述。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "四终态（ok/fail/skipped/need_info）、join all/any、on_fail retry/escalate/then(replan|skip|abort)、need_info 跳过同档重试直接升档——这些在 dag.workflow.mjs:683-815 均有对应分支（D3），且 harness.mjs 的 scenarios()（r1–r12, 行 140-268）逐一测了 happy/join-all-fail/join-any/retry/escalate/need_info-skip-retry/need_info-terminal/F4-不炸图/fatal-炸图/abort/skip/scope越界/scope未核/budget，覆盖完整（D2+D3+反证齐全，E3 达标）。但 `when` 语义『只支持 eq/in/exists』里，evalWhen()（dag.workflow.mjs:666-670）对 `op==='in'` 与 `op==='exists'` 的运行期分支**零测试覆盖**：Grep \"op:\\s*['\\\"](in|exists)['\\\"]\" 在 harness.mjs 与 fixtures/ 下均 0 命中；harness.mjs 里唯一的运行期 when 测试（r2/r2b，行 149-161）只用了 `op:'eq'`。when-undeclared 对照案例测的是 Gate 静态拒收（WHEN_UNDECLARED），不是运行期 evalWhen 的 exists 分支是否正确判真/判假。C3 的可执行类声明 E3 要求『跑错了没人看得见』的地方都要有反证，而 in/exists 两个分支目前完全没人看得见。"
+    },
+    {
+      "id": "C4",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "scripts/dag.workflow.mjs:33-51：TIERS.check 与 TIERS.strong 显式落到 deepseek-official，`channel:'official-substitute'` 且各带 `why` 文案（点名 F5、引用 §6/§2.4 A-B 数据）；:833-835 `degraded_tiers` 由 `usedTiers.filter(channel!=='official')` 构造，真跑返回体会点名并带 why。对照 DESIGN.md:207-216 §6：集成档写的是『deepseek-flash → 失败升 opus（订阅）』，验收档写的是『claude（订阅，只读硬锁）』——与代码注释『§6 的逃生舱是 claude -p --model opus（订阅）；workflow 只能走 LLM 路由（F5）』『§6 的验收是 claude 订阅通道…workflow 内到不了』完全对应，两个独立位置（DESIGN.md + dag.workflow.mjs）事实一致，达 E2。"
+    },
+    {
+      "id": "C5",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "harness.mjs:28-38 的 EXPECT 表 9 个 key（baseline-ok/cycle/unknown-id/write-conflict/hot-file-by-worker/work-without-cmd/when-op-bad/when-undeclared/review-on-work）与 contrast-cases.json 的 cases[].case 9 个名字逐一比对，完全一一对应（D3，位置独立两处，E2 达标）。逐案例核对 _mut 自述与实际 diff：cycle/unknown-id/work-without-cmd/when-undeclared/review-on-work 5 个案例描述与实际 JSON 改动精确吻合；hot-file-by-worker 的 _mut 漏提了 b.do 文本也变了（影响极小，不改变触发的 code）；write-conflict 的 _mut 写『c.writes 也写 src/x.ts』实际是把 c.writes 整个替换成 ['src/x.ts']（不是追加），when-op-bad 的 _mut 写『d.when.op=\"like\"』但 baseline 的 d 节点根本没有 when 字段，这其实是新增整个 when 块而非改动已有子字段——两处措辞不够精确，但不影响『只改一处触发对应 code』这个核心结论，记为 nonblocking。"
+    },
+    {
+      "id": "C6",
+      "type": "judgment",
+      "status": "pass",
+      "claimed_strength": "E1",
+      "strength_met": true,
+      "evidence": "[判断类] 三条逐一核实：①『整份脚本没有走引擎』——harness.mjs:1 注释自述『不经过 DSH 的 workflow 引擎』，且 run() 函数（harness.mjs:55-79）用 `new Function(...)` 在本地沙箱里跑脚本体，不经过真实 `workflow()` 工具调用，属实。②『重试/升档/abort/写集越界只有假 agent 覆盖』——harness.mjs 的 agentImpl（:58-70）是完全模拟的 plan() 回调，scenarios() 里涉及 retry/escalate/abort/scope 的用例（r4/r5/r9/r11）全部通过假 agentImpl 驱动，无一处调用真实 deepseek，属实。③『.mjs 不在 ledger-audit.ps1 的扩展名白名单里』——ledger-audit.ps1:134 `$auditExt = @('*.md','*.ps1','*.json','*.yml','*.yaml')`，确无 *.mjs，且行号与 DELIVERY 引用的 `:134` 精确对应，属实。三条均可被我独立反驳却反驳不了，判据成立。"
+    },
+    {
+      "id": "C7",
+      "type": "fact-consistent",
+      "status": "fail",
+      "claimed_strength": "E2（工人侧）",
+      "strength_met": false,
+      "evidence": "账本行顺序：decisions/self/ledger.md 倒数第 3/2/1 行依次是『AGENTS.md 补记』『本单元（Step 0 送审）』『LESSONS.md』，与 DELIVERY/PROGRESS 自述的『Step 0 那行物理上排在补记行之后』完全吻合（两处独立位置一致，E2 达标），这部分属实。但 TASK.md 明确要我核对『DELIVERY 贴的对账输出格式与该脚本源码里的打印格式是否一致』——核对结果**不一致**：DELIVERY.md §二③ 贴的输出从 `[ledger]` 行直接跳到 `[scan]` 行，再跳到 `[warn]` 行，完全没有 `[scope] project = ...`、`[scope] external = ...`、`[scope] logs = never audited...` 这三行；而 ledger-audit.ps1:222-228 的打印顺序是 `[ledger]` → `[scope] project` → `[scope] external` → `[scan]` → `[scope] logs` → （条件性）`[warn]`——这三行 `[scope]` 是脚本**无条件**打印的，不可能被正常运行跳过。DELIVERY 该节标题明确写『原文输出，不是转述』，但贴出的内容缺了脚本必然会打印的 3 行，且没有任何『已截断』的说明，与标题承诺矛盾。这正是任务书点名要我做的那一项核对，核出不一致，不能放行。"
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "what": "C1 声称 Gate 九类死规则『每条都真的会咬』且达 E3，但 EDGE_SELF、FROM_UNDECLARED 两类，以及脚本自加的『integrate 节点也要 cmd|assert』一条，在 contrast-cases.json 和 harness.mjs 里完全没有任何触发测试（Grep 零命中）",
+      "why": "违反 C1 的可执行类 E3 门槛（契约 §二·五：可执行类必须 E3，『跑错了没人看得见』）；这三条规则目前只有源码读的单一观察维度，没有任何执行证据能证明它们真的会在喂入对应变体图时命中预期 code 并拒收整图",
+      "evidence": "scripts/dag.workflow.mjs:265,275,219-223；tasks/DAG-2026-11-06/fixtures/contrast-cases.json（9 案例全文，无 EDGE_SELF/FROM_UNDECLARED/integrate 变体）；harness.mjs:28-38 EXPECT 表（无对应 key）"
+    },
+    {
+      "id": "B2",
+      "what": "C3 声称 `when` 的 eq/in/exists 三种 op 语义全部实现并测过且达 E3，但运行期 evalWhen() 对 op='in' 与 op='exists' 零测试覆盖（只测了 eq）",
+      "why": "违反可执行类 E3 门槛；WHEN_UNDECLARED 对照案例测的是 Gate 静态拒收，不是 evalWhen 运行期分支的正确性，in/exists 两条判断路径目前『跑错了也没人看得见』",
+      "evidence": "scripts/dag.workflow.mjs:666-670（evalWhen 实现）；harness.mjs:149-161（仅 op:'eq' 的运行期测试）；Grep \"op:\\s*['\\\"](in|exists)['\\\"]\" 在 harness.mjs 与 fixtures/ 均 0 命中"
+    },
+    {
+      "id": "B3",
+      "what": "C7 要求核对的『DELIVERY 贴的对账输出格式与脚本打印格式是否一致』核出不一致：DELIVERY.md §二③ 贴的 ledger-audit.ps1 输出缺了脚本无条件打印的 3 行 `[scope] project/external/logs`，且标题自称『原文输出，不是转述』",
+      "why": "违反契约『工人自测通过 ≠ 你验收通过；强度声明不经核实不算数』——这条证据结构被 TASK.md 指定为我要核的点，核出来的结果是证据本身不可信（被裁剪却声称是原文），不能把这份被裁剪的输出当 LEDGER_OK 的凭据",
+      "evidence": "scripts/ledger-audit.ps1:222-228（三行 `[scope]` 无条件 Write-Output）；tasks/DAG-2026-11-06/DELIVERY.md §二③ 贴出的输出块（缺这三行）"
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "contrast-cases.json 的 write-conflict 与 when-op-bad 两个案例的 `_mut` 自述措辞不够精确（『也写』实为替换；『when.op=』实为新增整个 when 块），不影响触发的 code，但建议改成准确描述"
+    },
+    {
+      "id": "N2",
+      "what": "hot-file-by-worker 案例的 `_mut` 没提到 b.do 的文本也跟着变了（纯描述性文字，不影响判定），建议 `_mut` 补一句或把 do 字段也改回一致"
+    }
+  ],
+  "rework_brief": "1) C1：在 fixtures/contrast-cases.json 补至少 2 个新变体（EDGE_SELF：某节点 after 指向自己；FROM_UNDECLARED：ctx.from 引用一个祖先 out 里没声明的字段），再补 1 个 integrate 节点缺 cmd|assert 的变体验证『比 DESIGN 严一条』的规则；同步在 harness.mjs 的 EXPECT 表加对应 key，重跑 `node tasks/DAG-2026-11-06/harness.mjs --all`，贴真实 checks 数与 failed=0。2) C3：在 harness.mjs 的 scenarios() 里加至少 2 个运行期用例，分别用 op:'in'（命中其中一个值 + 不命中都测）和 op:'exists'（字段存在/不存在都测），断言下游节点 status 符合预期，不要只在 Gate 层测语法。3) C7：重新跑一次 `powershell -NoProfile -File scripts/ledger-audit.ps1`，把完整原始 stdout（包含 3 行 `[scope] project/external/logs`）整段贴进 DELIVERY.md §二③；如果确实要精简展示，去掉『原文输出，不是转述』这个措辞，改成如实说明『节选，完整输出见…』。三项改完后把改动点在 DELIVERY.md 里对应条目下写清楚改了什么、怎么验的，再次送审。",
+  "escalate_question": ""
+}

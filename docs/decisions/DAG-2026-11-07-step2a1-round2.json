@@ -1,0 +1,85 @@
+{
+  "_provenance": {
+    "unit": "DAG-2026-11-07-step2a1",
+    "round": 2,
+    "trigger": "mandatory (rework 第 1 轮后)",
+    "channel": "subagent_claude_code (SDK + dontAsk)",
+    "reviewed_at": "2026-11-07",
+    "egress": "READY (<VPS-IP> via 127.0.0.1:1081, physical NIC bound)",
+    "note": "验收官原始返回，逐字照录；除本 _provenance 块外未改任何字段。"
+  },
+  "verdict": "pass",
+  "confidence": 0.9,
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "未改动文件，沿用第 1 轮结论：runs/probe-ro/NODES/s_probe.json（permission_mode=read-only, tool_result.status=\"error\"+沙箱拒绝原文, node_diff.changed_paths=[]）vs runs/probe-w/NODES/w_probe.json（workspace-write, tool_result.status=\"completed\", node_diff.added=[PROBE.txt]）。D1+D3 两类独立观察 + 反证（同一写入一败一成）。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "runs/_harness/overclaim/NODES/w_write.json 现状：result.changed=[\"notes.md\"], node_diff.changed_paths=[], checks.overclaim=[\"notes.md\"], ok=false，与声明一致（第1轮时为 checks.overclaim=[]/ok=true，已修复）；DIFF.json 的 changed_paths=[] 与 node_diff 一致，无矛盾。RUN.json result=fail、exit 对应。D1(node_diff)+D2(checks字段)+D3(final_text)+反证（honest 场景同一路径一致时 checks 全空、ok=true，见 runs/_harness/honest/NODES/w_write.json）。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "runs/_harness/underclaim/NODES/w_write.json：result.changed=[], node_diff.changed_paths=[\"notes.md\"], checks.underclaim=[\"notes.md\"], ok=false，与 DIFF.json 一致，与声明相符（第1轮为 checks.underclaim=[]/ok=true，已修复）。runs/_harness/oos/NODES/w_write.json：out_of_scope=[\"OFF-LIMITS.md\"], underclaim=[\"OFF-LIMITS.md\"], ok=false，持续正确（这次不再依赖 mutate.py 收尾side-effect，因为 run-id 命名空间已彻底隔离——mut-oos 单独存在，与 oos 互不影响）。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "runs/_harness/cmdfail/NODES/w_write.json：cmd_accept=[{\"run\":\"node -e \\\"process.exit(1)\\\"\",\"exit_code\":1,\"ok\":false}]，对应 g4-cmdfail.json 的 accept.run，与声明相符（第1轮为 cmd_accept=[]，已修复）；反证一侧 runs/g3-live/NODES/w_write.json 的 exit 0 → pass（未改动，沿用第1轮已核实证据）；变异「跳过所有 cmd accept」仍会使对应断言红（mutate.py 源码核实未变）。"
+    },
+    {
+      "id": "C5",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "未改动文件，沿用第 1 轮结论：runner.py run_gate() 直调 dag-gate.mjs（代码位置核实）+ g-bad.json REJECTED 输出；plan_check() 代码 + 真图 12 条 UNSUPPORTED_* 与节点清点吻合（7 RETRY+4 REPLAN+1 WHEN=12）。"
+    },
+    {
+      "id": "C6",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "runner-mutate.py 源码核实：锚点计数校验、sha256 对比、finally 还原逐字节一致，逻辑未变；本轮新增的 run_harness() 一律传 --run-prefix mut-，Glob 核实 runs/_harness/mut-{overclaim,underclaim,honest,cmdfail,oos}/ 与正向证据目录物理隔离并存，mut-overclaim/NODES/w_write.json 确实显示变异态（checks.overclaim=[]/ok=true），证明变异测试产物被正确隔离、不再污染正向证据。D2(rc)+D3(FAIL行)+反证（还原后全绿）。N1 的归类修正（§三 C6 行措辞）已落实，不影响 E3 达标。"
+    },
+    {
+      "id": "C7",
+      "type": "judgment",
+      "status": "pass",
+      "claimed_strength": "E1",
+      "strength_met": true,
+      "evidence": "DELIVERY 自定可反驳条件「NODES/w_write.json 的 node_diff 与 DIFF.json 矛盾 → C7 塌」。本轮逐一打开 runs/_harness/{overclaim,underclaim,cmdfail}/DIFF.json 与对应 NODES/w_write.json 的 node_diff 字段比对，三组均完全一致，无矛盾；honest 场景 s_recon/w_write/k_check 三节点字段也与 RUN.json 的 result=pass 自洽。第1轮触发的塌陷（打开后是反证）已不复现——这次打开的是正证。"
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "runs/_harness/mut-*/ 目录会随每次跑 runner-mutate.py 累积增长（当前已有 mut-overclaim/mut-underclaim/mut-honest/mut-cmdfail/mut-oos 共 5 个），没有清理机制；DELIVERY §四·12 已如实提及但未处理，不影响本次判定"
+    },
+    {
+      "id": "N2",
+      "what": "overclaim/underclaim 场景的 RUN.json 带 \"aborted\": true（w_write 失败后 k_check 未跑），这是预期的串行中止行为，但 DELIVERY 没有专门说明这个字段，验收时靠自己读 RUN.json 才注意到；不影响 C2/C3 判定，建议下次在 DELIVERY 里点一下这个字段"
+    }
+  ],
+  "rework_brief": "",
+  "escalate_question": "",
+  "reviewer_notes": "本轮只有 Read/Grep/Glob，终端输出（harness/mutate 的 stdout）仍是工人侧证据无法复现；但本轮重点是证据包文件本身的字段状态，这部分我逐一 Read 了 runs/_harness/{overclaim,underclaim,honest,cmdfail,oos}/ 与对应 mut-* 目录的 NODES/*.json、DIFF.json、RUN.json 原文，确认字段与 DELIVERY 声明及 compare()/run_cmd_accept() 源码逻辑一致，B1 的根因（run-id 命名空间共用）已通过 --run-prefix 彻底隔离修复，无复发迹象。C1/C5/C6 的核心证据文件本轮未改动，沿用第 1 轮已核实结论。"
+}

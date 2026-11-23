@@ -1,0 +1,62 @@
+{
+  "verdict": "pass",
+  "confidence": 0.85,
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "review-backfill.ps1:34-38 先 Test-Path 目标 .json，存在则只 [skip]、continue，绝不写；:41 用 (?s)```json\\s*(\\{.*?\\})\\s*``` 抓第一个 fenced 块（非贪婪但受尾部 ```约束回溯到真正的外层闭括号，不会截断嵌套对象）；:50 ConvertFrom-Json 校验失败才 [FAIL]+exit 1；:56 校验通过才落盘。我把 decisions/P1-2026-11-06-TUNNEL-round4.json 与对应 -raw.txt 的```json块、decisions/P1-2026-11-06-MTIME.json 与其 -raw.txt 逐字对比，两对均字节级一致（仅多一个结尾换行）。decisions/ 下 .json 从 10 个（5 个 [skip] 对应的既有 + 5 个本就结构化：P0×2/STRENGTH×3）变为 19 个，净增 9，与 filled=9 吻合。DELIVERY② 幂等结果（再跑 filled=0 skipped=14）可从源码逻辑直接推出：首轮写完后 14 个 -raw.txt 对应的目标全部存在，第二轮 Test-Path 全部为真，只能全 skip。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "我自己数了 decisions/ 下 19 个 .json 文件名，按 unit（去掉 -roundN 后缀）归并得到 10 个交付单元，与 INDEX.md Summary 一致。手算 INDEX.md Rounds 表：pass 9 / rework 6 / escalate 4（=19）；mean confidence 累加 19 个 Conf 值 ÷19 = 0.8116≈0.812；blocking 列累加 =17；non-blocking 列累加=71；仅 round 数=1 且 verdict=pass 的单元为 NBFIX/RULEFIX/V12/WARN=4/10。以上四类数字与 DELIVERY §三完全一致。再抽查 10/19 行，逐一打开对应 .json 核对 criteria 数/blocking 数/nonblocking 数/fail-unverified id（MTIME、TRIGGER、TRIGGER-round2、TUNNEL、TUNNEL-round2、TUNNEL-round3、TUNNEL-round4、STRENGTH-round1、STRENGTH-round2、SAMPLING、P0-round1），全部精确匹配 INDEX.md 对应行，无一处错位。review-index.ps1 的 Get-ChildItem 只 -Filter '*.json'（无 -Recurse），decisions/self/ 下无 .json、INDEX.md 和 *-raw.txt 均非 .json，结构上不会被重复计数。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "review-index.ps1 全文无随机数、无当前时间戳写入 $out；排序固定为 Sort-Object Unit, Round 与 Group-Object | Sort-Object Unit（:71,93,130），同一组输入文件必产出同一字符串，支持两次 -Write 哈希一致的声明。写盘唯一分支在 :140-143 的 if ($Write){...}，else 分支 :145 只 Write-Output 到 stdout，不落盘——这与声明的『不带开关不写文件』在源码层面完全对应，是单一分支、非多路径可能出岔的逻辑。未能亲自执行脚本复现两次哈希。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "review-index.ps1:40-46 对每个 .json try ConvertFrom-Json，失败则 Write-Output '[FAIL] <file>: ...' 并 $bad++、continue（不中断其余文件处理）；:148 的 RESULT 行里 parse_failures={5}=$bad；:151 if ($bad -gt 0){exit 1} else exit 0。逻辑与 DELIVERY 反证 B 描述（放坏 JSON → [FAIL]+parse_failures=1+exit1，移走后 0/exit0）完全吻合，未发现会让失败被吞掉的分支。未能亲自放坏文件复现。"
+    },
+    {
+      "id": "C5",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "BACKFILL.md 第 14-24 行『回填清单(9个)』与 decisions/ 实际存在的 9 个新 .json 文件名、verdict、confidence 一一对应（抽查 TUNNEL-round4、MTIME 两组与 raw.txt 字节级核对，见 C1）。LESSONS.md §一 五类错的引用逐条核查：MTIME B1/B2、STRENGTH-round1 B1/B2、STRENGTH-round2 B1、TRIGGER B1/B2、TRIGGER-round2 B1、TUNNEL B2、TUNNEL-round2 B1、TUNNEL-round3 B1、SAMPLING 第1/2/3条、P0-round1 B1/B2 —— 打开对应 .json 逐一核对 blocking[].what 原文，全部能查到且概括准确，无编造引用。发现两处非致命的内部标注不一致（已列入下方 nonblocking N1、N2），不影响 C5 要求的核心对应关系。"
+    },
+    {
+      "id": "C6",
+      "type": "judgment",
+      "status": "pass",
+      "claimed_strength": "E1",
+      "strength_met": true,
+      "evidence": "DELIVERY §五已标 [判断类]，三问回答具体、可被反驳：(1) 指出『4/10』的分母混用了抽检轮（SAMPLING）与演练（P0），并用 TRIGGER-POLICY §五『抽检轮不计入池』佐证——我核对单元归并逻辑后认同这个口径问题确实存在且被低估（只在脚注说明，没在数字旁标注）；(2) 对自我美化给出具体硬约束（挂 unit+blocking原文）而非空话，并承认防不住选择性归纳；(3) 承认与抽检『无自动关联』，给出可执行但本轮未做实的建议。三答案均具体到机制、不是『我觉得没问题』式断言，符合判断类上限 E1 的门槛。"
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    { "id": "N1", "what": "BACKFILL.md『本来就是结构化落盘的（5个，脚本[skip]）』一节，标题数字与其后枚举不符：该列表展开 STRENGTH-round{1,2,3} 后实为 10 个文件名；真正被 review-backfill.ps1 判定为 [skip] 的只有 5 个（MTIME-round2/NBFIX/RULEFIX/SAMPLING/WARN，这些有对应 -raw.txt）；另外 5 个（P0-round1、P0-round2、STRENGTH-round1/2/3）压根没有 -raw.txt，脚本的 foreach（按 *-raw.txt 过滤）根本不会遍历到它们，谈不上『脚本 [skip]』。不影响 C5 要求核对的『9 个回填文件』主表，但是文档自身的数字/描述不一致。" },
+    { "id": "N2", "what": "LESSONS.md §一 E5 行标注『次数 3』，但证据栏只列出 SAMPLING 的『第1条』『第2条』两个具体 blocking；SAMPLING.json 的 blocking[2]（『4行留存证据包4/4全缺』）已被计入同表 E1 行的证据，E5 自己的叙述里找不出第三个独立实例来撑起『3』。五类合计恰好 3+4+5+2+3=17，与 INDEX.md blocking 总数吻合，但不代表 E5 这一行自身的次数拆解经得起单独核对。" }
+  ],
+  "rework_brief": "",
+  "escalate_question": "",
+  "reviewer_notes": "读过的文件：REVIEW-CONTRACT.md 全文、TASK.md、DELIVERY.md、scripts/review-backfill.ps1 全文、scripts/review-index.ps1 全文、decisions/BACKFILL.md、decisions/INDEX.md、decisions/LESSONS.md；逐字读过并与 -raw.txt 比对的 .json：TUNNEL-round4、MTIME（字节级一致）；另抽读 TRIGGER、TRIGGER-round2、TUNNEL、TUNNEL-round2、TUNNEL-round3、STRENGTH-round1、STRENGTH-round2、SAMPLING、P0-round1 共 9 个 .json 用于核对 INDEX.md 行数字与 LESSONS.md 的 blocking 引用，覆盖 19 个裁决中的 11 个。判不了的地方：三个脚本的实测输出（filled/skipped、两次哈希一致、放坏 JSON 后的 exit code）是工人侧证据，我没有 shell，只能核对源码逻辑是否支持同样结论——C1-C4 的 pass 判定建立在『源码能推出同样结论+抽样字节比对』之上，不是我自己跑出来的；-raw.txt 是否真的『一个字节都没变』无法用 git diff 验证（仓库无 git），只能确认它与回填出的 .json 现在逐字一致。本次用 Bash 跑过两次只读 `ls -la`（列 decisions/ 和 decisions/self/ 目录内容），未执行任何写入或脚本。"
+}

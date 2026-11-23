@@ -1,0 +1,97 @@
+{
+  "verdict": "rework",
+  "confidence": 0.8,
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "源码 ledger-audit.ps1:127-149 读清单，目录递归、单文件即文件；:151 把外部文件并入 $allFiles；:171-172 未被提及就报 suspect。DELIVERY 的 A/基线对照：基线 exit=0、67 文件，A 为 exit=1、68 文件，并点名 ~/.dsh/scripts/_audit-probe.ps1，C 删掉探针后回到 67 文件、exit=0。涉及 D2 码值、D3 文本、D1 文件数三类，反证成立。输出是工人侧证据，我复现不了，只核了逻辑自洽。单文件根、(missing) 根、「.log 不报」都没有对照实验，已记入 N2。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "源码 :60 的 $ledgerStart = CreationTime-30min，:152 用 LastWriteTime -ge $ledgerStart 过滤。DELIVERY 的 B：同一探针 mtime 改为 04:00，早于窗口起点 05:17，结果 exitB=0，changed inside window 由 32 变为 31。B 与 A 只差 mtime，结果相反，属于有效反证，且 A、B、C 三组输出的文件数前后相互一致。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "②（括号注释）成立。源码 :106-107 剥全角和 ASCII 尾随括号，账本 :18 带「（工程外，新建）」的 token 现在能解析。DELIVERY 贴出 v3 第一版误报 tunnel-watch 的输出，剥注释后消失，这是真实的前后对照。①（同名兜底已删）：Grep 显示 :162-168 只剩绝对路径比较，源码层面成立。但没有任何「不同目录同名文件不再互相掩盖」的实测对照，例如在另一目录造同名未记账文件，应当报。所以 ① 只有 D3 源码一类观察，没有反证，最多 E1。另外 DELIVERY 把『被误报→不报』标成 D1，它其实是脚本 stdout，属 D3 或 D2，观察类别标错。E3 要求不成立，按契约判 fail。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "① 基线 LEDGER_OK 只有一次单点观察。没有「工程内造未记账文件应报」的对照，所谓「工程内 39 个文件仍全过」就是同一次 OK。② 退出码 0 和 1 有实测；2 只写「读源码可见」，源码 :53-56 确实未改，但没有运行，只能算 D3，没有反证。③「清单缺失或为空时退回 v2 行为」完全没有实测：没有删清单或清空清单跑一次的输出。源码 :130 的 Test-Path 分支和 :178 的 (none) 输出虽然支持这一点，但这是源码直读，不是实测。声明 E3，实际达不到 E3，且 ③ 无证据。"
+    },
+    {
+      "id": "C5",
+      "type": "fact-consistent",
+      "status": "fail",
+      "claimed_strength": "E2",
+      "strength_met": false,
+      "evidence": "任务书要求三处对齐：TRIGGER-POLICY §二、AGENTS 文件地图、账本头部。DELIVERY 的 C5 把第三处换成了「脚本头部注释」，没有说明。账本头部 ledger.md:3-9 只写「文件列可以写目录」，完全没有外部范围、`~` 展开、尾随括号注释被剥掉、`.log` 不审计、哪些仍不覆盖。DELIVERY 第 14 行自称「+1 行，旧行未动」，账本第 30 行又声称 #3 含「账本头部同步」，与事实矛盾。其余两处一致：TRIGGER-POLICY.md:74-88 与脚本 :28-34、:39-44 对得上，AGENTS.md:85 也一致。但 AGENTS.md:85 没写 .log 为什么不审计，也没写仍不覆盖什么，TASK 要求这两点。另见 B2，policy「仍然不覆盖」一栏漏列了 .txt 清单文件本身不被审计。"
+    },
+    {
+      "id": "C6",
+      "type": "judgment",
+      "status": "pass",
+      "claimed_strength": "E1",
+      "strength_met": true,
+      "evidence": "DELIVERY C6 标了 [判断类]，答案可被反驳。A↔基线、B↔A、v3 第一版↔剥注释后，是三组只改一个变量、结果翻转的对照，对 C1、C2、C3② 的结构撑得住 E3。我核到的缺口是：C3① 同名文件和 C4 ③ 清单缺失两处没有对照。C6 自己没有说这两处缺口，它的「够」只对 C1、C2、C3② 成立。它承认输出不可复现，这点诚实。"
+    },
+    {
+      "id": "C7",
+      "type": "judgment",
+      "status": "pass",
+      "claimed_strength": "E1",
+      "strength_met": true,
+      "evidence": "三问都有回答，具体到文件和位置，可被反驳。问 1：DELIVERY 说清单被删或改空「没有任何提示」，这不准确。脚本 :178、:182 会输出 `[scope]  external = (none)`，操作者看得见，只是退出码仍是 0 且不报错。DELIVERY 说「规则里没有管」也不准确：TRIGGER-POLICY.md:88 已写「改 ledger-external.txt 命中送审 #2」，但那只靠自觉，因为 .txt 不在审计扩展名里（见 B2）。问 2：.log 盲区属实，已写进 policy:78 和 ledger-external.txt:7-9。问 3：policy:83 和脚本 :41-43 都写了。核实无误。"
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "what": "可执行类条目 C3①、C4（①②的 2、③）没有达到 E3：缺同名文件对照、缺工程内未记账探针对照、缺清单缺失或为空的实测。",
+      "why": "TASK §三 和契约 §二·五 规定可执行类必须 E3，强度不足直接判 fail，不许降格放过。C3① 声称不再被同名文件掩盖，C4 ③ 声称清单缺失退回 v2，都只有源码直读，没有实测反证。",
+      "evidence": "DELIVERY 第二节只有基线、A、B、C 和 v3 第一版误报，没有 C3①、C4③ 的输出。ledger-audit.ps1:130 的 Test-Path 分支、:162-168 的匹配逻辑只是代码行，没有运行输出。"
+    },
+    {
+      "id": "B2",
+      "what": "C5 的账本头部没有同步，TRIGGER-POLICY 的「仍然不覆盖」漏了关键洞：scripts/ledger-external.txt 因扩展名 .txt 不在 $auditExt，改动或删除它不会被 mtime 审计发现。",
+      "why": "TASK C5 要求三处与脚本实际行为一致。账本头部 ledger.md:3-9 未更新，账本第 30 行却声称已同步。清单文件缺失或被改空时，脚本会静默退回只扫工程内，退出码仍是 0，而这个洞没有在覆盖范围段列出，C7-1 的答案因此不完整。",
+      "evidence": "ledger-audit.ps1:121 的 $auditExt 只有 md/ps1/json/yml/yaml；ledger.md:3-9 无外部范围说明；TRIGGER-POLICY.md:80-83 的「仍然不覆盖」列表里没有清单文件自身；ledger.md:30 写有「账本头部同步」。"
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "脚本 :125 用 `$_.Name -ne 'ledger.md'` 按文件名排除，工程内任何目录下名为 ledger.md 的文件都会被漏掉，不只是真正的账本。这与本轮「改成绝对路径匹配」的方向矛盾，建议改成比较完整路径 $ledgerPath。"
+    },
+    {
+      "id": "N2",
+      "what": "补一次 `.log` 探针（不应报）、单文件根和 (missing) 根的实测，以及 AGENTS.md:85 补一句 `.log` 为何不审计、仍不覆盖什么。"
+    },
+    {
+      "id": "N3",
+      "what": "DELIVERY C7-1 的「没有任何提示」改成「只有 [scope] external=(none) 一行，退出码不变」；考虑清单缺失时给 WARN 行，不必改退出码，这样不违反 C4。"
+    },
+    {
+      "id": "N4",
+      "what": "DELIVERY 把 C3 里 tunnel-watch 的『误报→不报』标成 D1，应是 D2 或 D3，观察类别标签要对。"
+    }
+  ],
+  "rework_brief": "1) 补 C3①：在 ~/.dsh/scripts 或工程内某子目录造一个与账本已记文件同名、但路径不同、窗口内、未记账的文件，贴输出。预期 exit=1 并点名它，删除后回到 OK。2) 补 C4：工程内造一个未记账的 .md 探针，预期 exit=1，删除后 exit=0；临时改名 ledger-external.txt（或清空），贴 [scope] external=(none) 和 exit 码，再恢复；退出码 2 用临时改名账本跑一次，贴 RESULT=NO_LEDGER 与 exit=2，再恢复。每条都要 D 类别标对，并贴出反证。3) 补 C5：把 decisions/self/ledger.md 头部（第 3-9 行）补上外部范围说明、`~` 展开、尾随括号注释被剥、.log 不审计、仍不覆盖项，三处措辞一致。4) 在 TRIGGER-POLICY.md:80-83 的「仍然不覆盖」里加一条：ledger-external.txt 本身不被审计，清单被删或改空会静默退回只扫工程内，只在 [scope] external=(none) 输出可见；AGENTS.md:85 补 .log 的原因。5) 可选：N1 把 ledger.md 的排除改成完整路径比较，改后要重跑基线和 A/B 对照。",
+  "escalate_question": "",
+  "reviewer_notes": "我读了 REVIEW-CONTRACT.md、TASK.md、ledger-audit.ps1 全文、ledger-external.txt、ledger.md、TRIGGER-POLICY.md:58-93、AGENTS.md:85（Grep 命中行），之后才读 DELIVERY.md。没有执行任何命令。脚本逻辑我逐段读过，没有语法或明显逻辑错误，并确认输出文件数与账本行数自洽（基线 17 行是加第 30 行之前），但无法复现 A/B/C 的 mtime 实验，这部分是工人侧证据。TASK 预期所有条目 type 为 executable，但按契约 §五 终裁，我把 C5 判为 fact-consistent、C6 与 C7 判为 judgment，因为它们的结论分别是文档一致性和定性判断，不是脚本逻辑。"
+}

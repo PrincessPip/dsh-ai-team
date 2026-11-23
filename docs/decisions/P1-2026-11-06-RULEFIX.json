@@ -1,0 +1,24 @@
+﻿{
+  "verdict": "pass",
+  "confidence": 0.8,
+  "criteria": [
+    { "id": "C1", "type": "fact-consistent", "status": "pass", "claimed_strength": "E3", "strength_met": true, "evidence": "TRIGGER-POLICY.md:27（三档表留存行：账本一行内联四件，≥3 文件或跨顶层目录才另落 self-*.md）与 :84-98（正文四件 + 例外条件）一致。反证我自己复现：Grep「账本一行 + 」在规则正文 0 命中。命中只有 :96 的「由来」和 :224 的变更记录，都是历史叙述。" },
+    { "id": "C2", "type": "fact-consistent", "status": "pass", "claimed_strength": "E3", "strength_met": true, "evidence": "TRIGGER-POLICY.md:156-163 覆盖了池大小（连续 5 个交付单元）、锚点（上一次抽检覆盖到哪一行）、末尾不满 5 行顺延、抽检轮自身不计入。REVIEW-CONTRACT.md:17 与变更记录 :208 同步为「每池」。反证：Grep「每 5 个账本行」在规则正文 0 命中，命中的都是历史任务书和裁决。" },
+    { "id": "C3", "type": "judgment", "status": "pass", "claimed_strength": "E1", "strength_met": true, "evidence": "[判断类] 工人把它标成事实一致类并自称 E2，我改判为判断类，因为它问的是「这组动作够不够」。我逐项对照 TASK 要求的五项，TRIGGER-POLICY.md:167-173 的四条全部覆盖：不改原文 → ①；认账 → ① 追加更正行；被降档交付物 → ②；重复犯错 → ③；版本 → ④。判断类门槛是 ≥E1，已满足。缺口：②只覆盖「命中 #1/#2 却从未送审」的交付；③「同类」没有定义（见 N2）。" },
+    { "id": "C4", "type": "fact-consistent", "status": "pass", "claimed_strength": "E3", "strength_met": true, "evidence": "TRIGGER-POLICY.md:117-125：「写进 `decisions/` 下的账本行或专门裁决文件」，不接受降级的名单是 TRIGGER-POLICY.md / REVIEW-CONTRACT.md / AGENTS.md / scripts/。与变更记录 :224 ④ 一致。反证：Grep 旧句「理由写进 `decisions/`」0 命中。" },
+    { "id": "C5", "type": "fact-consistent", "status": "pass", "claimed_strength": "E3", "strength_met": true, "evidence": "REVIEW-CONTRACT.md:164 的 schema 带 `type` 字段，值为 fact-consistent / judgment / executable。:17 是池语义，并把 mtime 对账定为「工人侧证据，别直接算 pass」。:180-183 和 :186-187 是三条新增（type 终裁 / 以自己 Read 到的文件为准 / 别越权跑命令）。标题 :1 是 v0.5，变更记录 :208 有 v0.5。反证：Grep 旧 schema 行 `{ \"id\": \"C1\", \"status\":` 在规则文件中 0 命中。" },
+    { "id": "C6", "type": "fact-consistent", "status": "pass", "claimed_strength": "E2", "strength_met": true, "evidence": "ledger.md:24 是追加行，引用原第 3、第 6 个交付单元，也就是 :15 和 :18。原文仍完整，与更正行的引用逐字对得上。更正行写明了错在哪（降级 / 免检）、正确档位（送审 / 留存）和依据（SAMPLING.md B1/B2、冲突裁决）。第 6 行「不发请求」与源码矛盾，我核对了：tunnel-watch.ps1:65 确有 `curl.exe ... -x 127.0.0.1:$Port https://api.ipify.org`。:25 的更正行涉及第 8/10/11 行，引用也对得上：decisions/self/ 下没有 self-*.md，这三行按新规的文件数或跨目录条件本应落文件。无 git，「旧行一字未改」只能间接支撑，没有 diff。" },
+    { "id": "C7", "type": "judgment", "status": "pass", "claimed_strength": "E1", "strength_met": true, "evidence": "[判断类] 工人交出的三个洞，我逐个核对，结论如下。Q1：工人说规则没堵「见 DELIVERY」「同上」，属实。TRIGGER-POLICY.md:86-92 只写了「不许只写已验证」和「没写第 4 件等于没做留存」，没有写「必须自含」。Q2：「该」这个方向对，但算法有口径空白。ledger.md:15 和 :18 都是档位判低，且 :24 都标「错判」，按字面累计 2 次。抽检池按 :158-163 的锚点算：第 1–10 个交付单元已被上次抽检覆盖，本轮第 12 个单元是新池起点，所以新池起点就是它，该按 3 行一次抽。但「同类」没有定义，3 行制下「池」多大、「连续两个池」怎么数也没写（N2）。Q3：工人说「规则写清了」，只对一半。「更正行不计入池」只在 ledger.md:9 的头部注释里，TRIGGER-POLICY.md §五 :158-163 和契约 §零 都没写。稀释池的残余洞，工人已经自己指出。" }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    { "id": "N1", "what": "「更正行不计入池」只写在 ledger.md:9 的头部注释。规则正文 TRIGGER-POLICY.md §五 :158-163 没有这一句，DELIVERY 却声称「规则写清了」。建议把它补进 §五，并在 §二 留存档第 4 件之后补一句「四件必须自含，不许指向 DELIVERY / 同上」。" },
+    { "id": "N2", "what": "§五 第 3 条的「同类错判」没有定义。「每 3 行一次」的池大小和「连续两个池无错判」的计数口径也没写。当前是靠工人自己解释，而 ledger.md:15 与 :18 恰好都是档位判低，所以没出问题。" },
+    { "id": "N3", "what": "留存档例外条件「跨顶层目录」有歧义。每个账本行都会写入 decisions/，只要同时改了根目录文件，字面上就总是跨目录，默认的内联形态就永远不适用。需要写明账本本身不算。" },
+    { "id": "N4", "what": "§五 处置 ② 要求被错判的交付「并入下一个送审交付单元」。本轮送审的 TASK.md 和 DELIVERY.md 都没有把第 3、第 6 个交付单元列为待审对象，ledger.md:24 说「并入本轮送审」，但没有对应的验收条目。这条动作实际没有被执行，只是写了一句。" },
+    { "id": "N5", "what": "AGENTS.md:9 仍写着 `TRIGGER-POLICY.md` v1.2 → v1.3，而策略已是 v1.5。DELIVERY 对「11 处命中」的计数，我复现出的数量略少，不影响结论。" }
+  ],
+  "rework_brief": "",
+  "escalate_question": "",
+  "reviewer_notes": "我读了 REVIEW-CONTRACT.md、TASK.md、TRIGGER-POLICY.md、decisions/self/ledger.md、DELIVERY.md，以及 AGENTS.md 的相关行和 ~/.dsh/scripts/tunnel-watch.ps1 的 ipify / 1081 命中行。我只用了 Read/Grep/Glob，没有跑命令、没有改文件。判不了的有三处：旧账行「一字未改」（无 git，没有 diff，也看不到 mtime）、DELIVERY 里贴的 ledger-audit 输出（我复现不了，只是工人侧证据）、第 6 行是否属于「脚本入口」从而命中 #2（工人自己标了争议）。"
+}

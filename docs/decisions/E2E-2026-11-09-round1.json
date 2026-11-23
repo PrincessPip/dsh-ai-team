@@ -1,0 +1,106 @@
+{
+  "unit": "E2E-2026-11-09",
+  "round": 1,
+  "date": "2026-11-09",
+  "trigger": "伙伴点名（2026-11-09 22:1x：先把这部分送审，拿到报告后改结论或补漏，先不修 bug）",
+  "channel": "claude -p --model opus --allowedTools Read,Grep,Glob,Bash,Write --output-format text（指路式 prompt 只给 BRIEF 路径）",
+  "verdict": "rework",
+  "confidence": 0.85,
+  "scope": "只核 tasks/DAG-2026-11-06/DELIVERY-e2e.md 的结论与证据链；不核 runner.py / Gate / 契约本身的既有判据（那是下一单元的事）",
+  "blocking": [
+    {
+      "id": "B1",
+      "criterion": "F1 归因 / §一「编排器的判据没错，责任在图不在 runner」",
+      "what": "DESIGN.md:203 规定「员工不碰主树，只返回 diff」；runner.py:784-790 只把落盘变化当 actual。所以照设计做的 work 节点只要自报非空 changed 就必判 overclaim，而 w_docs 违反「只交 patch」直接写主树反而判 ok。更严重：w_script 两次都交了真 patch（6300 / 5147 字符），因被判 fail 而被丢弃；integ 的 prompt 里 w_script.patch 是「（上游没有给这个字段）」，于是 integ 自行重写代码，最终交付物来自一条图里没规划的路径，且两个下游核查节点全被 skip，无人审过。",
+      "disposition": "接受",
+      "how": "改写 §一 结论与 §六 F1：责任是 runner 的 actual 口径与 DESIGN v1「只交 patch」语义的错配；新增「产物来源偏离规划」作为独立风险项，并把「能干活」的结论从「而且干对了」下调"
+    },
+    {
+      "id": "B2",
+      "criterion": "F3「两次都一次工具调用都没发出」",
+      "what": "事实错误。integ a2 窗口内 node_diff.modified=[decisions/INDEX.md]，cmd_effects 为空，说明 agent 实际干了活。超时记录里根本没有 tool_calls 键：runner.py:711 在 TimeoutExpired 时丢弃了已捕获的 stdout。所以「0」是记录缺失，不是观察结果；§四 表同一行写着「快照变化 1」，自相矛盾。",
+      "disposition": "接受",
+      "how": "F3 整条重写为「超时路径丢弃已捕获输出」；§四 表把 tool_calls 列对超时行改成「记录缺失」"
+    },
+    {
+      "id": "B3",
+      "criterion": "F8「这 4 个正是前几次 attempt 已经改过的文件」及 §九#2 修法",
+      "what": "4 个里 AGENTS.md 和 DELIVERY.md 是 w_docs 改的，不是之前的 integ attempt；runs/plan-step1-demo/baseline-summary.sha256 落在 EXCLUDE_DIRS 里本来就看不见。所以「把前几轮已改路径并入 actual」修不好 integ a3。",
+      "disposition": "接受",
+      "how": "F8 撤回原描述，改成「a3 把跨节点（w_docs）与排除区（runs/）的既有改动报成 overclaim」；§九#2 的修法同步改"
+    },
+    {
+      "id": "B4",
+      "criterion": "§7.1「工具轨迹归因在主路径上不成立」（已写进 HANDOVER.md 与 AGENTS.md）",
+      "what": "过度概括：统计的是所有调用，而归因需要的是写操作。副本里被改的 5 个文件中 3 个通过结构化 edit 落盘（review-index.ps1 / AGENTS.md / DELIVERY.md），只有 INDEX.md（脚本生成）与 baseline 走 pwsh。n=1、只有 deepseek 一家、两次超时轨迹还丢了。应降为 [判断类] E1，并撤回「推翻 / 路子不通」的说法。",
+      "disposition": "接受",
+      "how": "§7.1 降级为 [判断类] E1 并重写结论；HANDOVER.md §三 与 AGENTS.md 里的「推翻 / 前置已推翻」措辞一起撤回"
+    },
+    {
+      "id": "B5",
+      "criterion": "送审前置（TRIGGER-POLICY.md §三）",
+      "what": "cite-check --strict 对 DELIVERY-e2e.md 退出码 1，有 2 条 NOANCHOR（runner.py:789 / runner.py:95）。ledger-audit 为 LEDGER_SUSPECT：runs/e2e-20261109-2050/ 下 30 个文件与 REVIEW-BRIEF-e2e.md 从未登账 —— 工人那次 LEDGER_OK 是在拷证据包之前跑的。",
+      "disposition": "接受",
+      "how": "补登账本行覆盖证据包与 BRIEF；给那 2 条引用补锚后重跑 cite-check"
+    },
+    {
+      "id": "B6",
+      "criterion": "§7.2 把「主树零污染」当作「副本策略的验收」",
+      "what": "员工在 workspace-write 下写到了副本之外：integ a1 写过 $env:USERPROFILE\\_dsh_probe.ps1（事后自删）；w_docs 写了 %TEMP%\\mkpatch-wdocs.py（仍在）；w_script a2 写过 %TEMP%\\dsh-eMbl5G\\*。副本只隔离了工程树，没隔离整台机器。§八 没写这一条。",
+      "disposition": "接受",
+      "how": "§7.2 与 §八 补「副本边界的真实范围」；「零污染」限定为「工程树零污染」"
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "F9 可结案：(a) runner.py:1375 超时后照样跑 cmd，是真缺陷但影响小；(b) underclaim 成因 = runner.py:450 把只变 mtime 也算 modified + 超时丢弃自报，a2 重写的 INDEX.md 与 a1 字节相同。",
+      "disposition": "采信并写进 DELIVERY（F9 从「现象未查」升格为「已定位」）"
+    },
+    {
+      "id": "N2",
+      "what": "F2 成立且达 E3；「唯一共同原因」字面成立。但拦截不是副本特有（主树同样拦）；且 integ a1 的 result.summary 里已写明被 RemoteSigned 拦截，runner 不读自由文本，这条信号被浪费。",
+      "disposition": "采信；补进 F2 的说明"
+    },
+    {
+      "id": "N3",
+      "what": "主树零污染事后重核通过：相对基线共 6 个文件变化（新增 CITE-CHECK-e2e.txt / DELIVERY-e2e.md / REVIEW-BRIEF-e2e.md；修改 AGENTS.md / ledger.md / HANDOVER.md），全部发生在 22:01:05 之后；主树 runs/ 除 e2e 目录外零新增。原来第 59 分钟那次检查没覆盖 integ a3，这次补上。口径只有 size + mtime，不含哈希。",
+      "disposition": "采信；把这条补进 §7.2 作为终版证据"
+    },
+    {
+      "id": "N4",
+      "what": "DELIVERY-e2e.md 一次都没引用 runs/e2e-20261109-2050/ 证据包，探针 / 核验脚本 / 日志 / 基线全指向 %TEMP% 易失路径。",
+      "disposition": "接受；全部改成先指证据包路径"
+    },
+    {
+      "id": "N5",
+      "what": "产物格式符合 c_iface 契约（前 5650 字节哈希相同、无 BOM、284 CRLF / 0 裸 LF、20 行最终状态全匹配、分组段后无其它二级标题）。§八·4 的空白可以补上。",
+      "disposition": "接受；§八·4 改为「已由验收官独立核过」"
+    }
+  ],
+  "missed_failures": [
+    { "id": "M1", "severity": "blocking", "what": "超时路径丢弃已捕获输出，超时 attempt 的工具轨迹与最终文本全丢，导致 F3 被误读成「空转」" },
+    { "id": "M2", "severity": "blocking", "what": "失败节点的 patch 被丢弃，下游在缺上游产物时自行发挥，交付物来源偏离图的规划且无人复核" },
+    { "id": "M3", "severity": "blocking", "what": "runner 奖励违反「只交 patch」、惩罚遵守它：work 节点的判定语义与 DESIGN v1 冲突" },
+    { "id": "M4", "severity": "blocking", "what": "重试 / 升档的 prompt 与首次逐字相同，不带上次失败原因，导致同因再败（a3 重新探执行策略）" },
+    { "id": "M5", "severity": "blocking", "what": "员工的写入可逃出副本（$HOME / %TEMP%），快照与主树指纹都看不见" },
+    { "id": "M6", "severity": "blocking", "what": "证据包 runs/<id> 在员工可写的根目录内且又在快照排除区：员工可读其它节点（含失败节点）结果、可无痕改写证据（w_docs 实读 s_code.json / w_script.json）" },
+    { "id": "M7", "severity": "nonblocking", "what": "只变 mtime 的幂等重写也被算 modified（runner.py:450），重跑生成脚本会制造 over/underclaim 噪声" },
+    { "id": "M8", "severity": "nonblocking", "what": "Windows 上超时只结束 node.EXE，其 pwsh 子进程可能存活并写进下一次 attempt 窗口（未实测）" }
+  ],
+  "ran_by_reviewer": [
+    "verify-product.py → PRODUCT_OK, exit 0",
+    "读 RUN.json → 4154.0 / fail / agent_calls=9 / k_* skipped / groups=[w4-k_hash], exit 0",
+    "ledger-audit.ps1 → RESULT=LEDGER_SUSPECT, exit 1",
+    "统计 tool_calls → 186 次（pwsh 130 / read 33 / glob 8 / grep 5 / edit 5 / write 5）；a2 与 w_script a3 无 tool_calls 键",
+    "列出 write/edit 目标与带写操作的 pwsh 命令, exit 0",
+    "主树 review-index.ps1 不带 Bypass → exit 1；副本不带 → exit 1；副本带 -ExecutionPolicy Bypass → exit 0",
+    "sha256sum INDEX.after.md 与副本 INDEX.md → 均 0cb2c55b…",
+    "拿主树基线重核 → 新增 3 / 修改 3，全部在 22:01 之后",
+    "cite-check --strict 对 DELIVERY-e2e.md → NOANCHOR 2, exit 1",
+    "比较 integ.a1 与 a3 的 prompt → 完全相同",
+    "核 INDEX.after.md 是否符合 c_iface 格式 → 全部符合"
+  ],
+  "reviewer_notes": "验收官自述只读：没改工程里任何文件；只在副本与主树各跑了一次不带 -Write 的 review-index.ps1（只读，主树重核证明未引起变化）；自建临时文件已删。它指出 %TEMP%\\mkpatch-wdocs.py 是 w_docs 留下的，交工人决定。",
+  "final": "第 1 轮 rework 0.85 / 6 blocking。六条全部接受，已按报告改写 DELIVERY-e2e.md 的结论与 F1/F3/F8/§7.1/§7.2，并新增 F10–F15。补登账本后 ledger-audit 回 LEDGER_OK；cite-check 的 3 条真错误（裸 DESIGN.md 解析不到、锚不唯一）已修，UNRESOLVED/AMBIG 清零，但仍剩 14 条 NOANCHOR（证据形式，非结论错误），与 §九 的 9 条修法一起移交下一单元。**修 bug 不在本轮**：伙伴 2026-11-09 明确要求先收工移交，runner.py 的六条缺陷（M1–M6）与 9 条修法清单见 DELIVERY-e2e.md §九 + HANDOVER.md §七。"
+}

@@ -1,0 +1,20 @@
+{
+  "_comment": "when 成立（verdict=go）：w_maybe 必须真跑起来。",
+  "nodes": {
+    "s_gate": {
+      "expect_prompt_contains": ["id: s_gate", "只读"],
+      "result": { "verdict": "go", "summary": "侦察认为可以继续" }
+    },
+    "w_maybe": {
+      "expect_prompt_contains": ["id: w_maybe", "允许改动的文件"],
+      "write_files": {
+        "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md": "# A1 fixture 基线\n\n- 第一行\n- 第二行\n- 第三行\n- when 通过\n"
+      },
+      "result": { "changed": ["tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"], "summary": "追加了一行" }
+    },
+    "k_check": {
+      "expect_prompt_contains": ["id: k_check"],
+      "result": { "verdict": "pass" }
+    }
+  }
+}

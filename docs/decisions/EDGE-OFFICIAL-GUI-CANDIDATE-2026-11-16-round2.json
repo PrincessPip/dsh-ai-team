@@ -1,0 +1,135 @@
+{
+  "verdict": "pass",
+  "confidence": 0.94,
+  "readonly_enforcement": "snapshot_only",
+  "scope": "仅通过本轮GUI候选与隔离机械验收，不代表真实GUI人审或生产发布通过。",
+  "evidence_root": "%USERPROFILE%/AppData/Local/Temp/edge-independent-r2-6m2ojyic",
+  "evidence_paths": "以下原件路径均相对此目录。",
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "完整回归45/45，覆盖普通工具、9个浏览器工具正控及普通Session、fork、旧Agent、资源旁路拒绝；专用会话探针4/4。原件：official-gui-candidate/evidence/REPAIR-FULL-1794842899915.json；official-gui-candidate/parent-evidence/CREATE-SESSION-1794842946205.json。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "原callId反证10/10：变更后返回APPROVAL_STALE、零dispatch、审计保持原身份；双专用Session同时待审的身份变更反证及双向正控通过。运行时value/checked探针2/2。原件：INDEPENDENT-AUDIT.json；official-gui-candidate/parent-evidence/REVIEW-BINDING-1794842934498.json；official-gui-candidate/parent-evidence/STATE-PROBE-1794842934868.json。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "完整回归覆盖三个确定性启动屏障、待审取消、忙renderer、重复stop、归属篡改拒绝、lease、失联及卸载；进程/CDP/MCP清理和显式新代际正控通过。最终残留进程0、锁0，18个profile保留。原件：上述REPAIR-FULL及FINAL-CLEANUP-BUILD.json。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "真实Client/Host Gateway机械测试覆盖loader、namespace、状态解包、创建与选择会话、stop、退订及销毁；客户端产物与模板重新计算结果一致。原件：上述REPAIR-FULL及FINAL-CLEANUP-BUILD.json。React使用spy，未据此认定真实DOM通过。"
+    },
+    {
+      "id": "C5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "双会话报告JSONL前缀与真实磁盘字节一致；ScriptedAdapter的19个报告事件与磁盘同序同值，磁盘另有停止后事件，共20个；官方审批配对成立。5个坏证据变体全部检出。3080及日常浏览器根保持不变。原件：INDEPENDENT-AUDIT.json、FINAL-CLEANUP-BUILD.json。"
+    },
+    {
+      "id": "C6",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "输入和TEMP副本的候选/portable均按最终manifest核验19531项，包含252个依赖runtime文件；集合、SHA、非链接检查通过。复制反证13/13、选择性回滚演练5/5、portable导入通过。原件：COPY-RECEIPT.json、COMMAND-1.log、official-gui-candidate/parent-evidence/ROLLBACK-1794842965198.json、FINAL-CLEANUP-BUILD.json。发布回滚方案定性部分按判断类E1认可，未实施生产部署。"
+    }
+  ],
+  "blocking": [],
+  "previous_blocking": [
+    {
+      "id": "B1",
+      "status": "resolved",
+      "claim": "审批身份固定、拒绝变更及审计一致性已由原反证和本轮交叉核验证。"
+    },
+    {
+      "id": "B2",
+      "status": "resolved",
+      "claim": "完整复制保留依赖内runtime目录，独立manifest校验及旧复制器反证通过。"
+    },
+    {
+      "id": "B3",
+      "status": "resolved",
+      "claim": "真实双专用Session待审错配和三个启动阶段确定性停止覆盖已补齐并独立复跑。"
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "claim": "发布README仍保留首轮覆盖缺口描述，应同步为本轮状态。",
+      "evidence": "official-gui-candidate/release/README.md:19「Two simultaneous browser approval streams」所在段仍称双会话及三个启动阶段未分别测试；与本轮实跑及DELIVERY §9不一致。"
+    },
+    {
+      "id": "N2",
+      "claim": "真实React DOM、当前GUI人审、生产部署及回滚、长时间稳定性未验证；这些不在本轮通过范围。MCP进程环境块未独立读取，不扩大六目录隔离证据的含义。"
+    },
+    {
+      "id": "N3",
+      "claim": "引用检查修正root参数后退出0，但refs=0，不能当作行号覆盖证明；旧账本格式及mtime债未处理。"
+    }
+  ],
+  "executions": [
+    {
+      "command": "node supervise.mjs --implementation",
+      "result": "退出0，45/45，196.4秒",
+      "artifact": "COMMAND-0.log"
+    },
+    {
+      "command": "python -B PARENT-copy-tests.py",
+      "result": "退出0，13/13",
+      "artifact": "COMMAND-1.log"
+    },
+    {
+      "command": "python -B PARENT-run.py PARENT-binding-probe.mjs",
+      "result": "退出0，10/10",
+      "artifact": "COMMAND-2.log"
+    },
+    {
+      "command": "python -B PARENT-run.py PARENT-state-probe.mjs",
+      "result": "退出0，2/2",
+      "artifact": "COMMAND-3.log"
+    },
+    {
+      "command": "python -B PARENT-run.py PARENT-create-session-probe.mjs",
+      "result": "退出0，4/4",
+      "artifact": "COMMAND-4.log"
+    },
+    {
+      "command": "python -B PARENT-run.py PARENT-rollback-rehearsal.mjs",
+      "result": "退出0，5/5",
+      "artifact": "COMMAND-5.log"
+    },
+    {
+      "command": "python -B audit-independent.py",
+      "result": "退出0，10项交叉核通过，5个坏证据变体全部检出",
+      "artifact": "INDEPENDENT-AUDIT.json"
+    },
+    {
+      "command": "python -B scripts/cite-check.py --root . --files official-gui-candidate/DELIVERY.md official-gui-candidate/REVIEW-BRIEF.md official-gui-candidate/TASK.md official-gui-candidate/WORKER-R1-REWORK.md official-gui-candidate/release/README.md --strict --out CITE-CHECK.txt",
+      "result": "退出0，files=5，refs=0；首次错误root调用退出3，保留于COMMAND-6.log",
+      "artifact": "CITE-CHECK.txt"
+    }
+  ],
+  "rework_brief": "",
+  "reviewer_notes": "所有执行及新增证据均位于上述TEMP副本，未修改输入工程或生产文件，未调用外部模型或子代理。最终原输入候选78352文件无新增、删除或SHA变化，辅助契约/方案/脚本副本一致，见FINAL-INPUT-CHECK.json。只读执法属于前后快照核查，不能检测写后还原或树外写入；正式外层快照仍由父级核收。"
+}

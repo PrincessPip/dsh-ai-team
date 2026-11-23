@@ -1,0 +1,88 @@
+{
+  "verdict": "pass",
+  "confidence": 0.97,
+  "readonly_enforcement": "snapshot_only",
+  "test_root": "%USERPROFILE%/AppData/Local/Temp/astra-release-independent-hwipei3e",
+  "evidence_index": "%USERPROFILE%/AppData/Local/Temp/astra-release-independent-hwipei3e/reviewer-own/COMMANDS-AND-EVIDENCE.json",
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立核对2441个发布文件、15515个依赖及来源差异，均匹配清单。实际安装落点重新启动正式链：exitCode=0，197个安装文件、334个外部文件均匹配SHA，unexpectedOrDrift=[]；见test_root/reviewer-own/installed-launch/RUNNER.json。安装测试中的包缺件、SHA漂移、依赖缺失及错误版本均精确拒绝。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "run-suite.py实际exit0；installer-1794716125771353400/RESULT.json共28项通过，覆盖dry-run不变、安装SHA、备份、幂等、路径/链接/忙碌拒绝及两种半安装恢复。亲跑parent-install-lease.py：持有真实写句柄时精确INSTALL_SCOPE_REFUSED，current/history不变、无发布；释放exit0后同一目标安装成功。回执：test_root/tasks/ASTRA-NATIVE-RELEASE-AUDIT-2026-11-15/artifacts/install-lease-1794716093010351900/RESULT.json。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "亲跑run-hold.py：Basic/native-auto/native-hold在300360压力下均摘要1次、回答1次。parent-scope.mjs精确复现NATIVE_SERVICE_CONFLICT，三服务隔离后正常。正式兼容矩阵验证同根单AgentLoop桌宠自动摘要、目标auto开关及手动拒绝。额外test-2b2-extra.mjs退出0，包含非目标标准裁剪、native保留区保护；见test_root/reviewer-own/pruner-extra/RUNNER.json及stdout.txt。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "两次run-release.py正例均通过none/zstd独立进程seed/resume；每种格式普通/native会话各执行一次新工具，续答无新增原生压缩。半行/半帧、未知完整性、受损历史拒绝并保留字节；none torn的beforeSha=afterSha、wire=[]、tools=0。正式兼容测试还验证模拟context overflow不回退Basic。原件位于test_root/tasks/ASTRA-NATIVE-RELEASE-2026-11-15/artifacts/release-1794716079307680000及release-1794716454124416200。"
+    },
+    {
+      "id": "C5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "亲跑parent-install.py，6/6通过：普通Zstd历史回退后SHA正确，native历史拒退，漂移后的current预检器未执行，预检期间历史变化精确HISTORY_CHANGED_DURING_PREFLIGHT。四个真实预检进程启动时BUSY均存在。完整suite另覆盖hidden-native、损坏、未知及实际写租约拒退。见test_root/tasks/ASTRA-NATIVE-RELEASE-AUDIT-2026-11-15/artifacts/install-1794716150315941000/RESULT.json。"
+    },
+    {
+      "id": "C6",
+      "type": "judgment",
+      "status": "pass",
+      "claimed_strength": "E1",
+      "strength_met": true,
+      "evidence": "直读RUNBOOK及OPERATION-PLAN，已具体说明安装落点、路由、现有会话/桌宠/共享宿主影响、停写交接、备份、hold与回退边界及真实请求另批。冻结树tasks/ASTRA-NATIVE-RELEASE-AUDIT-2026-11-15/OPERATION-PLAN.md:32「先做完整宿主副本的装配演练，再批准原3080维护窗口灰度。」；同文件:58「维护停准入/停写仍是硬前提。」方案明确完整Web/UI尚未验证，没有冒充生产安装许可。"
+    },
+    {
+      "id": "C7",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "suite-1794716079203029500四阶段全部exit0、forcedKill=false、cleanupVerified=true；三项变异分别命中HOLD_BASIC_AUTOMATIC_REQUIRED、Missing expected rejection、NATIVE_HISTORY，随后干净正例通过。另独立构造首次安装半行日志：精确INSTALL_SCOPE_REFUSED: PHYSICAL_INTEGRITY_REQUIRED，目标完全不变；恢复原字节后同一目标安装成功，见test_root/reviewer-own/first-install-torn.json。引用检查6文件、3引用，3/3 OK。"
+    },
+    {
+      "id": "C8",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "按TASK时序分工核查机制及已完成证据：首轮归档SHA匹配，before/after均complete、5665条目一致、diff空、exit0、cleanup_verified=true，3949冻结输入全部绑定。亲跑postcheck.py的13项正反例全部通过。末次只读复核4290包文件、4280源输入、32565外部基线、4291冻结输入均无漂移，扫描complete且无新增文件；见test_root/reviewer-own/final-input-audit.json。进程表确认本轮由review-control-round2.py调用review-codex.py；测试副本相关进程查询无残留。当前轮after由外层实际postcheck完成后才能采纳本裁决。"
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "mtime历史债仍存在，不能称全仓干净。",
+      "evidence": "冻结树GATES/RESULT.json：MTIME exitCode=1，mtimeResult=RESULT=LEDGER_SUSPECT，currentUnitSuspects=[]；已查看原始MTIME.txt及目录覆盖告警。"
+    },
+    {
+      "id": "N2",
+      "what": "通过范围为本机固定依赖SDK发布准备及沙盒演练；不涵盖完整Web/UI上线、生产切换、长期质量或通用迁移。",
+      "evidence": "OPERATION-PLAN.md:28「本轮没有证明完整Web profile装配/启动、UI显示、客户端构建与已有用户会话迁移。」；两格式均验证冷恢复和物理损伤，详细语义字段变异仅在none逐项覆盖。"
+    }
+  ],
+  "rework_brief": "",
+  "reviewer_notes": "未修改冻结工程、原工作树、生产或历史证据；所有测试写入及反例均在记录的TEMP副本内，命令与副本位置见证据索引及本轮工具事件流。产品测试使用socket deny和模拟SSE，未调用子代理、其他模型或真实原生请求。C8通过仅签认可观察的机制与已完成证据，不预签本轮未来after；外层快照、清理或来源校验失败时必须拒绝采纳本pass。"
+}

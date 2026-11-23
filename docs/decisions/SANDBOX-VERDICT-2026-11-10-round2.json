@@ -1,0 +1,101 @@
+{
+  "verdict": "pass",
+  "confidence": 0.88,
+  "criteria": [
+    {
+      "id": "B1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "scripts/runner.py:1155「            sd.mkdir(parents=True, exist_ok=True)」before :1160「for k in (\"TMP\", \"TEMP\", \"TMPDIR\"):」; :1159「sandbox_existed = sd.is_dir()」. Ran runner-harness --only honest -> 27/0 incl. '每个 attempt 的临时目录都存在' and '写手起跑前临时目录已存在（is_dir() 事实，不是自报）'. Ran runner-mutate.py -> mutant 'N1·临时区目录不建（B1 回归）' anchor_hits=1/1, FAIL on exactly '每个 attempt 的临时目录都存在'; mutations=50 caught=50 restored_green=True; full 450/0 after restore. Real run runs/e2e3-20261110-231402: 7/7 sandbox.attempts exists=True, 7/7 NODES/*.a1.json sandbox_dir_existed_at_launch=True; copy runner.py == main tree (diff --strip-trailing-cr identical)."
+    },
+    {
+      "id": "N1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "runner-mutate.py 'N3·started_at 退回收尾时刻' old='\"started_at\": run_started_at,' new=time.strftime(...) (real form, not a constant date); I ran it: FAIL 'started_at / finished_at 与 duration_s 自洽（±2s）' + FAIL 'started_at 不晚于「启动 runner 之前」+2s'. Honest run: 'RUN.duration_s 覆盖了那 2.5 秒 sleep' ok."
+    },
+    {
+      "id": "N2",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "LEDGER-AUDIT.txt / EGRESS.txt first byte 0x5b, `file` = ASCII text (no UTF-16 BOM); LEDGER-AUDIT last line RESULT=LEDGER_OK; decisions/self/ledger.md:261 rework row present."
+    },
+    {
+      "id": "N3",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "DELIVERY.md §八 has the research summary incl. the 'list is not a complete history' quote; §一·1 is factual and names the B1 mkdir; §七/§九 numbers match RUN3.txt [run]/RUN.json readings (17.7 min, pass, check_verdicts both pass, overlap 46.122)."
+    },
+    {
+      "id": "N4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "runner-harness.py:481 exists assertion + :503-504 sandbox_dir_existed_at_launch assertion (fact from is_dir(), not self-report); worker.py:183-194 comment rewritten and matches behaviour."
+    },
+    {
+      "id": "N5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "runner-harness.py:418-423 globs only '_harness_<rid>*'; %LOCALAPPDATA%\\ai-team-sandbox now has 89 dirs with no -N suffix pile-up (was 332+)."
+    },
+    {
+      "id": "N6",
+      "type": "judgment",
+      "status": "pass",
+      "claimed_strength": "E1",
+      "strength_met": true,
+      "evidence": "Deferred as agreed; recorded at DELIVERY.md §五·13 '[判断类] N2 可以被图绕过'."
+    },
+    {
+      "id": "N7",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "scripts/runner.py:2362 and :2398「\"outside_workspace\": not _overlaps(sandbox_root, ROOT),」— no longer hard-coded True (the assertion that checks it is weak, see nonblocking N2)."
+    },
+    {
+      "id": "N8",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "REVIEW-BRIEF-round2.md:45 cites REVIEW-CONTRACT.md §四; the schema really is at REVIEW-CONTRACT.md:194 '## 四、输出格式'."
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "fake-worker/worker.py:190-194 only checks that TEMP is a directory inside the write_temp_files loop; real dsh checks on every launch. Under the B1 mutant the honest run still ends RUN.result=pass and is caught only by the harness assertion. Move the TEMP is_dir check to the top of main() so the stand-in is as strict as dsh for every node."
+    },
+    {
+      "id": "N2",
+      "what": "The honest assertion labelled 'outside_workspace 是**算出来的**（不是写死 True）' only checks ==True. pick_sandbox_root die(2)s on overlap, so a finished run can never have False, and the assertion cannot tell computed from hard-coded. Either rename the label or add a unit test of the computed path (e.g. call _overlaps directly or mutate the expression to True and confirm a red)."
+    },
+    {
+      "id": "N3",
+      "what": "The exists assertions at runner-harness.py:675 (parallel-check) and :849 (retrythenok) compare against [True]*len(attempts) and pass vacuously when attempts is empty; honest has a len>=3 guard, these two do not."
+    },
+    {
+      "id": "N4",
+      "what": "DELIVERY.md §七 says the copy's INDEX.md is 12,265 bytes while RUN3.txt:49 says 11900; the difference is exactly 365 (= line count), so it is a CRLF/LF counting difference, but neither file says which convention it uses."
+    }
+  ],
+  "rework_brief": "",
+  "escalate_question": "",
+  "reviewer_notes": "Commands run: runner-harness --only honest, runner-mutate.py (full, it edits scripts/runner.py in place and restored it byte-identical, sha 3d7d6a3dfeccbd7d), cite-check --strict (16/16 OK), plus read-only ls/diff/python reads of the e2e3 evidence pack. While the mutation bench was running I saw a one-line diff between the copy and main runner.py; that was a live mutant, and after the bench finished the two are identical. I did not write REVIEW-round2-raw.txt: the user did not approve the file write.",
+  "_provenance": "验收官 `claude -p --model opus --allowedTools Read,Grep,Glob,Bash` 的 stdout 原样转存（它的会话没有文件写权限，报告未自行落盘）。JSON 块逐字未改；两条非 @判断类 的 severity 与 id 都由它自己给。"
+}

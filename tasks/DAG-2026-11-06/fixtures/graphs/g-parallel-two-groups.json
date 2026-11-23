@@ -1,0 +1,169 @@
+{
+  "v": 1,
+  "plan_id": "plan-b1-two-groups",
+  "budget": {
+    "max_calls": 20
+  },
+  "nodes": [
+    {
+      "id": "a",
+      "kind": "scout",
+      "do": "侦察 a：读 fixtures/sandbox/notes.md。前两次会失败，第三次成功。",
+      "after": [],
+      "out": [
+        "facts",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "facts 非空"
+        }
+      ],
+      "on_fail": {
+        "retry": 2,
+        "then": "replan"
+      }
+    },
+    {
+      "id": "b",
+      "kind": "scout",
+      "do": "侦察 b：读 fixtures/sandbox/notes.md。前两次会失败，第三次成功。",
+      "after": [],
+      "out": [
+        "facts",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "facts 非空"
+        }
+      ],
+      "on_fail": {
+        "retry": 2,
+        "then": "replan"
+      }
+    },
+    {
+      "id": "c",
+      "kind": "scout",
+      "do": "侦察 c：读 fixtures/sandbox/notes.md。前两次会失败，第三次成功。",
+      "after": [],
+      "out": [
+        "facts",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "facts 非空"
+        }
+      ],
+      "on_fail": {
+        "retry": 2,
+        "then": "replan"
+      }
+    },
+    {
+      "id": "d",
+      "kind": "scout",
+      "do": "侦察 d：读 fixtures/sandbox/notes.md。前两次会失败，第三次成功。",
+      "after": [],
+      "out": [
+        "facts",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "facts 非空"
+        }
+      ],
+      "on_fail": {
+        "retry": 2,
+        "then": "replan"
+      }
+    },
+    {
+      "id": "e",
+      "kind": "scout",
+      "do": "侦察 e：读 fixtures/sandbox/notes.md。前两次会失败，第三次成功。",
+      "after": [],
+      "out": [
+        "facts",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "facts 非空"
+        }
+      ],
+      "on_fail": {
+        "retry": 2,
+        "then": "replan"
+      }
+    },
+    {
+      "id": "f",
+      "kind": "scout",
+      "do": "侦察 f：读 fixtures/sandbox/notes.md。前两次会失败，第三次成功。",
+      "after": [],
+      "out": [
+        "facts",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "facts 非空"
+        }
+      ],
+      "on_fail": {
+        "retry": 2,
+        "then": "replan"
+      }
+    },
+    {
+      "id": "g",
+      "kind": "scout",
+      "do": "侦察 g：读 fixtures/sandbox/notes.md。前两次会失败，第三次成功。",
+      "after": [],
+      "out": [
+        "facts",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "facts 非空"
+        }
+      ],
+      "on_fail": {
+        "retry": 2,
+        "then": "replan"
+      }
+    },
+    {
+      "id": "h",
+      "kind": "scout",
+      "do": "侦察 h：读 fixtures/sandbox/notes.md。前两次会失败，第三次成功。",
+      "after": [],
+      "out": [
+        "facts",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "facts 非空"
+        }
+      ],
+      "on_fail": {
+        "retry": 2,
+        "then": "replan"
+      }
+    }
+  ]
+}

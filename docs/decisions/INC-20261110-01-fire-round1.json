@@ -1,0 +1,41 @@
+{"unit":"INC-20261110-01","round":1,"verdict":"rework","confidence":0.85,
+ "blocking":[
+  {"id":"B1","what":"verify-findings.mjs 的夹具修法（调度工人改的，不是救火队长）一半正当、一半是在改考卷：它给 w_docs 加 writes=['decisions/INDEX.md']、patch_targets=['decisions/INDEX.md']，还把 decisions/INDEX.md 移出了夹具的 hot_files",
+   "why":"(a) check() 期望值一条没改：当前文件与 2026-11-07 的副本对 diff，check 的改动只有 E2EFIX 加的那些（VERIFY-e2efix.txt 已经有 '正/四条 err 全部消失'，TRANSCRIPT §20 也在你改之前），本次只动了输入。(b) 但输入跟节点自己的规则矛盾：夹具图 w_docs.accept[0].rule 写的是「不触及 scripts/review-index.ps1 与 decisions/ 下任何文件」，修后的正例却让 w_docs 把 patch 打到 decisions/INDEX.md。代码注释写「与真图 R1 同款」，这不对：真图 R1 保留了 decisions/INDEX.md 的热文件身份，这里两个热文件都清空了。(c) 这样削掉一层保护没有必要：我在 %TEMP% 镜像里试了另一种改法——保留 INDEX.md 为热文件，w_docs.writes/patch_targets 改成 tasks/DAG-2026-11-06/PROGRESS.md（也就是 F1 用的 DOC 路径）——结果同样是 RESULT=ALL_OK。",
+   "evidence":"git diff --no-index %TEMP%/ai-team-e2e-20261109-205040/tasks/DAG-2026-11-06/verify-findings.mjs tasks/DAG-2026-11-06/verify-findings.mjs 看 ⑤ 段；runs/plan-20261107-000746/GRAPH.json 的 w_docs.accept[0].rule；镜像替代修法跑出 ALL_OK（D2 退出码 + D3 输出，反证 = 不必删 INDEX.md 热文件也能绿）"},
+  {"id":"B2","what":"T2 说的「harm 跨 attempt 累积、不可洗」，断言台只测到 harm 出现在第 1 次 attempt 的情况，跨 attempt 这一半没测到",
+   "why":"我自己做的变异 X8：harm 只在 ti==0&&k==0 时累积，harness 仍然 checks=250 failed=0。也就是说「第 1 次 attempt 干净失败、第 2 次落盘、第 3 次干净 ok」这条路线没有断言；一旦有人回归成只看第 1 次，就会出现 E2EFIX B2 那种被重试洗掉。当前代码（dag.workflow.mjs:1142「for (const p of pc.fs_write_forbidden) if (harm.indexOf(p) < 0) harm.push(p);」）读下来是对的，问题在 VERIFY 把这一项标 E3，但对应的反证咬不到「跨 attempt」这一点，属于证据说满了。",
+   "evidence":"镜像变异 X8 → rc 0 / checks=250 failed=0（存活）；对照 X1（harm 不早停）→ 3 条红，X2 → 1 条红"}
+ ],
+ "nonblocking":[
+  {"id":"N1","what":"[判断类] R1（review-index.ps1 移出 hot_files）。我查了 hot_files 在 scripts/ 下的全部用法：只有 dag.workflow.mjs 里 Gate 的静态规则（:463 HOT_FILE_WRITE 只看 writes 声明），解释器和 runner 的执行面都不读它。所以改前也没有任何东西能在运行期抓住「w_script 落了盘却不报」。R1 没有削弱运行期保护，削弱的是静态声明这一层（以后非 integrate 节点可以合法地在 writes 里声明 review-index.ps1）。「由 C1 接管」这句话在解释器上说过头了：C1 只能抓到「报了落盘」的情况。不过救火队长在自述第 1 条已经自己承认，不算隐瞒。回答 BRIEF 的问题：workflow 引擎里 w_script 写了文件不报，改前改后都没人抓得住；能抓住的只有 runner 的快照差。E1"},
+  {"id":"N2","what":"[判断类] C2 的 .status 例外我判为「有意」，不是漏做：join 先于 from 判，状态值本身永远存在，card 会照实打印 a.status=fail，上游失败的事实没有被掩盖。但事故单 T3 要求的是「对齐 runner from_block_reason()」，而 runner.py:452 用 ref_value 在上游非 ok 时对 .status 也返回 None 并拦下。两边不对称还在，正是本单要收口的那一类，需要伙伴定口径（O2 已报）。E1"},
+  {"id":"N3","what":"C2 没有测「上游 skipped（不是 fail）」：我做的变异 X6 把 skipped 上游当 ok 放行，harness 仍是 250/0。真图里 w_docs 的 then=skip 正好会产出 skipped 上游，建议补一条断言"},
+  {"id":"N4","what":"O4 属实，而且早就有：改前副本 :864 就有 r.patch = clip(payload.patch, 1200)，card 给 integrate 的上限是 8000，但它读的是已经截过的记录；文件头 :26 说「下游 integrate 拿到全文」，说的不是事实。runner 不截断，又是一处不对称。影响：真图 w_script 的 patch 超过 1200 字时，integ 拿到的是残缺 diff，可能再走一次「自己补完」，也就是 F10 那一类。真跑前必须修"},
+  {"id":"N5","what":"O3 属实（dag.workflow.mjs:1200-1203 只在 last.status==='ok' 时跑 scopeCheck，越界可以被重试洗掉），O5/O6/O7 如实写了，没有说小"},
+  {"id":"N6","what":"调度方的两处说法与事实不符：① BRIEF §四说「账本还没记本单元」，实际 ledger.md:231 已经在 01:18 记了「送审（等验收官）」；② 那一行账本声称「398 文件 sha256 对撞，白名单外零内容改动」，但 TRIAGE.txt 里找不到这次对撞的输出（按铁律 2 算未验证）。我自己对撞时，白名单外有内容变化的是 INC-20261110-01.md（24803→24864 字节，01:18:30）、ledger.md、verify-findings.mjs，三个都是调度方在救火结束后改的；BRIEF 只申报了 verify-findings，事故单在执行后被改这件事没有申报"},
+  {"id":"N7","what":"T6 对救火队长来说成立：它的 SNAPSHOT.txt（01:06）里 INC.md 和 ledger 的 mtime 还是 00:40，说明这两个文件不是它改的。runner.py 内容哈希 f8f10000…bd6522f，与基线一致（我等自己的 runner-mutate 跑完后重算的）；.pyc 是重编译缓存，不算越界。/tmp/dp.txt 属于事故单 §五 已声明的盲区（工程外只能靠自报），判在盲区之内"}
+ ],
+ "missed_failures":[
+  {"id":"M1","what":"解释器的 fs_write_forbidden 会因为 schema 结构上变成空判据：nodeSchema 设了 additionalProperties:false，而 PLUMBING 只有 summary/missing/artifacts。一个 out 声明了 patch 但没声明 changed 的节点（harness 的 g1.b、:619-620 的 a/a2 都是这个形状），在真引擎里根本交不出 changed 字段，判据 ① 永远不会响；card 却还在叫它「changed 必须是 []」。Gate 也没有规则要求 patch 节点声明 changed。真图两个 patch 节点都声明了 changed，这次没受影响。属于 E2EFIX B1 同一类（输入形态让判据静默失效）。fake agent 绕过了 schema，所以 harness 看不出来"},
+  {"id":"M2","what":"跨 attempt 的 harm 与 skipped 上游这两格没有测试（见 B2 / N3）。救火队长自己的 15 条变异没覆盖到"}
+ ],
+ "ran":[
+  {"cmd":"node scripts/dag-gate.mjs runs/plan-20261107-003443/GRAPH.json","result":"OK (0 error / 2 warn: CHECK_NO_EXECUTABLE k_hash/k_count), rc=0"},
+  {"cmd":"node scripts/dag-gate.mjs runs/fire/INC-20261110-01/GRAPH.orig.json","result":"REJECTED (2 error PATCH_WITHOUT_TARGETS / 4 warn), rc=1"},
+  {"cmd":"python scripts/runner.py <真图> --dry-plan","result":"gate OK (0 err / 2 warn), 5 波, rc=0"},
+  {"cmd":"node tasks/DAG-2026-11-06/harness.mjs --all","result":"checks=250 failed=0 rc=0"},
+  {"cmd":"node tasks/DAG-2026-11-06/manager-harness.mjs","result":"checks=174 failed=0 rc=0"},
+  {"cmd":"python tasks/DAG-2026-11-06/runner-harness.py","result":"RESULT checks=338 failed=0 rc=0（在 mutate 结束后串行跑）"},
+  {"cmd":"python tasks/DAG-2026-11-06/runner-mutate.py","result":"mutations=32 caught=32 restored_green=True, final_sha256=f8f10000f13cddd0 基线==当前"},
+  {"cmd":"node tasks/DAG-2026-11-06/verify-findings.mjs","result":"RESULT=ALL_OK rc=0"},
+  {"cmd":"python 自写段哈希（validate() 段 / card() 前全部前缀）对比当前文件与 dag.workflow.orig.mjs","result":"validate 45be3c757a3f58a0 两边相同；prefix bb771fb6c13c84da 两边相同；card 起于 682；orig 整文件 sha 35c612ae… = HASH-BEFORE 基线"},
+  {"cmd":"git diff --no-index -U0 dag.workflow.orig.mjs scripts/dag.workflow.mjs | grep ^@@","result":"21 个 hunk，首个为 -720，没有起点 <682 的 hunk"},
+  {"cmd":"python 自写 sha256 对撞 HASH-BEFORE.txt 398 个文件","result":"内容变化 7 个：白名单内 3 个 + pyc + 调度方改的 INC.md/ledger.md/verify-findings.mjs；runner.py 哈希不变"},
+  {"cmd":"harness.orig 与当前 eq() 名单对比","result":"96 → 176，缺失 0；唯一删除的行是旧 happy 假 agent"},
+  {"cmd":"%TEMP%/rv-mirror 镜像，对解释器打 8 个自写变异（X1–X8）跑 harness","result":"X1/X2/X3/X4/X5/X7 被抓（各自红在对应判据上）；X6（skipped 上游放行）与 X8（harm 只累积首次 attempt）存活。源码已还原为 250/0"},
+  {"cmd":"镜像中 verify-findings 替代修法（保留 INDEX.md 热文件，w_docs→PROGRESS.md）","result":"RESULT=ALL_OK"},
+  {"cmd":"python scripts/cite-check.py --files CHANGES.md VERIFY.md INC.md REVIEW-BRIEF --strict","result":"OK 9 / LONE 9，没有 DRIFT"},
+  {"cmd":"清理","result":"%TEMP%/rv-mirror 及 rv_* 临时文件已删除，未往 runs/ 写入"}
+ ],
+ "rework_brief":"1) 调度工人：重做 verify-findings.mjs 的 ⑤ 段。保留 decisions/INDEX.md 在 hot_files 里；w_docs 的 writes 和假 agent 的 patch_targets 改指 w_docs 自己规则允许的文档路径（如 tasks/DAG-2026-11-06/PROGRESS.md）；把注释里「与真图 R1 同款」这句改准确。check 期望值仍然不动。2) harness.mjs 加两条断言：attempt1 干净失败 → attempt2 报落盘 → attempt3 干净 ok，期望终态非 ok、harm 点名、第 3 次不发生；上游 then=skip 产出 skipped 时，下游 ctx.from 引用其字段，期望 need_info 且 0 次调用。两条都要用变异（X8 / X6 的写法）证明会红。3) VERIFY 的 T2 把「跨 attempt」这一点的证据改成指向新断言。4) 可选：M1 在 nodeSchema 里给 patch 节点强制加 changed（执行面改动，在白名单内），或者写进 VERIFY 的局限里。5) 申报 INC-20261110-01.md 在执行后被改了什么，并补上 sha256 对撞的原始输出。"}

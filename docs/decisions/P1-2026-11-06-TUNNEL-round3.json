@@ -1,0 +1,30 @@
+{
+  "verdict": "rework",
+  "confidence": 0.82,
+  "criteria": [
+    { "id": "C1", "status": "pass", "evidence": "claude-egress-check.ps1:176 `$wantSrc = if ($BindIp) {...} else { Get-PhysicalSourceIp }` is dynamic. :128 `if ($SourceIp) { $a += @('-b', $SourceIp) }` adds the flag. Grep for `192\\.168\\.2\\.40` in the script: 0 hits, so nothing is hard-coded." },
+    { "id": "C2", "status": "pass", "evidence": "Route gateway filter at :101 `NextHop -notmatch '^198\\.(18|19)\\.'`. Candidate address filter at :105 `-notmatch '^(169\\.254\\.|198\\.(18|19)\\.)'`. Together these cover the whole /15, and link-local is excluded as well." },
+    { "id": "C3", "status": "pass", "evidence": "Get-PhysicalSourceIp is wrapped in try/catch and returns $null (:99-110). :182-192 retries unbound when the bound start fails. When there is no source IP, the unbound start runs first (:176-177). Exit 6 occurs only when both attempts fail." },
+    { "id": "C4", "status": "pass", "evidence": ":132 `-o ServerAliveInterval=15 -o ServerAliveCountMax=3`." },
+    { "id": "C5", "status": "pass", "evidence": "Grep `[^\\x00-\\x7F]` on the script: no matches. Grep `(?-u)[\\x80-\\xFF]` (byte-level): no matches. The file is therefore pure ASCII and needs no BOM. Residual: ripgrep strips a leading BOM, so a BOM cannot be ruled out. A BOM on an all-ASCII file is harmless to PS 5.1, so the property that matters (no encoding dependence) holds. I consider this a verifiable form of the standard, not a lowering of it." },
+    { "id": "C6", "status": "fail", "evidence": ":201 `if ($result.listening -and -not $Start)` gates the existing-tunnel inspection. If a bound tunnel is already up and the operator runs with `-Start`, no tunnel is started and the inspection is skipped, so sourceIp stays ''. :255-256 then falls to the else branch and prints `[source]    unbound (via TUN)`. That is false for a tunnel bound to the NIC. Branches in the other cases are correct (:249-254)." },
+    { "id": "C7", "status": "pass", "evidence": "(1) The NIC IP changes: a stale bound tunnel is detected after about 45 s (15 s x 3) and ssh exits. There is no auto-reconnect, so the port goes down and the script exits 3. The next `-Start` re-detects the IP (:176). (2) Bind succeeds but the direct path is dead: the first attempt times out (ConnectTimeout=8) and is reaped (:149). The unbound retry runs and the output shows DEGRADED (:238, :249-250). The operator can tell a degraded run from a normal one, but not 'bind failed' from 'bound but direct unreachable' (see N1)." }
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "what": "With `-Start` and a tunnel already listening, the source line misreports a NIC-bound tunnel as 'unbound (via TUN)'.",
+      "why": "C6 requires the output to show the real route. The false claim is made in exactly the situation the docs recommend (running with -Start), and it hides the fact that the TUN is bypassed.",
+      "evidence": "claude-egress-check.ps1:201 gates inspection on `-not $Start`. :171 skips starting when already listening. :255-256 prints 'unbound (via TUN)' when sourceIp is empty and $Start is set."
+    }
+  ],
+  "nonblocking": [
+    { "id": "N1", "what": "The degraded message says 'bind ... failed' for both causes: the source address cannot be assigned, and the direct path to the VPS is unreachable. ssh runs hidden, so its stderr is never captured. A 5-second probe of `ssh -b` with output captured, or at least a note that either cause is possible, would let the operator tell them apart." },
+    { "id": "N2", "what": "A failed bound attempt can cost up to about 8 s (20 x 400 ms) before the fallback starts, and the unbound retry then adds up to another 8 s. Total worst case is about 16 s. This is acceptable, but it is not documented." },
+    { "id": "N3", "what": "Get-ExistingTunnelSource reads the first ssh.exe whose command line matches `L\\s+1081`. A second ssh process on that port would give an ambiguous answer. Unlikely, and the failure is benign." },
+    { "id": "N4", "what": "DELIVERY's 'syntax errors = 0' and the three output transcripts cannot be reproduced by me. The 25-minute stability test is explicitly unfinished. Neither is used in this verdict." }
+  ],
+  "rework_brief": "In claude-egress-check.ps1, record whether this run started a tunnel, and gate the existing-tunnel inspection on that instead of on -Start. Before step 2 add `$startedHere = $false`. Inside the `if ($first.ok)` branch set `$startedHere = $true`, and do the same in the `$second.ok` branch. Change :201 to `if ($result.listening -and -not $startedHere)`. Then the inspection runs whenever the tunnel already existed, with or without -Start. The 'unknown' branch at :253 should then trigger on `-not $startedHere` and sourceIp empty (or equivalent), so 'unbound (via TUN)' prints only when this run actually started an unbound tunnel. Check: with a bound tunnel running, `.\\claude-egress-check.ps1 -Start` must print `[source]    <ip> (bound to physical NIC, TUN bypassed)`. Grep the script again for non-ASCII after the edit and expect 0 hits.",
+  "escalate_question": "",
+  "reviewer_notes": "I could not execute the script. All logic findings come from reading the code, and the transcripts in DELIVERY are unverified by me. The BOM caveat for C5 is noted above. B1 is a small, local fix that stays inside the existing design."
+}

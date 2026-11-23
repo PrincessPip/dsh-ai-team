@@ -1,0 +1,45 @@
+{
+  "unit": "DAG-EXAM-2026-11-12",
+  "round": 2,
+  "date": "2026-11-12",
+  "channel": "subagent → openrouter/anthropic/claude-sonnet-5.5（只审返工·窄范围）。⚠️ 同模型的 opus-5.5 连发两次均无终局消息失败，第三次换 sonnet 成功；第 1 轮用的是 opus-5.5",
+  "verdict": "pass",
+  "confidence": 0.88,
+  "confirmed_by_reviewer": [
+    {
+      "id": "B1",
+      "type": "fact-consistent",
+      "status": "pass",
+      "evidence": "DELIVERY.md:11-13 已限定为「8 节点图第一次」并列出 e2e-20261110-2005 / e2e3-20261110-231402；验收官自查 runs/*/RUN.json 确认二者 result=pass、7 节点、5 波、check_verdicts 全 pass；e2e3 的 w_script 是给 scripts/review-index.ps1 加分组渲染（开发图非运维图）；runs/ 下 8 节点 pass 只有 exam 一份；AGENTS.md:218 限定为「8 节点真开发图」，待办已无「整链 pass 未证」"
+    },
+    {
+      "id": "B2",
+      "type": "executable",
+      "status": "pass",
+      "evidence": "账本第 322 行命中 DAG-EXAM、4 段格式；ledger-check -Baseline → violations=0 / RESULT=OK n=325 / rc=0；agents-budget --changed → RESULT=OK body=50767 rendered=51115 target=55000；ledger-audit → RESULT=LEDGER_OK / suspect none；cite-check --strict（不加 --out）→ OK 4 / LONE 1 / rc=0；AGENTS.md 新待办 7/8、已知限制两条、已收工一行均在"
+    },
+    {
+      "id": "B3",
+      "type": "fact-consistent",
+      "status": "pass",
+      "evidence": "integ.accept[2] 仍要求「<行号>:<reason>」而行 k_real.accept[0].run 硬写 schema=ledger-format-v2-baseline；integ.a1.json 自报「assert 文字仍是旧版…已过期」且节点 ok；旧 GRAPH.fixed.json 的 k_real 不碰 baseline、integ.accept[2] 同为旧文 →「矛盾 11-11 已存在、这次固化」准确；LEDGER-JOB DELIVERY.md §3.3 有同一记录。§四·8 与 AGENTS.md 的披露程度足够；未发现别的同类矛盾（k_test ≥60 行、k_guard BOM 与产物不冲突）"
+    },
+    {
+      "id": "N3-N5",
+      "type": "fact-consistent",
+      "status": "pass",
+      "evidence": "GRAPH.exam.json 实测 18,126 B；runs/_harness 实测 1,766 文件 / 96.3 MB；scripts/runner.py 160,053 B / sha 前缀 1EA8FB50；BRIEF-round2 对 probe-kreal 会写 PROBE-KREAL.txt 的更正属实"
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {"id": "N1", "what": "TASK.md:28 的 T5 仍写「整链第一次 pass」（任务书原文），可不改或加注限定为这张 8 节点图"},
+    {"id": "N2", "what": "全局 ~/.dsh/AGENTS.md 待办 3「DAG 整链 pass 仍未证」已过期，收工时要更新（不属本单元项目文件）"},
+    {"id": "N3", "what": "第 1 轮 N1/N2（k_real 自洽洞：base=0 时判据空转、永不报违规的 stub 过得了）本轮按约定未改，已披露在 §四·7/9 与项目待办 8"}
+  ],
+  "impossible": [
+    {"what": "四套台子（523/0 · 284/0 · 190/0 · mutate 60/60）与真跑本身的重放", "why": "任务书禁跑；只核了证据文件与 runner.py sha"}
+  ],
+  "reviewer_notes": "全程只读，未改主树；未跑 run-exam.py / runner-mutate.py / runner-harness.py / probe-kreal.py（后者会写 PROBE-KREAL.txt）。",
+  "summary": "第 1 轮三条 blocking 全部真实修复：B1 标题已限定为「8 节点图第一次」并正确列出 e2e-2005 / e2e3 两次 7 节点 pass（且承认 e2e3 是开发图）；B2 账本（325 行）与 AGENTS.md 改动真实存在，ledger-check / ledger-audit / agents-budget / cite-check 全绿且措辞未夸大；B3 图内矛盾的披露准确（既有矛盾、由本次固化、assert 不受机器约束）。返工未引入新的不实声称，也未动技术面。"
+}

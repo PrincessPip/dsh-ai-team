@@ -1,0 +1,88 @@
+{
+  "verdict": "pass",
+  "confidence": 0.87,
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "Source code: %USERPROFILE%/.dsh/scripts/cdp/claude-egress-check.ps1:249 assigns 'ready (DEGRADED: bind failed, this run goes over TUN)...' to $result.action; :272 prints '[action]    {0}' -f $result.action; the [source] strings at :261 ('unbound -- bind failed, fell back to TUN'), :263 and :267 do not contain DEGRADED. Documents: Grep DEGRADED in ai-team/AGENTS.md hits only :14-15 ('DEGRADED 字样实际打在 [action] 行', citing :249/:272/:261/:263/:267, all matching the source). Grep DEGRADED in ~/.dsh/AGENTS.md hits only :102 ('DEGRADED 字样在 [action] 行'). Grep '[source]' in ~/.dsh/AGENTS.md returns only :101, which is the correct statement that the [source] line shows 'unbound -- bind failed...'. Grep 'source.{0,20}(标|DEGRAD)' in ai-team/AGENTS.md returns 0 old-wording hits. Two independent locations agree with the source, and the counter-search came back clean."
+    },
+    {
+      "id": "C2",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "ai-team/AGENTS.md:98-101 has four file-map rows: scripts/review-backfill.ps1, scripts/review-index.ps1, scripts/selfcheck.workflow.mjs and decisions/LESSONS.md. A Glob for those four paths under ai-team/ returned all 4. The file-map text and the files on disk are two independent locations, and they agree."
+    },
+    {
+      "id": "C3",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "%USERPROFILE%/.dsh/profiles/web/cordis.patch.yml:3189 '- id: subagent-model-selection-settings', :3191 'config:', :3192 'enabled: true', :3193 'allowedModels:'. The list items run :3194-3223; the last two items are :3222 '      - provider: openrouter' (6 spaces) and :3223 '        model: anthropic/claude-sonnet-5.5' (8 spaces), the same indentation as :3218-3221. Neighbouring items anthropic/claude-haiku-4.5 (:3219) and anthropic/claude-haiku-5.5 (:3221) are still there. The next segment, '- id: hmr' at :3224, is at top level, so the list closes properly. The worker's dsh_doctor output (0 problems / 175 plugin rows) is worker-side evidence that I could not reproduce. It does not affect this criterion, which only checks whether the lines are in the source. Whether the allowlist actually takes effect is unverified (it is a session-level snapshot)."
+    },
+    {
+      "id": "C4",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "Grep 'P1 契约校准|校准实测剩一半|唯一还没被真实套过|P2：`?workflow|⬜' in ai-team/AGENTS.md returned 0 hits. ① The header :8 now reads 'P0 / P1 / P2 全过，下一步 P3 待伙伴决定'. ② :111 '✅ P1：契约校准（已完成）' and :115 '✅ 三类门槛已全部被真实交付套过：SAMPLING · MTIME · WARN'. :116 only records that the old to-do has expired, so it is not an unfinished item. This agrees with decisions/INDEX.md:14-15/:18/:30: MTIME rework→pass, SAMPLING rework (it was applied), WARN pass. ③ To-do 5 is now '✅ P2 已收工… 下一步 P3', which agrees with INDEX.md:31 P2-SELFCHECK pass 0.85 and with ledger line 46 (LOG pass 0.85). No completion claim contradicts the actual verdicts."
+    },
+    {
+      "id": "C5",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "Grep 'ssh |-D 1080|-L |1080|ai-team-vps' in ~/.dsh/AGENTS.md finds only one manual command, at :203: 'ssh -i ... -N -D 1080 -L 1081:127.0.0.1:8888 root@<VPS-IP>'. :204 is the warning sentence '只有 -D 1080 不够', not a command. :195 is prose ('ssh -L 1081'). No tunnel command with only -D is left. A second, independent location agrees: claude-egress-check.ps1:238 has the recovery command 'ssh ... -N -D 1080 -L ${HttpPort}:127.0.0.1:8888'."
+    },
+    {
+      "id": "C6",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "decisions/INDEX.md:35 'verdicts: **21** rounds' and :36 'delivery units: **12**; passed on round 1: **6/12**'. decisions/LESSONS.md:3 '21 轮 / 12 个交付单元 / 首轮通过 6/12 / 17 条 blocking' agrees with INDEX.md:35-38 (blocking total 17), and :4 declares '一律以 INDEX.md 的现值为准'. :5 '全 21 轮' is also consistent. Grep '19 轮' returns 0. The only '19' left is :62 ('19 个 .json'), which is a historical account of the SELFCHECK round, not a header statistic."
+    },
+    {
+      "id": "C7",
+      "type": "judgment",
+      "status": "pass",
+      "claimed_strength": "E1",
+      "strength_met": true,
+      "evidence": "[判断类] The worker's answers to all three questions in DELIVERY §五 (1/2/5) can be checked against my own findings, and I add one point. Q1: LEDGER_OK is not evidence. The ledger's 'decisions/' directory token and the 'AGENTS.md' filename token cover most of the changes. The audit is layered: mtime → token match → 'recorded that day'. It cannot answer 'what changed'. Q2: this is a structural gap, and it is worse than DELIVERY describes. I read scripts/ledger-external.txt:13-14 and Glob confirms %USERPROFILE%/.dsh/cordis.patch.yml exists. The '~/.dsh/cordis.patch.yml' in the external list is a different file from the profiles/web/cordis.patch.yml that was actually changed this round. The list reads as if 'the patch file is covered', but the profile patch that holds allowedModels has never been audited. ~/.dsh/AGENTS.md is not covered either. Q3: Grep can only show that literal strings are absent. It misses synonyms, rephrasings and full-width/half-width punctuation (e.g. the C4 'P1：' full-width colon). That is why I added a broad regex 'source.{0,20}(标|DEGRAD)' plus a reverse check that DEGRADED appears only on the correct line, but semantically equivalent rewordings can still slip through."
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "In scripts/ledger-external.txt:14, '~/.dsh/cordis.patch.yml' is not the profiles/web/cordis.patch.yml changed this round (both files exist). The list misleadingly reads as 'the patch is covered'. Next round (it hits #2), either add ~/.dsh/profiles/web/cordis.patch.yml and ~/.dsh/AGENTS.md, or add a comment to the list saying the profile patch is not covered."
+    },
+    {
+      "id": "N2",
+      "what": "ai-team/AGENTS.md:117, to-do 2, still says 'mtime 对账只扫工程根目录'. Since MTIME v3 it also scans ~/.dsh/scripts and ~/.dsh/cordis.patch.yml (line 95 of the same file and ledger-external.txt). The wording is stale and inconsistent within the file."
+    },
+    {
+      "id": "N3",
+      "what": "decisions/LESSONS.md:3-4 writes out 21/12/6/12/17 and then says '本文件不复述可变的统计'. The self-description contradicts what the line just did. Either drop the numbers or change it to 'quoted values are a snapshot; INDEX wins'."
+    },
+    {
+      "id": "N4",
+      "what": "The manual command at ~/.dsh/AGENTS.md:203 has no -b physical-NIC binding, so copying it starts a tunnel that goes over TUN (the known 20-30 minute silent drop). The doc only says -Start is 'recommended'. Add '手工命令不绑 -b，会走 TUN' after the command."
+    },
+    {
+      "id": "N5",
+      "what": "In ai-team/AGENTS.md's 'verified platform facts' table, the 'subagent model allowlist' row still lists only haiku-4.5/opus-5.5/fable-5.1/haiku-5.5 and does not include sonnet-5.5, which was added this round. It is consistent with to-do 4 but not updated."
+    }
+  ],
+  "rework_brief": "",
+  "escalate_question": "",
+  "reviewer_notes": "I opened all of these with Read/Grep/Glob myself: REVIEW-CONTRACT.md, TASK.md, DELIVERY.md, ai-team/AGENTS.md (:105-119 plus Grep), ~/.dsh/AGENTS.md (Grep :7/:99-104/:186-204/:280/:341-343), claude-egress-check.ps1:230-276, profiles/web/cordis.patch.yml:3180-3233, decisions/INDEX.md (full), LESSONS.md (Grep), ledger-external.txt, ledger.md (Grep), and the two TUNNEL files (Grep). I ran no shell commands. I could not verify the worker's dsh_doctor output, the mtime audit output, or whether sonnet-5.5 actually takes effect in a new session. All three are worker-side evidence and none was used as grounds for a pass."
+}

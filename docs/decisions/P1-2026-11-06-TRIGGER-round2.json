@@ -1,0 +1,25 @@
+{
+  "verdict": "escalate",
+  "confidence": 0.8,
+  "criteria": [
+    {"id": "C1", "status": "pass", "evidence": "TRIGGER-POLICY.md 含：三档 :19-57，六条清单 :61-70，两条硬规矩 :74-83，抽检 :94-111，通道表 :85-90。内容与原始需求六点无冲突。"},
+    {"id": "C2", "status": "pass", "evidence": "TRIGGER-POLICY.md:25 免检为「只读，或不改任何文件」，:26 留存为「任何改文件的操作」，:27 送审为清单命中，:29-34 为「取最高档」。以契约错别字为例：改文件，所以不属免检；命中 #2，所以取最高档，落入送审，唯一。遗留的模糊点见 N1、N2，都不构成两档互套。"},
+    {"id": "C3", "status": "pass", "evidence": "REVIEW-CONTRACT.md:12-18 的 mandatory 行是不需额外动作，只判交付质量。sampling 行是按账本行抽，要额外评审档位诚实，并读 decisions/self/ledger.md，读不到记 unverified。这与 TRIGGER-POLICY.md:102-109 一致，两个值的行为差异有明确说明。"},
+    {"id": "C4", "status": "fail", "evidence": "AGENTS.md:9 仍写「每 5 个留存抽 1 个」。TRIGGER-POLICY.md:96 已明确改为「每 5 个账本行」，并写明原来只抽留存档有洞。「跑 3 个真实任务」的旧待办已无残留（grep 无命中，PLAN.md:128 已重写）。但 AGENTS.md:9 与 AGENTS.md:75 都没有提到账本，抽检规则没有同步到顶部状态。AGENTS.md:88 仍写「触发策略 v1.0」，而策略已是 v1.1。"},
+    {"id": "C5", "status": "pass", "evidence": "TRIGGER-POLICY.md:89 写 subagent_claude_code 用于工作目录之内。:90 写工作目录之外用 claude -p，并带 --allowedTools Read,Grep,Glob，可读全盘。全文没有「subagent 可读全盘」的说法。"},
+    {"id": "C6", "status": "pass", "evidence": "找到可钻的空子：① 整条漏记账本。抽检只从账本行里抽（TRIGGER-POLICY.md:96），没有行就没有样本，DELIVERY §四.2 也承认。② 拆分规避。把一个 ≥3 文件的改动拆成多行，每行 ≤2 个文件，可躲开 :99 的优先抽样条件，也躲开 #3。③ #5「修完一个真 bug」（:69）由工人判断「真」，没有客观标准。④ 自判档位写在自己的账本里，没有外部校验。最小修补：抽检时验收官用文件 mtime 扫描 ai-team 目录，与账本日期和文件列做差，没记账的改动按 blocking 处理。同时把 #5 改成「凡因验收失败或用户报错而修改」的客观表述。"},
+    {"id": "C7", "status": "pass", "evidence": "B1 已修好。免检判据全部是客观的，TRIGGER-POLICY.md:25 不再有「小改」「错别字」「代价 < 修复成本」。:29-34 有冲突裁决，错别字案例可唯一落档。B2 已修好。账本 decisions/self/ledger.md 存在，首行已写。:38 要求任何改文件的操作都记一行，:47 要求免检也记，:96 的抽检池为账本行，覆盖免检。这不是加一句话了事，主观判据已被删除。"}
+  ],
+  "blocking": [
+    {"id": "B1", "what": "AGENTS.md:9 仍写「每 5 个留存抽 1 个」，与 TRIGGER-POLICY.md:96 的「每 5 个账本行」相反。", "why": "违反 C4（三处同步）。AGENTS.md 是每个新会话读的项目记忆。它保留旧口径，等于把上一轮 B2 的洞（抽检只抽留存、免检不被抽）在记忆层重新打开。这正是策略 #3 要拦的「一个事实没同步到 ≥2 个文件」。", "evidence": "AGENTS.md:9 对照 TRIGGER-POLICY.md:96。DELIVERY 的「6 处」改动里没有 AGENTS.md，账本第一行却把 AGENTS.md 列为已改文件。"}
+  ],
+  "nonblocking": [
+    {"id": "N1", "what": "硬规矩 2「验不了就转伙伴」与送审 #1「不可逆操作必跑」可能同时命中，例如一个不可逆且 Claude 验不了的操作。「取最高档」没有说明它的归属。"},
+    {"id": "N2", "what": "AGENTS.md:88 写「触发策略 v1.0」，实际已是 v1.1。AGENTS.md:75 的文件地图也没提账本 decisions/self/ledger.md，也没在文件地图补上 decisions/self/。"},
+    {"id": "N3", "what": "「工人先把活判成留存/免检」这一步，本身没有规定在改文件之前还是之后记账。建议要求先记账再动手。"},
+    {"id": "N4", "what": "TRIGGER-POLICY.md:25 的免检含「跑只读命令」，但只读命令也可能动服务。应在免检定义里写明「不触发清单 #1」。"}
+  ],
+  "rework_brief": "按契约 §六，这是第 2 轮 rework，自动升级为 escalate。代码层的修法很小：① 把 AGENTS.md:9 的「每 5 个留存抽 1 个」改成「每 5 个账本行抽 1 个（含免检）」；② AGENTS.md:88 的 v1.0 改成 v1.1；③ AGENTS.md:75 的文件地图加一行 decisions/self/ledger.md。验证命令：在 ai-team 目录下 grep -n \"留存抽\\|v1.0\" AGENTS.md 应无命中，grep -n \"账本\" AGENTS.md 应 ≥2 处命中。",
+  "escalate_question": "按 §六，两轮 rework 自动升级，要伙伴定：A) 直接放行，由工人当场补完上面 3 处小修，再跑 grep 自证，不再送审。后果是省一轮，但 B1 修复没有第三方复核。B) 再送审一轮，只验 AGENTS.md 三处。后果是多花一次验收，但闭环完整。我建议 A，因为 B1 是纯文本同步，grep 即可复现。",
+  "reviewer_notes": "我只读了 TRIGGER-POLICY.md、REVIEW-CONTRACT.md、AGENTS.md、PLAN.md 的相关行、ledger.md 和 DELIVERY.md，没有运行态验证，也没有读取 decisions/P1-...-raw.txt。DELIVERY 自己承认没读回的 PLAN.md:128 和 REVIEW-CONTRACT.md §零，我已读回确认无误。mtime 扫描的建议没有实测，只是假设文件系统时间戳可用。"
+}

@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "plan_id": "plan-b1-parallel-abort",
+  "budget": { "max_calls": 8 },
+  "nodes": [
+    {
+      "id": "s1",
+      "kind": "scout",
+      "do": "侦察 1：会失败，且 on_fail.then=abort。",
+      "after": [],
+      "out": ["facts", "summary"],
+      "accept": [{ "type": "assert", "rule": "facts 非空" }],
+      "on_fail": { "retry": 0, "then": "abort" }
+    },
+    {
+      "id": "s2",
+      "kind": "scout",
+      "do": "侦察 2：本来会成功。",
+      "after": [],
+      "out": ["facts", "summary"],
+      "accept": [{ "type": "assert", "rule": "facts 非空" }],
+      "on_fail": { "retry": 0, "then": "replan" }
+    }
+  ]
+}

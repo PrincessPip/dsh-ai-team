@@ -1,0 +1,24 @@
+{
+  "verdict": "pass",
+  "confidence": 0.88,
+  "criteria": [
+    {"id": "C1", "status": "pass", "evidence": "claude-egress-check.ps1:185 $wantSrc = BindIp or Get-PhysicalSourceIp (dynamic, read from Get-NetRoute/Get-NetIPAddress at :100-107). New-TunnelArgs adds '-b' at :128. grep for <LAN-IP> in the script: not hardcoded (it appears only in DELIVERY)."},
+    {"id": "C2", "status": "pass", "evidence": "Excluded at both steps. Route NextHop is filtered with notmatch '^198\\.(18|19)\\.' (:101). Interface address is filtered with '^(169\\.254\\.|198\\.(18|19)\\.)' (:105). That covers <TUN-SUBNET>."},
+    {"id": "C3", "status": "pass", "evidence": "Get-PhysicalSourceIp returns $null on failure (:110). With an empty SourceIp, New-TunnelArgs omits -b. A failed bound start retries unbound (:192-194) and marks degraded. Only if the unbound attempt also fails does it set code 6, which is the old behaviour when the tunnel cannot start."},
+    {"id": "C4", "status": "pass", "evidence": ":132 -o ServerAliveInterval=15 -o ServerAliveCountMax=3."},
+    {"id": "C5", "status": "pass", "evidence": "Grep [^\\x00-\\x7F] on the script returned 0 matches in my own run. The file is pure ASCII, so it does not need a BOM."},
+    {"id": "C6", "status": "pass", "evidence": "Output at :260-268 has four [source] states: degraded, bound to <ip>, unknown pre-existing tunnel, and unbound via TUN. The JSON output carries sourceIp and degraded."},
+    {"id": "C7", "status": "pass", "evidence": "(1) If the NIC IP changes, the old -b tunnel stops delivering. ServerAlive detects that in about 45 s and ssh exits. The next run sees the port down (code 3), and -Start re-detects the IP. (2) The case where the bind works but the direct path is blocked is handled at :192-199. The bound attempt fails, the script falls back to TUN, and it prints a DEGRADED line that says 'address not assignable, or the direct path to the VPS is unreachable'. The operator can tell 'running unbound' from 'running bound', but not which of the two causes made the bind fail (known limit N1, which I accept)."}
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {"id": "N1", "what": "Last round's blocking item is fixed. $startedHere (:177) is set only when this run actually starts the tunnel (:191, :198). The 2b gate at :212 uses -not $startedHere, so a pre-existing bound tunnel is inspected even with -Start. Get-ExistingTunnelSource's regex 'L\\s+1081' matches the command line produced by New-TunnelArgs (the '-L','1081:127.0.0.1:8888' elements become '-L 1081:...'), and '-b\\s+<ip>' extracts the bind address. On reading, the code gives the output DELIVERY claims for run 2. I did not execute the script."},
+    {"id": "N2", "what": "The regex 'L\\s+1081' also matches '-L 10810...'. This is harmless in practice."},
+    {"id": "N3", "what": "If local port 1080 (-D) is occupied, ExitOnForwardFailure kills both the bound and the unbound attempt. The result is code 6 with the message 'cannot reach the VPS or tinyproxy not running', which misdirects the operator. This is pre-existing and not caused by this change."},
+    {"id": "N4", "what": "Direct-connection stability is still unproven. The longest direct window is about 13 minutes, against 20-30 minute drops on TUN. DELIVERY states this honestly. The claim 'more stable than TUN' remains a hypothesis."},
+    {"id": "N5", "what": "A pre-existing tunnel started without -b is reported as 'unknown', not 'unbound (TUN)'. That is the conservative choice and is not wrong."}
+  ],
+  "rework_brief": "",
+  "escalate_question": "",
+  "reviewer_notes": "I could not run the script, so the DELIVERY outputs (runs 1-5, syntax errors = 0) are only checked against the code logic and are not reproduced by me. C5 is the only criterion I checked directly, with Grep. I assume the Windows PowerShell 5.1 behaviour of Get-NetRoute, Get-CimInstance and $Matches is as the code expects."
+}

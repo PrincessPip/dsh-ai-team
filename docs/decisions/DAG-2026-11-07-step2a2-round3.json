@@ -1,0 +1,60 @@
+{
+  "_provenance": {
+    "note": "验收官返回体的逐字副本。除本 _provenance 字段外未改动任何字段。",
+    "unit": "DAG-2026-11-07-step2a2（合并单元：Step 2 · A2-min + ⑤ 三条尾巴）",
+    "round": 3,
+    "scope": "只审第 2 轮那两条 blocking 的修法（C7 探针实验 / C8 四格重跑 / N4 头部数字）",
+    "channel": "subagent_claude_code（SDK + dontAsk，只有 Read/Grep/Glob）",
+    "date": "2026-11-07",
+    "egress": "claude-egress-check.ps1 → READY",
+    "outcome": "escalate / 0.68 / 1 blocking(C7) / 1 nonblocking(N5)",
+    "worker_response": "C7 判决**接受**：我把探针文件删了、也没落盘 stdout，剩下的只有我自己的叙述 —— 对无 shell 的审查通道确实结构性不可核。C8 判 pass（验收官独立打开了 RUN.json / NODES/w_try.json / NODES/w_bad.json 逐字段核对，全部对得上）。N4 已解决。N5（基数 285→528 vs 546）是我的疏漏：应写清这两个数是不同时间的值。",
+    "human_decision": "伙伴 2026-11-07 04:1x 拍板：**本轮到此收工**，C7 的第 4 轮留到下一个会话做。三条备选路线记在 HANDOVER §二，推荐 ③（用 claude -p CLI 通道让验收官自己跑）。",
+    "open_item": "C7（ledger-audit 的 .py/.mjs 扩展真的生效）现在只有 D3 一维 + 我的叙述，**不够 E3**。整单元因此停在 `escalate`，未拿到 pass。"
+  },
+  "verdict": "escalate",
+  "confidence": 0.68,
+  "criteria": [
+    {
+      "id": "C7",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "ledger-audit.ps1:140/146/164 的 $auditExt 含 *.py/*.mjs（未变，第2轮已核过）。本轮新增的『探针实验』——scripts/_audit-probe.py 现已不存在（Glob 0 命中），盘上没有任何文件记录过它跑出的 stdout/exit code；提到 547/546 的只有两处，DELIVERY §二⑧/§三 与 decisions/self/ledger.md:91，两处都是同一作者的叙述，不是独立产物。我能验证的只是：ledger-audit.ps1:211『never mentioned in ledger』字面文本、:239-248『[suspect] none / RESULT=LEDGER_OK / exit 0』与『RESULT=LEDGER_SUSPECT / exit 1』的控制流，与叙述里的输出格式一致——但这只证明『代码写得出这种输出』，不证明『这次真的跑出过』。D1（计数翻转）与反证（删掉回 none）我一条都复核不了，只剩 D3（代码格式一致）一维，够不到 E3 的『≥2 维+反证』门槛。"
+    },
+    {
+      "id": "C8",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "RESULTS.md 持久化了四格与第3格完整 issue 原文；selfcheck.workflow.mjs:44 的『新判据』文本与 RESULTS.md §三·B 逐字相同（Grep 核对）。更关键：hit×新 这 3 条 issue 里引用的具体字段，我逐一打开真实文件核对均对得上——runs/_harness/retrythenok/RUN.json:24-29（attempts=2, status=ok）、NODES/w_try.json:85/88-90/109（attempts[0].ok=false、overclaim 指向 notes.md、attempts[1].ok=true）、runs/_harness/retry-oos/NODES/w_bad.json（attempt_count=1、harm=[OFF-LIMITS.md]、status=fail）全部逐字匹配，不是编出来的数字。D2（四格计数）+ D3（issue 原文，经我独立核实非虚构）+ 反证（clean×新=0 与 hit×旧=0 均落在 RESULTS.md 里）。唯一不能核的是『四次调用真的触发了 LLM 判据』这件事本身——这点与第2轮里 K5/N3 被接受的方式同类（控制流+落盘产物一致，而非亲手重跑），按既有口径应判 pass。"
+    },
+    {
+      "id": "N4",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "DELIVERY-step2a2.md:12 现为『断言台 76 → 170，变异台 5 → 13』，与 §二①(170)、§二⑥(13/13) 一致，第2轮的 N4 已解决，不再是问题。"
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "what": "C7 仍没有达到『可执行类』要求的 E3——不是第2轮那种『自认降级』，而是本轮补的『探针实验』证据对 Read/Grep/Glob 的验收官来说整条不可核：探针文件已删、无任何落盘 transcript，547/546/suspect/exit code 全部只存在于工人自己写的两段叙述里",
+      "why": "违反 REVIEW-CONTRACT §二『你的证据必须是你自己跑出来的』与 Rule 3『声明与证据是否匹配、够不够该档门槛』——我能独立核实的只有『代码格式与叙述一致』这一维（D3），够不到 E3 的『≥2 维 + 反证』。这是第2轮同一条（C7）blocking 在第3轮仍未真正解决，只是换了一套同样不可验证的新叙述；按 §六『第 2 轮仍 rework：自动升级为 escalate』，这已是本单元第二个连续的 rework 轮次",
+      "evidence": "Glob 'scripts/_audit-probe.py' → 0 命中；Grep '547|546|_audit-probe|LEDGER_SUSPECT|LEDGER_OK' 全仓库，命中的全是 DELIVERY-step2a2.md 与 decisions/self/ledger.md:91 的叙述文本，没有任何独立 log/transcript 文件；decisions/self/self-20261106-01.md 与 self-20261107-01.md 均是旧轮次材料，与本次探针无关"
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N5",
+      "what": "⑤-1 原先报的扫描基数是『285→528』，本轮 C7 探针报的无探针基数是『546』——相差 18，DELIVERY 没有解释这个漂移（可能只是两轮之间新增文件导致的自然增长），但因为我没有 shell 核不了真实当前文件数，这条只能存疑，不升级为 blocking"
+    }
+  ],
+  "rework_brief": "",
+  "escalate_question": "C7（ledger-audit.ps1 的 .py/.mjs 审计扩展确实生效）这条『可执行类』结论，经过两轮都卷在『怎么证明动态执行的结果』上——第2轮是工人自认降级被打回，第3轮补的探针实验因为探针文件已删、且全程没有落盘 transcript，对只有 Read/Grep/Glob 的验收官来说仍然整条不可复核。请人类决定走哪条路：① 要求工人在第4轮里把探针两次运行的完整 stdout（含 exit code）存成一个不会被删除的 log 文件再提交，继续按 E3 门槛验收（多一轮，但保住契约『不听工人说』的原则）；② 认定『探针类的一次性动态实验』对这个审查通道（无 shell 的 subagent）结构性不可验证，为这一类证据单独放宽到『工人侧证据，验收官只核控制流一致性即可视为 E2 封顶』，相当于事后认可工人第2轮的自降；③ 直接由有 shell 权限的人（或另一条有执行权限的审查通道）去真跑一次这个探针，把结果作为独立证物补进来，而不指望文本审查解决。三者后果：①维持标准但拖进度；②等于修改契约的隐含前提，以后类似『删掉证据再声称 E3』的模式会被默许；③成本最低但要换审查主体。",
+  "reviewer_notes": "C8 的判断基于『我独立打开并核对了 RUN.json / NODES/w_try.json / NODES/w_bad.json 的具体字段，与 RESULTS.md 引用逐字一致』，这是我自己跑出来的核验，不是信了工人的话；但『四次 selfcheck.workflow.mjs 调用真的发生过且算出 0/0/1/0』这件事本身仍只能信工人，与第2轮 K5/N3 被接受的边界一致，如实声明。C7 则反过来：我能核的只有静态代码（$auditExt、消息格式、exit code 分支），动态部分（计数翻转、点名路径、删掉回 none）没有任何盘上痕迹可核，我判定它仍不够 E3。528→546/547 的基数漂移没能查实，按『缺口存疑不升级』处理。"
+}

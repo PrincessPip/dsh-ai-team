@@ -1,0 +1,97 @@
+{
+  "verdict": "escalate",
+  "confidence": 0.99,
+  "readonly_enforcement": "snapshot_only",
+  "independent_evidence_root": "%USERPROFILE%/AppData/Local/Temp/astra-round2-independent-pzdgql8y",
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立运行 verify-copy.py：69678文件，drift=0，nonIndependentFiles=0；网络拒绝及本地恢复正例通过。PRODUCTION-PROTECTION.json：72094保护项无变化、无新增。FINAL-INDEPENDENT-CHECKS.json确认复制字节与首轮映射一致。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "规定的12项测试通过；DYNAMIC-EXCEPTIONS-INDEPENDENT.json确认probe/cache均按0→1→0完成正例、漂移拒绝和恢复。但独立cross-scope-provenance.py成功执行跨包入口，详见B1及CROSS-SCOPE-PROVENANCE.json。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立八阶段均取得真实Web页面、boot和7项资源。已读取父级17-BROWSER.json、18-RUNNER.json并查看19-browser.png，支持首页壳渲染。构建路线按E1判断继承首轮；2441个release文件及复制字节与首轮一致，SHA核查见HASH-INHERITANCE-AND-GATES.json。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立full.py：实际Web的主preset、非目标Basic和桌宠行为通过；缺tokenMeter反例exit=1、NATIVE_SERVICE_CONFLICT，恢复behavior后exit=0。当前probe.mjs SHA与首轮相同，详见FINAL-INDEPENDENT-CHECKS.json及HASH-INHERITANCE-AND-GATES.json。"
+    },
+    {
+      "id": "C5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立none/Zstd各完成seed/cold/bad；cold各为tools=2、nativeCalls=0，ordinary/native各执行一次新工具；坏日志拒绝且前后SHA一致。FINAL-INDEPENDENT-CHECKS.json记录完整结果；未知完整性仍仅为Web resume-audit事件注入。"
+    },
+    {
+      "id": "C6",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "INDEPENDENT-RUN.json：full.py exit=0、耗时168秒、scriptDrift=[]；8个不同Web PID、各阶段符合预期且无超时。原5项反例及恢复通过；验证器另测漂移exit=1/pass_=false，恢复exit=0。最终自有Node进程为空、13380/13381空闲；Web exit=1是探针完成后的预定清理。新增C2失败单列，不由收尾成功覆盖。"
+    },
+    {
+      "id": "C7",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立cite-check.py --strict：2文件、3引用、OK=3、exit=0，见CITE-CHECK.txt。已核模拟fetch代码、实际网络拒绝和两份交付的范围声明；首轮失败原件及当前反例均保留，未提升为生产、迁移或长期质量结论。"
+    },
+    {
+      "id": "C8",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "仅判机制及已完成证据：独立postcheck.check的11个正反例符合预期。最终快照观测complete=true、added/deleted/modified均为空；2645冻结输入、2638原源无漂移。见HASH-INHERITANCE-AND-GATES.json及FINAL-INDEPENDENT-CHECKS.json；本轮正式after仍须父级退出后收取。"
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "claim": "核心来源绑定仍可经绝对目录入口绕过：漂移manifest能将核心请求导向已登记的其他包。",
+      "what": "首轮未登记入口漏洞已被挡住，但同类C2缺口尚未闭合。",
+      "why": "守卫加载后，绝对目录请求未触发解析前核心manifest复核；最终落点位于非核心包时，只验证文件SHA，无法证明它属于请求的核心包。",
+      "evidence": "独立执行cross-scope-provenance.py：基线exit=0/stdout=CORE_BASELINE function；在进程内将dsh-llm/package.json的main改为../../ms/index.js，再require核心包绝对目录，exit=0/stdout=CROSS_SCOPE_EXECUTED function 2s；恢复后exit=0/stdout=CORE_RESTORED function，manifestRestored=true。目标ms/index.js原本已登记，未修改映射或目标字节。完整命令及输出在CROSS-SCOPE-PROVENANCE.json，guard SHA=f893b1f4b07396a946e5253c4b05859a9ad91304dd7a85eadca2c7046e376a45。代码依据：tasks/ASTRA-NATIVE-WEB-ASSEMBLY-2026-11-15/guard.mjs:46「if(packageIndex>=0)verifyCoreManifest(coreRoots[packageIndex]);」及:52「const p=coreOf(f);if(p)verifyCoreManifest(p);」。"
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "浏览器证据限首页壳；原生历史完整UI、禁用插件兼容、真实历史迁移和长期质量仍未验。"
+    },
+    {
+      "id": "N2",
+      "what": "现有closeout返回stagePass=true仅覆盖既有测试集；本次额外反例单独归档，不能据该字段放行C2。"
+    }
+  ],
+  "rework_brief": "仅修装配层：在next/require.resolve前校验绝对及相对目录请求涉及的核心manifest，并绑定核心请求与最终所属包。加入preload后main指向已登记跨包文件的反例，要求执行前非零退出且无CROSS_SCOPE_EXECUTED；验证恢复后重新冻结运行八阶段、来源和清理检查，不修改过审release。",
+  "escalate_red_line": [
+    4
+  ],
+  "escalate_question": "[红线4] 按契约§六，第二轮同类C2问题仍未闭合，升级处理：A，继续按原C2要求定向修复并进行下一轮独立验收；B，停止本次交付并保留未通过状态。两者均不构成生产放行。",
+  "reviewer_notes": "未修改送审工程，全部复制、运行和故障注入均在独立TEMP目录，反例manifest已逐字恢复。独立证据文件路径均相对于independent_evidence_root，父级证据路径相对于送审工程。未预签本轮正式after，父级仍须执行实际postcheck并核完整快照、输入绑定与清理回执。"
+}

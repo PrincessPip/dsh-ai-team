@@ -1,0 +1,109 @@
+{
+  "verdict": "rework",
+  "confidence": 0.9,
+  "criteria": [
+    {
+      "id": "C1",
+      "status": "pass",
+      "evidence": "命令 node -e \"import('./src/index.js').then(m=>...)\" exit=0，导出 = [Config, DEFAULTS, apply, inject, name]；name === 'ai-team'（src/index.js:25）；inject = ['tools']（src/index.js:28）；Config / apply 均为 function。补强：用假 ctx{tools.register} 调 apply(ctx,{}) → REGISTERED=[\"ai_team_init\",\"ai_team_review\",\"ai_team_plan\",\"ai_team_gate\",\"ai_team_run\"]，COUNT=5；Config({codexSandbox:'nope'}) 被 Schema 拒绝（$.codexSandbox expected \"read-only\"|\"workspace-write\"|\"danger-full-access\"）。"
+    },
+    {
+      "id": "C2",
+      "status": "pass",
+      "evidence": "逐个 dump 五个 defineTool 产物（node --input-type=module，exit=0；defineTool 会把参数简写提升成 JSON Schema，故读 parameters.properties + parameters.required），与 docs/CONTRACT.md §3.1–§3.5 的参数表**逐个**比对（不是抽样）：\n- ai_team_init：target:string 可选 / force:boolean 可选（2 参，契约表 2 条，必填一致）\n- ai_team_review：brief:string **required** / round:string / backend:string enum[codex,openai] / model:string / dryRun:boolean（5 参，必填=契约的「brief 是」）\n- ai_team_plan：brief:string **required** / outDir / model / dryRun（4 参）\n- ai_team_gate：graph:string **required**（1 参）\n- ai_team_run：graph:string **required** / engine:string enum[headless,fixture,codex] / runId / fixtureDir（4 参）\n多参数=0，少参数=0，类型/必填全对。五个 output.schema 均 type='object' 且 additionalProperties=false 且 render 为 function；description 长度 136–388 字符（非空）。"
+    },
+    {
+      "id": "C3",
+      "status": "pass",
+      "evidence": "node src/lib/verdict.test.mjs → 末行 `PASS 23 / 23`，exit=0（含「解析 114 份 / 坏 JSON 0 份 / 共 116 份」「核过 38 份历史 rework」）。点名三条的覆盖位置：src/lib/verdict.test.mjs:144「pass 且 blocking 非空 → 强制 rework」、:99/:109/:115「无 verdict → escalate」、:166「evidence 为空 → E0 + 追加证据缺失 blocking」。变异验证（在 %TEMP% 副本上做，仓库零改动）：M1 关掉 pass+blocking→rework、M2 关掉 evidence→E0、M3 让无 verdict 返回 pass、M4 让 assertVerdict 不再拒第四态 —— 四次运行全部 exit=1 且失败用例名对得上（如 M4 报 `Missing expected exception: 应拒绝 {\"verdict\":\"fail\",...}`）；还原后 PASS 21/21（副本无 docs/decisions，故少 2 例）。断言机不是空转。"
+    },
+    {
+      "id": "C4",
+      "status": "pass",
+      "evidence": "先备份 tasks/DAG-2026-11-06/fixtures/sandbox（5 文件，记录 SHA256 前 16 位），跑 BRIEF 原文命令 `python engine/runner.py tasks/DAG-2026-11-06/fixtures/graphs/g3.json --engine fixture --fixture-dir tasks/DAG-2026-11-06/fixtures/scenarios/honest`：输出 `[runner] gate OK (0 err / 1 warn)` / `waves 3 波：s_recon | w_write | k_check` / 三节点全 `ok attempt=1` / `[runner] result PASS`，**exit=0**。证据包 runs/run-20261124-032716/：FAKE 存在（内容 `engine=fixture；本证据包不能当交付证据。`）、RUN.json result=pass、GATE.json ok=true errCount=0 warnCount=1 waveCount=3、NODES/ 3 份。跑后 sandbox/notes.md 57B→86B（证明它确实写主树、确认 BRIEF 的「不幂等」前提属实），已按备份还原：5 个文件 SHA256 与基线逐一相同，`git status --porcelain` 为空。反证（同一张 g3.json 只换 --fixture-dir）→ scenarios/overclaim：`[w_write] FAIL … overclaim: tasks/DAG-2026-11-06/fixtures/sandbox/notes.md`、`[runner] result FAIL`、**exit=1**，跑完同样还原干净。"
+    },
+    {
+      "id": "C5",
+      "status": "fail",
+      "evidence": "自建正则扫 git ls-files（274 文件，排除 .git/node_modules）+ 另扫整个工作树：真实残留 = **私网 LAN IP `<LAN-IP>`，5 处，全部在已提交（会公开）的文件里**：docs/decisions/LINENO-2026-11-07-round8.json:9、docs/decisions/LINENO-2026-11-07-round9.json:9、docs/decisions/P1-2026-11-06-TUNNEL.json:5、docs/decisions/P1-2026-11-06-TUNNEL-round2.json:5、docs/decisions/P1-2026-11-06-TUNNEL-round4.json:5（原文「绑物理网卡 <LAN-IP>」，同行里 <PROXY-PORT-TUNNEL> / <VPS-IP> 都已替换，只有这个 IP 漏了）。这属 BRIEF 点名的「私网网段」。本仓库自己的 CI 规则就禁止它（.github/workflows/ci.yml:56 正则覆盖 192.168/16），但 --include 只给了 md/js/mjs/py（ci.yml:57），**不扫 .json** —— 所以「零残留」在这类文件上从没被机器守过，reports/REDACTION-REPORT.md 的 10 条规则里也确实没有任何一条针对本机 LAN IP（只有 tun-subnet / local-wan-ip）。其余命中已逐条排除：ci.yml:50/:61/:67 是检测规则本身；127.0.0.1 为通用 loopback；1080/1081 只出现在历史裁决「端口由 1081 改成 <占位符>」的叙述里；token 类（ghp_/gho_/sk-/github_pat_ 严格正则）**0 命中**；<LAN-IP> 是「绑一个不存在的 IP」的示例；runs/ 未被跟踪（.gitignore:8）。"
+    },
+    {
+      "id": "C6",
+      "status": "fail",
+      "evidence": "两处硬伤，都在「依赖怎么拿」这一步：(1) package.json:50 peer 区间 `^0.2.0-rc.2` 与 README §2.2 给的两个来源**都不满足**：npm view @deepseek-ai/dsh-tools dist-tags --json → {\"latest\":\"0.0.1-rc.1\",\"next\":\"0.2.2-rc.5\",\"alpha\":\"0.2.3-alpha.2\"}（README 对 dist-tag 的描述属实），但 node-semver `satisfies('0.2.2-rc.5','^0.2.0-rc.2')===false`、`satisfies('0.2.1-rc.2','^0.2.0-rc.2')===false`，只有 0.2.0-rc.2 满足；而 npm 上**没有 0.2.0 这个版本**（npm view @deepseek-ai/dsh-tools@0.2.0 version → 404，exit=1）。实测解析（用本仓库 package.json 做 npm install --dry-run，exit=0）：会拉 29 个包，含 `@deepseek-ai/dsh-tools 0.2.0-rc.2` —— 与 README 推荐的 next=0.2.2-rc.5 / DSH 自带 0.2.1-rc.2 都不是同一个东西；README §2.2 自带的验收判据「要满足 ^0.2.0-rc.2」会把这两条推荐路线判成不合格（本机 profiles/web/node_modules 下确认没有 dsh-tools，dsh 自带的是 0.2.1-rc.2）。(2) tasks/ 不在 package.json:19-28 的 files 清单里，而 ai_team_run 的默认引擎 fixture 依赖 tasks/DAG-2026-11-06/fixtures/**（src/lib/paths.js:34-37、:162-211）→ 走 registry 安装（README §2.2 方式 A）的用户拿到的是没有夹具的包，README §6.2「一条命令就能跑通全流程」对这种安装方式不成立。"
+    },
+    {
+      "id": "C7",
+      "status": "pass",
+      "evidence": "package.json:14-18 `dsh.bundle.patch = \"./cordis.patch.yml\"`，该文件存在（Test-Path=True）。cordis.patch.yml:2-3 `id: dsh-ai-team` / `name: dsh-ai-team`，与 package.json:2 包名 dsh-ai-team 一致。config 键对账（脚本解析，非人眼）：patch 11 键 = backend/model/codexPath/codexSandbox/openaiBaseUrl/openaiApiKeyEnv/timeoutMs/engineDir/pythonPath/nodePath/outDirName，src/index.js:56-83 的 Config 也是这 11 键 → `in Config not in patch = []`，`in patch not in Config = []`（不多不少）。附：exported name='ai-team' 与 patch name 不同属正常范式（官方 @deepseek-ai/dsh-experimental-tool-agent-team 的导出 name 也是短名 'tool-agent-team'）。"
+    },
+    {
+      "id": "C8",
+      "status": "pass",
+      "evidence": "README.md §6「诚实边界」264-323 行，四条全在且与实测一致：① engine 实战原样、不做跨平台重写（268-271，并指向 PORTING 逐条 file:line）；② fixture 是假 worker、只验流程不验产物（273-296，实测 3 节点全 ok / result PASS 但证据包带 FAKE，FAKE 内容自述「不能当交付证据」）；③ result=pass 只代表流程、verify-product 未随附（298-300，仓库内确实搜不到 verify-product）；④ 验收官仍可能顺从、不承诺 100%（302-305 原文「抬高糊弄成本，但不承诺 100%」）。自夸扫描（完全/100%/开箱即用/无需依赖/彻底/隔离/最强…）命中项**全是否定式的诚实表述**（README.md:36、203、218、304），没有与事实相反的自夸。README 里的数字与行号抽查全对：fixtures 实测 90 文件 / 240.5 KB / 40 场景 / 35 图（README.md:250、274 声称同值）、116 份裁决（README.md:253、260）；manager.py:423-424、:411、runner.py:1998-2003、:2004-2009 四处引用内容与正文说法一致。"
+    },
+    {
+      "id": "C9",
+      "status": "pass",
+      "evidence": "直接执行 ai_team_review({brief:'…', round:'1', dryRun:true})（node --input-type=module，exit=0）：返回 verdict='escalate'、confidence=0、raw=''、enforcement='snapshot_only'，blocking 明写「dry-run：没有调用后端，本结果不是裁决」→ **不是 pass**（src/tools/review.js:194-223，:196 先过 assertVerdict 再返回）。后端不可用（codexPath 指向不存在的可执行文件，不配置真实后端）→ 抛 `无法启动子进程：definitely-not-a-real-codex-xyz（ENOENT）`，工具失败、不产出裁决。未知 backend → defineTool 参数校验直接拒（`invalid arguments: \"backend\" must be one of [\"codex\",\"openai\"]`）。dry-run 产物已清理（.ai-team/ 已删，git status 为空）。"
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "what": "C5 脱敏残留：本机 LAN IP `<LAN-IP>` 出现在 5 个已公开的裁决 JSON 里（属 BRIEF 明列的「私网网段」）",
+      "why": "这些 JSON 在 git 里（会随 GitHub 一起公开），脱敏规则集与 CI 闸门都没覆盖到这一类（规则集没有 LAN IP 规则；CI 私网 IP 规则只扫 md/js/mjs/py，不扫 json），所以「8 类规则零残留」的结论在这一类上不成立。发布前必须清掉，否则等于把作者机器的内网网段写进开源仓库。",
+      "evidence": "docs/decisions/LINENO-2026-11-07-round8.json:9、docs/decisions/LINENO-2026-11-07-round9.json:9、docs/decisions/P1-2026-11-06-TUNNEL.json:5、docs/decisions/P1-2026-11-06-TUNNEL-round2.json:5、docs/decisions/P1-2026-11-06-TUNNEL-round4.json:5（行内原文：\"…→ <VPS-IP>，绑物理网卡 <LAN-IP>\"）。对照：.github/workflows/ci.yml:56 的私网 IP 正则本可命中，但 ci.yml:57 的 --include 只有 *.md/*.js/*.mjs/*.py。复现：git ls-files | 正则 \\b(10\\.|172\\.(1[6-9]|2[0-9]|3[01])|192\\.168)\\.[0-9]{1,3}\\.[0-9]{1,3}\\b 扫全量跟踪文件。"
+    },
+    {
+      "id": "B2",
+      "what": "C6 依赖步骤自相矛盾：peer 区间 `^0.2.0-rc.2` 排除 README 推荐的两个来源（next=0.2.2-rc.5、DSH 自带 0.2.1-rc.2），且 npm 上无 0.2.0 stable，实测会解析到更旧的 0.2.0-rc.2",
+      "why": "README §2.2 是「5 分钟上手」的第一步，也是最容易卡住新用户的一步：照 ① 或 ② 装完，再跑它自带的验收命令（要满足 ^0.2.0-rc.2）会得到「不合格」；而 npm 自动解析又会塞一份 dsh-tools@0.2.0-rc.2 进插件树，与本体 0.2.1-rc.2 并存。这一步不修，C6 无法算「能照做」。",
+      "evidence": "package.json:50 `\"@deepseek-ai/dsh-tools\": \"^0.2.0-rc.2\"`；`npm view @deepseek-ai/dsh-tools dist-tags --json` → {\"latest\":\"0.0.1-rc.1\",\"next\":\"0.2.2-rc.5\",\"alpha\":\"0.2.3-alpha.2\"}；node semver.satisfies：0.2.1-rc.2→false、0.2.2-rc.5→false、0.2.0-rc.2→true；`npm view @deepseek-ai/dsh-tools@0.2.0 version` → 404 exit=1；`npm install --dry-run`（本仓库 package.json）→ `add @deepseek-ai/dsh-tools 0.2.0-rc.2`（连 dsh-agent/dsh-llm/cordis 4.0.5 一起 29 个包）。README.md:54、67-70、93 是这处说法。"
+    },
+    {
+      "id": "B3",
+      "what": "C6 装配缺口：tasks/ 不在 package.json 的 files 清单里，但 fixture 引擎（ai_team_run 的默认引擎）依赖 tasks/DAG-2026-11-06/fixtures/**",
+      "why": "从 registry 安装（README §2.2 方式 A）的用户拿到的包里没有夹具，README §6.2 / §3 承诺的「一条命令跑通全流程、零成本」以及 ai_team_run 的默认行为都不成立；这是「上手步骤走不通」的第二处。修法二选一：把 tasks/DAG-2026-11-06/fixtures 加进 files，或在 README 里写明「夹具只在 git 仓库里」。",
+      "evidence": "package.json:19-28 files = [src, engine, templates, docs, examples, cordis.patch.yml, README.md, LICENSE]（无 tasks）；src/lib/paths.js:34-37 定义 FIXTURES_REL='tasks/DAG-2026-11-06/fixtures' 且 :162-211 fixtureCheck() 以 engineRootOf(config)=包根 为基准找 fake-worker/worker.py 与 scenarios/*/spec.json；src/tools/run.js:158-185 默认 engine='fixture' 并在缺件时 throw。"
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N-A",
+      "what": "场景数写成 45，实际是 40（契约与 README 都写 40）",
+      "evidence": "src/tools/run.js:10、:112「45 个回归场景」、src/lib/paths.js:125「仓库带 45 个」；实测 `(Get-ChildItem tasks/DAG-2026-11-06/fixtures/scenarios -Directory).Count = 40`，docs/CONTRACT.md:240 与 README.md:250 也写 40。"
+    },
+    {
+      "id": "N-B",
+      "what": "docs/PORTING.md §6 把一处**已修好**的 bug 写成「移植前必须先修的 bug」",
+      "evidence": "PORTING.md:325-327、:329、:465 称 engine/fire-chief.py:447 是 `port = port or \"<PROXY-PORT-TUNNEL>\"`；实际 fire-chief.py:447 已是注释「开源适配：推不出本机代理端口时不覆盖…」（:449-450 `if not port: return env`），engine/ 里该占位符只剩 runner.py:1396/1483/1543 三处注释。PORTING §10 清单第 6 项那条 `grep` 判据现在会给出假警报。"
+    },
+    {
+      "id": "N-C",
+      "what": "engine/dag-gate.mjs 文件头给的三个行号引用是错的",
+      "evidence": "engine/dag-gate.mjs:8 称复用「dag.workflow.mjs:545 / :553 / :577」，但那三行是 SCOPE_FROM / writer 命令规则；真正的 `args.graphJson` / `args.dryRun` 在 engine/dag.workflow.mjs:829-841。功能不受影响（它包装整个脚本体），只是引用失真。"
+    },
+    {
+      "id": "N-D",
+      "what": "PORTING.md §1.1 表里 fire-chief 的 `p.kill()` 行号差一行",
+      "evidence": "PORTING.md:55 写 `engine/fire-chief.py:635-646`（Popen + 超时 p.kill()），实际 `p.kill()` 在 fire-chief.py:647（区间 635-646 覆盖不到）。"
+    },
+    {
+      "id": "N-E",
+      "what": "契约 §3.2 的返回块漏了 enforcement 字段（实现多一个键，且是契约正文要求的）",
+      "evidence": "docs/CONTRACT.md:161-170 返回形状只列 verdict/confidence/blocking/findings/outDir/raw；src/tools/review.js:168 另有一个 const 钉死 'snapshot_only' 的 enforcement，且 docs/CONTRACT.md:176/318 明确要求返回里标注执法等级 —— 是文档没同步，不是实现错。"
+    },
+    {
+      "id": "N-F",
+      "what": "代码注释里的历史数字过期：称 116 份裁决中有 3 份坏 JSON，实测 0 份",
+      "evidence": "src/lib/verdict.js:5；实测 `node src/lib/verdict.test.mjs` 输出「解析 114 份 / 坏 JSON 0 份 / 共 116 份」，2 个非三态文件是 docs/decisions/CONSTRAINTS.json 与 docs/decisions/FIRE-CHIEF-2026-11-07-round5-scope.json（verdict 为空串，被用例跳过）。"
+    },
+    {
+      "id": "N-G",
+      "what": "N2 那个「node --check 报 Illegal return statement 是正常」的事实，对外文档没写",
+      "evidence": "实测 `node --check engine/dag.workflow.mjs` → `SyntaxError: Illegal return statement`（:833），`engine/selfcheck.workflow.mjs` 同理（:61），exit=1（正常，它们是交给 workflow 工具的脚本体）。全仓只有 reports/REVIEW-BRIEF.md:69 提到这一点（那是验收任务书，不是对外文档）；docs/CONTRACT.md:374 与 .github/workflows/ci.yml:24 的 `node --check` 都只覆盖 src/，所以不会误报，但对读者仍是个坑。"
+    }
+  ],
+  "reviewer_notes": "核验顺序（按你的要求先自己核、后对照自述）：读 BRIEF 的 9 条判据 → 自己写正则/自己跑命令收集证据 → 之后才去读 README / REDACTION-REPORT / PORTING / CONTRACT 里的结论性描述，并把它们给出的 file:line 反过来核一遍。C5、C8、N3 这三条尤其如此：C5 的扫描规则是我按 BRIEF 列的类别自己写的（不是复用仓库脚本），C8 的 90 文件/240.5 KB/40/35/116 是自己数的，N3 的 130 条引用是我自己抽的。\n\n关于你给的线索：fixture 全链（gate OK 0 err/1 warn → 3 波 → 3 节点 ok → result PASS）与裁决断言机 23/23，我都自己复现了，属实；但「8 类规则 272 文件零残留」在我这套规则下**不成立** —— 5 处 <LAN-IP> 是真实残留，原因是规则集里没有「本机 LAN IP」这一类，加上 CI 的私网 IP 规则不扫 .json。这处差异请你重点复看，它决定 verdict 是 pass 还是 rework。\n\n没核 / 核不了的（如实交代）：① 没有 Linux/macOS 环境，PORTING.md 里跨平台结论只核了「引用行号与文字对得上」，没核「在别的平台上真的会那样失败」；② 没有真调 codex / OpenAI 后端跑一轮真验收（要花订阅额度、且不是只读操作），所以「真后端 + 合规裁决」这条链未验，C9 只验了 dry-run 与后端缺失两条；③ 「装完要新开会话才看得到工具」没做实验（需重启/新会话），只核了 patch 与装配口径的文字；④ 没在干净机器上从零 npm 安装（只做 `npm install --dry-run` 观察解析结果）。\n\n纪律执行情况：C4 跑之前把 fixtures/sandbox 备份到 %TEMP%（含 SHA256 基线），跑完还原并逐一核对 5 个文件 SHA256 与基线相同、`git status --porcelain` 为空；两次 runner 都是串行独占跑的（中间没有别的进程动 runs/），跑前跑后都确认了没有并发写。仓库里唯一留下的东西是我这两次运行的产物 runs/run-20261124-032716（honest，PASS，含 FAKE 标记）与 runs/run-20261124-032815（overclaim，FAIL），都在 .gitignore:8 的 runs/ 下，不算污染工作树；除此之外我没有修改任何代码或文档，变异测试、dry-run、npm dry-run 全在 %TEMP% 副本/临时目录里做，做完已删除（含一个建出来又删掉的 node_modules junction）。"
+}

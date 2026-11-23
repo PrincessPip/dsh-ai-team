@@ -1,0 +1,32 @@
+{
+  "v": 1,
+  "plan_id": "plan-a2-budget",
+  "budget": { "max_calls": 2 },
+  "nodes": [
+    {
+      "id": "w_fail",
+      "kind": "work",
+      "do": "往 tasks/DAG-2026-11-06/fixtures/sandbox/notes.md 末尾追加一行 '- 预算测试'。",
+      "after": [],
+      "writes": ["tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"],
+      "out": ["changed", "summary"],
+      "accept": [
+        { "type": "assert", "rule": "changed 只许含 notes.md" }
+      ],
+      "on_fail": { "retry": 1, "then": "replan" }
+    },
+    {
+      "id": "w_ok",
+      "kind": "work",
+      "do": "往 tasks/DAG-2026-11-06/fixtures/sandbox/BUDGET.md 追加一行 '- 预算够用'。",
+      "after": [],
+      "writes": ["tasks/DAG-2026-11-06/fixtures/sandbox/BUDGET.md"],
+      "out": ["changed", "summary"],
+      "accept": [
+        { "type": "scope", "rule": "只许改 BUDGET.md" },
+        { "type": "assert", "rule": "changed 恰好是 BUDGET.md" }
+      ],
+      "on_fail": { "retry": 0, "then": "skip" }
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "unit": "E2EFIX-2026-11-09",
+  "round": 2,
+  "verdict": "pass",
+  "confidence": 0.88,
+  "criteria": [
+    {"id": "B1", "type": "executable", "status": "pass", "claimed_strength": "E3", "strength_met": true, "evidence": "runner.py:916-934 normalises a string patch_targets; a missing one gives patch_targets_missing. My %TEMP% scenario: w_patch without targets → FAIL patch_targets_missing; w_oos with a string target on OFF-LIMITS.md → FAIL patch_out_of_scope. Real graph dag-gate → REJECTED 2 err PATCH_WITHOUT_TARGETS (w_script, w_docs). Mutation turns red on exactly the B1 asserts"},
+    {"id": "B2", "type": "executable", "status": "pass", "claimed_strength": "E3", "strength_met": true, "evidence": "g-wash run: attempt1 FAIL fs_write_forbidden → fail(then=replan), RUN.result=fail, rc=1, NODES has only w_wash.a1.json (no a2) despite retry=1 and a 2-attempt spec; harm union at runner.py:1603-1604 / :1392-1393; mutation red on '只跑了 1 次 attempt'"},
+    {"id": "B3", "type": "executable", "status": "pass", "claimed_strength": "E3", "strength_met": true, "evidence": "runner.py:912-940 moves the patch checks out of the attribution branch; runner-harness.py:192-200 calls compare(attribution='wave') directly (338/0); two-scout same-wave graph with out=patch → Gate PATCH_REQUIRES_WORK, runner FATAL rc=2; mutation red on exactly the B3 asserts"}
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {"id": "NB1", "why": "ledger-audit reports RESULT=LEDGER_SUSPECT again: REVIEW-BRIEF-e2efix-round2.md (mtime 2026-11-10) is not in the ledger. This repeats round-1 N1.", "your_evidence": "powershell -File scripts/ledger-audit.ps1 → [suspect] tasks/DAG-2026-11-06/REVIEW-BRIEF-e2efix-round2.md -- never mentioned in ledger"},
+    {"id": "NB2", "why": "DELIVERY §五 claims N3 (timeout kills only the direct child; a grandchild holding the pipe can block communicate()) was written into §三·12. §三·12 is about unflushed NDJSON buffers and does not contain it. This overstates completeness. N3 itself stays nonblocking: it is pre-existing, applies to real headless runs only, fails visibly as a hang, and C5 is claimed at fixture level only.", "your_evidence": "DELIVERY-e2efix.md:167-168 vs :209; grep 直接子进程|kill|句柄|进程树 in DELIVERY-e2efix.md → only line 209"},
+    {"id": "NB3", "why": "ledger line 222 cites the harm fix at :1647 / :1437. Those lines are the stop branches; the union the fix added is at :1603-1604 / :1392-1393.", "your_evidence": "grep -n 'harm' scripts/runner.py"},
+    {"id": "NB4", "why": "The brief says 8 unit assertions in the compare/patch section; there are 9 ok lines. Cosmetic.", "your_evidence": "runner-harness output lines under '单元 · compare 的 patch 判据'"},
+    {"id": "NB5", "why": "patch_targets is self-reported and not cross-checked against the patch's diff headers (already declared in DELIVERY §三·8). This is the next hardening step.", "your_evidence": "runner.py:923-934 reads only RESULT.patch_targets"}
+  ],
+  "missed_failures": [],
+  "answers": {
+    "is_wave_patch_block_reachable": "No. Parallel eligibility needs kind in {scout,check,contract,replan} (runner.py:73,:333). PATCH_REQUIRES_WORK requires kind=work whenever out has patch (dag.workflow.mjs:232). runner.py aborts on Gate reject. So the block is dead in real runs.",
+    "is_that_a_problem": "No. It is defence in depth, pinned by direct unit asserts plus a mutation that turns red on exactly them, and it is declared in DELIVERY §三·14.",
+    "should_N3_block": "No; see NB2. The false pointer to §三·12 should be corrected."
+  },
+  "ran": [
+    "node scripts/dag-gate.mjs runs/plan-20261107-003443/GRAPH.json → rc=1, REJECTED 2 err PATCH_WITHOUT_TARGETS (w_script, w_docs) / 4 warn",
+    "python scripts/runner.py tasks/DAG-2026-11-06/fixtures/graphs/g-wash.json --engine fixture --fixture-dir tasks/DAG-2026-11-06/fixtures/scenarios/wash --run-id _review2/wash → rc=1, 1 attempt, RUN fail, no w_wash.a2.json",
+    "python scripts/runner.py g-patch.json --engine fixture --fixture-dir %TEMP%/e2efix-r2/scen-b1 --run-id _review2/b1 → w_patch FAIL patch_targets_missing; w_oos FAIL patch_out_of_scope (string targets)",
+    "node scripts/dag-gate.mjs %TEMP%/e2efix-r2/g-notargets.json → REJECTED PATCH_WITHOUT_TARGETS; g-par.json / g-par-integ.json → REJECTED PATCH_REQUIRES_WORK",
+    "python scripts/runner.py %TEMP%/e2efix-r2/g-par.json --engine fixture ... --run-id _review2/par → rc=2 FATAL Gate reject",
+    "python tasks/DAG-2026-11-06/runner-harness.py → rc=0, checks=338 failed=0",
+    "python tasks/DAG-2026-11-06/runner-mutate.py → rc=0, mutations=32 caught=32 restored_green=True; B1/B3 full-harness mutations each failed=2 on exactly their target asserts; B2 failed=6 incl. the target",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ledger-audit.ps1 → RESULT=LEDGER_SUSPECT (only REVIEW-BRIEF-e2efix-round2.md)",
+    "python scripts/cite-check.py --strict --files TASK-e2efix.md DELIVERY-e2efix.md REVIEW-BRIEF-e2efix-round2.md scripts/graph-rules.md → rc=0, [OK] 2",
+    "cleanup: rm tasks/DAG-2026-11-06/fixtures/sandbox/PATCH-A.md; rm -rf runs/_review2 and %TEMP%/e2efix-r2; scripts/ untouched (runner.py sha256 f8f10000f13cddd0… restored by the mutate tool)"
+  ],
+  "reviewer_notes": "Everything ran on --engine fixture plus the Gate; no real-model runs. This round did not re-judge the design or C2-C5."
+}

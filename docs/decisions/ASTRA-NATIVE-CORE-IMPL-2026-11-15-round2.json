@@ -1,0 +1,89 @@
+{
+  "verdict": "pass",
+  "confidence": 0.98,
+  "readonly_enforcement": "snapshot_only",
+  "evidence_root": "%USERPROFILE%/AppData/Local/Temp/astra-independent-r2-zg29z3fd",
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "亲跑 run-parent.py：hooks 10/10，completed=true、sourceUnchanged=true；pending 别名、payload 替换、拒绝及取消反例通过。完整产品入口的动态 assembly、context 刷新、late middleware 反例通过。源码 tasks/ASTRA-NATIVE-CORE-IMPL-2026-11-15/isolated/node_modules/@deepseek-ai/dsh-agent-loop/lib/index.js:1062「const accepted = deepFreeze(structuredClone(decision));」及 :1102「for (const message of view.pending) this.session.append」确认冻结视图被实际消费。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "亲跑 run-parent.py --probe parent-native.mjs：10/10；默认压力产生一次 compaction 后发送重新派生的请求，含一个 checkpoint 和合法 tail，不含旧前缀。完整 run.py 中 test.mjs 43项、test-2b2-negative.mjs 9项通过，覆盖 retained 身份/哈希篡改、重复和错误路由拒绝；源码核查确认 buildRequest 在准入完成及消息提交后执行。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "完整 run.py exit0；test-2b2.mjs 输出活跃 turn 自动压缩、错误 owner 拒绝、取消零请求、失败及不收缩零普通发送且无重试均 PASS。父级拒绝场景保留 step/end、turn/end，显式重提仅提交一次。native-engine.mjs:34「runtimeOwners.set(agent,{phase,turnStart:last.seq,signal,header,prepared:event.prepared});」与运行结果交叉核对。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "两父级台均 exit0：拒绝、取消、未闭合 native journal 前后物理字节相同，write handle 可重新取得；正常 native 恢复后实际执行新工具，普通恢复仍补 closers。agent-loop/lib/index.js:2014「const persisted = audit.events;」及上下文确认同一 write handle 冷读、审计、closers、seed 的先后顺序。"
+    },
+    {
+      "id": "C5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "本轮 parent-native 双向 Basic 对照：巨型消息两组均 summaries=0、requests=2；完整消息两组均 summaries=1、requests=2。普通及目标路由旧 Basic 历史恢复、Basic→native 过渡通过；完整产品回归的直接调用、错误路由和 late middleware 守卫反例通过。native-engine.mjs:85「if(!isTarget(agent.session.requestHeader()?.config??agent.options))return super.compactRegion」确认非目标委托原路径。"
+    },
+    {
+      "id": "C6",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "本轮 test-core.mjs 16/16：运行中卸载取消、部分安装失败清理、重复冲突、重新安装通过；parent-native 的卸载后普通路径及再安装通过。直读 native-plugin.mjs 确认 Service/fiber 组合与逆序释放，:29「releases.push(ctx.tools.guard」为正式工具守卫；未采用 resumeWith 方法覆写。"
+    },
+    {
+      "id": "C7",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "亲跑 test-c7.py 九场景全部通过、sourceUnchanged=true：旧声明写入 exit0，新声明 seq/contextWindow 写入分别 exit2 且唯一 TS2540，恢复旧声明可重现，最终完整类型测试 exit0。另建独立无抑制探针：adapterDefaults.maxTokens、header.id、event.data.turn 写入各产生唯一 TS2540，正常读取及方法调用 exit0；回执 independent-c7/RESULT.json。runtime-types.d.ts:14「export type AdmissionReadonly<T>」及使用处与运行时深冻结一致。strict 配置正负例通过；对照首轮快照的456个 JS/MJS 文件无变化。上一轮 B1 已消除。"
+    },
+    {
+      "id": "C8",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "测试前 verify-pack.py：17711项、bad=[]；逐项登记来源核验17710项、bad=[]，契约及评审脚本与原源一致。默认完整 run.py：13 worker 全exit0，98.902秒，无强杀；历史 verify-live 53/53、proof 9/9、N1 selftest 25/25；离线 rehearsal 按默认 live 校验 exit1，精确命中证据模式错误。保护源10534项无变化，保护反例6/6；干净 gate 副本准入反例4/4；缺件/SHA反例及异常顶层0→1→0通过。原工程前后17713文件，changed/added/removed均为空；结束时登记来源仍零漂移，20个已记录测试PID均不存在。"
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "claim": "引用检查器对当前包路径的自动识别覆盖有限。",
+      "evidence": "本轮 cite-check.py --strict exit0，输出 named=1、OK=1、LONE=4；源码锚已另行逐项打开并核对。报告：CITE-CHECK.txt。"
+    }
+  ],
+  "receipts": {
+    "full_run": "full-execution.json",
+    "full_suite": "work/tasks/ASTRA-NATIVE-CORE-IMPL-2026-11-15/artifacts/suite-1794686941194763300/RESULT.json",
+    "hooks": "work/tasks/ASTRA-NATIVE-CORE-AUDIT-2026-11-15/artifacts/parent-1794686877767035600/RUNNER.json",
+    "native": "work/tasks/ASTRA-NATIVE-CORE-AUDIT-2026-11-15/artifacts/parent-1794686875726410400/RUNNER.json",
+    "c7": "work/tasks/ASTRA-NATIVE-CORE-AUDIT-2026-11-15/artifacts/c7-1794686878125666200/RESULT.json",
+    "source_integrity": "source-after-check.json"
+  },
+  "reviewer_notes": "所有测试及新增探针仅写入独占 TEMP 副本，未修改原工程。通过范围为本次隔离实现、离线矩阵及历史证据重算，不包含新增原生真测、生产发布或任意 HMR/fsync/exactly-once 保证。snapshot_only 仅证明所采样内容零净变化，不是进程级硬沙箱，也不能证明树外或写后还原行为。"
+}

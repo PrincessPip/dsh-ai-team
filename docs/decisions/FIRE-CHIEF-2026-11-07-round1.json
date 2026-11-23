@@ -1,0 +1,61 @@
+{
+  "unit": "FIRE-CHIEF-2026-11-07",
+  "round": 1,
+  "date": "2026-11-07",
+  "trigger": "mandatory",
+  "channel": "claude -p --model opus --allowedTools Read,Grep,Glob,Bash (stdin prompt, 指路式)",
+  "verdict": "pass",
+  "confidence": 0.85,
+  "blocking": [],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "FIRE-CHIEF.md:74 §六 第 1 步描述里还写「加『救火』一档（触发条件 + 额度闸）」，与 :86「撤掉闸，只记录」及 TRIGGER-POLICY.md:145「不算第四档」矛盾。工人的旧口径反例正则没有覆盖「额度闸」「一档」，所以漏了。",
+      "disposition": "fixed",
+      "how": "改成「加 §二·五 救火档（触发两路 + 读宽写窄 + 额度只记录不设闸 + 禁改面）」"
+    },
+    {
+      "id": "N2",
+      "what": "排除 subagent_claude_code 的真实理由是 dontAsk 天然只读 + 文件访问锁在子级工作目录内、写不了；原文只写了 subagent 只有 openrouter 一条路由，会让人误以为 subagent_claude_code 是可选项。",
+      "disposition": "fixed",
+      "how": "TRIGGER-POLICY.md §二·五 通道段拆成两条分别给理由；§四 通道表同步补"
+    },
+    {
+      "id": "N3",
+      "what": "第一次真实救火大概率先卡在触发条款：波内并行还没开工，自动 A / B 都不成立，事故单 §一 触发事实、§二 病灶、§六 失败史都填不实。",
+      "disposition": "fixed",
+      "how": "FIRE-CHIEF.md §六 新增「第 2 步的触发路径」段：第一次只能走伙伴点名或换一个真卡住的单元，禁止为跑通流程伪造卡壳"
+    },
+    {
+      "id": "N4",
+      "what": "快照命令只递归当前工作目录，写到工程外 / ~/.dsh 看不见；只比 mtime + 字节数，同秒同大小改动也看不见。",
+      "disposition": "fixed",
+      "how": "INC-TEMPLATE.md §五 快照命令下加「已知盲区」框"
+    },
+    {
+      "id": "N5",
+      "what": "DELIVERY 行号偏移：C1 写 FIRE-CHIEF.md:80,82,83,86（实际 67/84-87/90）；C2 写三档表 :27-31（实际 :30-34）。",
+      "disposition": "fixed",
+      "how": "按验收官实测值改正"
+    }
+  ],
+  "criteria_summary": {
+    "C1": "pass / E3 / fact-consistent",
+    "C2": "pass / E2 / fact-consistent（工人已如实降到 E2：无 git，证不了「未被改动」）",
+    "C3": "pass / E2 / fact-consistent",
+    "C4": "pass / E2 / fact-consistent",
+    "C5": "pass / E2 / fact-consistent",
+    "C6": "pass / E2 / fact-consistent",
+    "C7": "pass / E3 / fact-consistent",
+    "C8": "pass / E2 / fact-consistent",
+    "C9": "pass / E2 / fact-consistent（理由不全 → N2）",
+    "C10": "pass / E2 / fact-consistent",
+    "C11": "pass / E2 / fact-consistent",
+    "C12": "pass / E1 / judgment（验收官另补一条更早会卡住的条款 → N3）",
+    "N1-B": "pass / E2（未改动禁改文件）",
+    "N2-B": "pass / E2（没写成第四档）"
+  },
+  "reviewer_notes": "我在工作目录里只跑了只读命令（ls、sed、grep、wc、tail），没有写任何文件。ledger-audit.ps1 的 mtime 对账和 list_subagent_models 实测我都没复现，只当工人侧证据看。三档规则和账本历史行「没被改过」，没有 git 结构上证明不了；我只确认了它们现在还在、条目数是 59+1，对应 C2 和 N1-B。",
+  "worker_accepts": "all",
+  "worker_comment": "5 条 nonblocking 全部接受并当场修复。N1 是真矛盾（我的反例正则覆盖面 = 我的想象力），N2 是我写错的理由，N3 会让第一次救火直接卡住 —— 这三条都是验收官先看出来的，工人自查没抓到。"
+}

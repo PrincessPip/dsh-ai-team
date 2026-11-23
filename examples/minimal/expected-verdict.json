@@ -1,0 +1,30 @@
+{
+  "verdict": "rework",
+  "confidence": 0.71,
+  "blocking": [
+    "B1: C2 声明「有自动化测试且全部通过」，但没有给出任何 file:line 或命令输出 —— 证据缺失（type=E0）",
+    "B2: C2 的强度声明为 E3（交叉 + 反证），实际只有一条「跑绿了」的观察，且没有反证 —— 强度不足，按 fail 判"
+  ],
+  "findings": [
+    {
+      "id": "C1",
+      "claim": "src/slug.js 导出 slugify，并把大小写/空白转成以单个 '-' 连接的 slug",
+      "evidence": "src/slug.js:7「export function slugify(input) {」；命令 `node -e \"import('./src/slug.js').then(m=>console.log(JSON.stringify(m.slugify('  Hello  World '))))\"` 输出 \"hello-world\"",
+      "type": "E2"
+    },
+    {
+      "id": "C2",
+      "claim": "仓库里有针对 slugify 的自动化测试，一条命令跑起来且全部通过",
+      "evidence": "",
+      "type": "E0"
+    },
+    {
+      "id": "C3",
+      "claim": "README.md 的示例调用与实现行为一致",
+      "evidence": "README.md:12「slugify('Hello World') // => \"hello-world\"」⟷ 实跑输出 \"hello-world\"（同一事实、两个位置一致）",
+      "type": "E2"
+    }
+  ],
+  "outDir": "/path/to/workspace/.ai-team/reviews/round1",
+  "raw": "<<验收官原文（截断到 20000 字符）。原文里出现 'pass' 字样不算裁决，只有结构化字段算；缺 verdict 字段时整份降级为 escalate。>>"
+}

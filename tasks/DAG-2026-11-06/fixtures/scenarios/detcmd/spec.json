@@ -1,0 +1,11 @@
+{
+  "_comment": "C4-a（F5）：节点不落盘 + cmd 必败 ⇒ 确定性失败，retry=1 + escalate=strong 也只许跑 1 次。",
+  "nodes": {
+    "w_det": {
+      "result": {
+        "changed": [],
+        "summary": "什么都没写"
+      }
+    }
+  }
+}

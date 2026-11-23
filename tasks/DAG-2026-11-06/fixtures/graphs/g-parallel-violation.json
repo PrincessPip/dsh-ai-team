@@ -1,0 +1,31 @@
+{
+  "v": 1,
+  "plan_id": "plan-b1-parallel-violation",
+  "budget": { "max_calls": 8 },
+  "nodes": [
+    {
+      "id": "s_bad",
+      "kind": "scout",
+      "do": "侦察：读 notes.md 报行数。只读，不改任何文件。",
+      "after": [],
+      "ctx": { "read": ["tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"] },
+      "out": ["facts", "summary"],
+      "accept": [
+        { "type": "assert", "rule": "facts 里至少有一行内容" }
+      ],
+      "on_fail": { "retry": 1, "then": "replan" }
+    },
+    {
+      "id": "s_ok",
+      "kind": "scout",
+      "do": "侦察：读 OFF-LIMITS.md 报行数。只读，不改任何文件。",
+      "after": [],
+      "ctx": { "read": ["tasks/DAG-2026-11-06/fixtures/sandbox/OFF-LIMITS.md"] },
+      "out": ["facts", "summary"],
+      "accept": [
+        { "type": "assert", "rule": "facts 里至少有一行内容" }
+      ],
+      "on_fail": { "retry": 1, "then": "replan" }
+    }
+  ]
+}

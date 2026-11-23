@@ -1,0 +1,97 @@
+{
+  "unit": "DIET-FOLLOWUP-2026-11-12",
+  "round": 2,
+  "date": "2026-11-12",
+  "channel": "subagent → openrouter/anthropic/claude-opus-5.5（DSH 子代理、全新会话、带工具；第 2 轮，只审返工部分）",
+  "verdict": "pass",
+  "confidence": 0.82,
+  "confirmed_by_reviewer": [
+    {
+      "id": "C0",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "FREEZE 用重写后最新版复算 13/13 sha256+bytes 全 MATCH；另留底「重写之前第一次复算时 delivery=186854b1… 也 MATCH」"
+    },
+    {
+      "id": "C-B1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "自己数得 8401/8451、8689/8752，与 FIRE-TMP-IMPACT.txt 一致；四处披露互相一致；补测非 tmp 条目 50/50、63/63 哈希全对，悬空条目全带 tmp/ 前缀"
+    },
+    {
+      "id": "C-N1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "库内 RESULT=OK blocks=12 missing_files=0；--selftest failed_blocks=[0]；副本 mutate-landing 13/13 void=0；反证：删掉 missing_here == 0 后第 13 格 MISSED；镜像删 NEXT-STEPS.md 块 5、6 都红。判据只收紧没放宽"
+    },
+    {
+      "id": "C-N2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "`--changed .` / `..` / `tasks/DAG-2026-11-06/ Makefile` / `tasks/DAG-2026-11-06` 全 REQUIRED；scripts/runner.py 仍 SKIP（fail-closed 没过火）；selftest 22/22；变异台副本 12/12 void=0"
+    },
+    {
+      "id": "C-审期改材料",
+      "type": "judgment",
+      "status": "pass",
+      "claimed_strength": "E1",
+      "strength_met": true,
+      "evidence": "[判断类] 判 nonblocking：主动披露 + 改的是自述数字不是判据或证据 + 结论全靠自跑得出。但「只改 4 处数字」核不了（impossible：无旧副本）；建议以后冻结同时存 .frozen 副本"
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {
+      "id": "N-a",
+      "what": "DELIVERY.md:20 「证明夹具可再生、清理无害」管的是整条 K3，与 §四·9 自相矛盾 —— 523/0 证明不了 runs/fire 清理无害，应只说 _harness"
+    },
+    {
+      "id": "N-b",
+      "what": "fail-closed 有洞：`--changed %USERPROFILE%\\.dsh`（或 ~/.dsh）会 SKIP，因为目录名带点、`\".\" not in base` 判不出来 —— 可这正是全局 AGENTS.md 所在目录。建议对已存在的路径加 os.path.isdir 判命中。另 T22 把尾斜杠与无扩展名放同一次调用，变异只删 `\".\" not in base` 后仍全绿，无扩展名那半条没被单独钉住"
+    },
+    {
+      "id": "N-c",
+      "what": "同类旧数字没跟上：项目 AGENTS.md:155「12 格」应为 13；AGENTS.md:224「20 例/11 格·落点 12 格」且仍写「定位…根因」与已降级待办 3 冲突；TRIGGER-POLICY.md:600「20 例/11 格」且未提 fail-closed；全局 ~/.dsh/AGENTS.md 最近三条仍写「定位…根因」；DELIVERY §四 标题写「8 条」实际 12 条；DELIVERY.md:171 的「修法在 §七·1」原属第 8 条现挂在第 12 条后"
+    },
+    {
+      "id": "N-d",
+      "what": "ledger-audit 自跑 RESULT=LEDGER_SUSPECT（rc=1）：REVIEW-BRIEF-round2.md 没进账本；账本第 299 行也没列 FIRE-TMP-IMPACT.txt。ledger-check OK n=299"
+    },
+    {
+      "id": "N-e",
+      "what": "runs/fire/INC-20261111-03/PRODUCT-SHA256.txt 有 1 条非 tmp 条目悬空（__pycache__/collect.cpython-314.pyc），哪里都没披露；无删前清单，归因 impossible。建议把待办 9 的一揽子免责改成可执行判别规则"
+    },
+    {
+      "id": "N-f",
+      "what": "mutate-landing 第 13 格用 `10 in got`，与该台规矩 2「恰好是第 i 块」不一致，应改 `got == [10]`；RESULT 那半句 missing_files 是冗余的（变异 X2 实测单删它没有一格会红）"
+    }
+  ],
+  "impossible": [
+    {
+      "what": "runner-harness 复跑",
+      "why": "BRIEF 明令禁跑"
+    },
+    {
+      "what": "审期那次 DELIVERY 改动的逐字 diff",
+      "why": "没有旧副本；等长替换只能说明字节数对得上"
+    },
+    {
+      "what": "INC-20261111-03 那个 pyc 的删除归因",
+      "why": "没有删前清单"
+    },
+    {
+      "what": "fire-chief 四件体检",
+      "why": "只在实跑事故时执行"
+    }
+  ],
+  "reviewer_notes": "只读：变异实验都在 %TEMP%\\rv2-* 副本里做，做完已删；扫树确认 06:03:22 以后工程内没有文件被改；runner-harness 没跑。B1 已关闭。两条修法都是「只收紧不放宽」，不是自己给自己发合格证。",
+  "summary": "pass 0.82 / 0 blocking。B1 关闭（自己数得 8401/8451、8689/8752 与证据一致；补测非 tmp 条目全对，悬空条目全带 tmp/ 前缀，与「已知清理」形态吻合）。N1 修法经反证成立（删掉 missing_here == 0 后第 13 格 MISSED）；N2 修法经反证成立（runner.py 仍 SKIP，fail-closed 没过火）。审期改材料判 nonblocking：主动披露 + 改的是自述数字。留给收工前的 6 条 nonblocking（N-a~N-f）里 N-b 是真洞（.dsh 目录会 SKIP）、N-c 是同类旧数字第三次、N-d 让闸门报红。"
+}

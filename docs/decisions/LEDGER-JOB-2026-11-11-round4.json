@@ -1,0 +1,133 @@
+{
+  "verdict": "pass",
+  "confidence": 0.82,
+  "criteria": [
+    {
+      "id": "K1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "D1: xxd of both scripts starts with efbbbf. D2: exit 1 without baseline, exit 0 with baseline. Exit-2 cases invalid-utf8-exit-2 etc. PASS inside the 30/0 run. Counter-evidence: default-path case PASS"
+    },
+    {
+      "id": "K2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "Checker sha256 2345df67… unchanged since round 3 (header and code consistency was verified then). Mutants M1/M7/M11/M13 all caught in my mirror run"
+    },
+    {
+      "id": "K3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "scripts/ledger-check.ps1:270「if ($line -match '^\\s*---\\s*$') {」, and inside that branch :281「$openRow = $false」. scripts/ledger-check.ps1:352「if (-not $openRow) {」. TASK.md:80 now matches the code. M2 caught (red=2)"
+    },
+    {
+      "id": "K4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "Mirror run without baseline: RESULT=VIOLATIONS n=19 = FIELD3_INVALID line=170 + ORPHAN_CONTINUATION 171..188, exit 1. Line 56 not reported"
+    },
+    {
+      "id": "K5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "With baseline: known=19 new=0, exit 0, lines=283. M5 caught (baseline-new-violation-still-red goes red)"
+    },
+    {
+      "id": "K6",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "Mirror TESTS=30 FAILED=0. Diff vs ORIGINAL is header comments :15/:25 only. M6 red=17, M7 red=22"
+    },
+    {
+      "id": "K7",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "D1: runs/fire/INC-20261111-03/ledger-prefix-280.md is a byte prefix of the current ledger (True). scripts/ledger-audit.ps1 mtime 2026-11-07 03:46, untouched. BOM on both scripts"
+    },
+    {
+      "id": "K8",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "My run: [result] defined=11 void=0 ran=11 caught=11 restored_green=True; mirror checker sha unchanged after restore"
+    },
+    {
+      "id": "R4-B1",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "D1: ls runs/fire/INC-20261111-03 shows no TRANSCRIPT.log, CHANGES.md or SNAPSHOT.txt. D2: META.json fire_chief_exit=6 with missing [TRANSCRIPT.log, CHANGES.md, SNAPSHOT.txt]. D3: ledger line 283 retracts the 'content unchanged' claim"
+    },
+    {
+      "id": "R4-B2",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "0 hits for the five old strings (必然报 VOID / 第 56 行那条真债 / 数据行/续行/分隔线 / R_TIER 否定前缀排除 / 内容一字未改). REGRESS.txt:4 rewritten (mtime 16:10:48). ledger-check-test.ps1 diff is only :15/:25"
+    },
+    {
+      "id": "R4-B3",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "TRIGGER-POLICY.md:92「它按 `-split ' \\| ', 4` 切」 matches scripts/ledger-check.ps1:296「$f = @($line -split ' \\| ', 4)」; :93 adds the regex warning; :81 lists all exit-2 conditions"
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "REVIEW-BRIEF-round4 §四 says round-3 N3 (.pyc) and N4 (baseline BOM accepted / count defaults to 1) were 'recorded in DELIVERY 附二'. grep for pyc|pycache|DONTWRITE|无 BOM|count in DELIVERY.md returns 0 hits. This is a sixth 'claim before doing'; it is limited to the cover letter, so not blocking. Add the two deferral notes to 附二."
+    },
+    {
+      "id": "N2",
+      "what": "INC-TEMPLATE.md:196 and :208 contain a form-feed (0x0C) where the 'f' of fire-chief.py should be (rendered as 'ire-chief.py'). This was introduced this round, in the fire chief's sole input. Fix both spots and check that grep -c $'\\f' INC-TEMPLATE.md returns 0."
+    },
+    {
+      "id": "N3",
+      "what": "TASK.md:50 still has the unescaped `-split ' | ', 4`, the same error as B3. TASK.md:55 still credits the negative lookbehind `(?<![不非未无])`, which X1 removed."
+    },
+    {
+      "id": "N4",
+      "what": "'Current' numbers are stale again: TRIGGER-POLICY.md:103 (disposition=25 / n=282), DELIVERY.md:10 (n=282), TASK.md:72 (24/106). Measured now: disposition=26, tier=106, lines=283. Drop live readings from prose."
+    },
+    {
+      "id": "N5",
+      "what": "The 'partner decided 2026-11-11' basis for the exit-6 rule is E0: nothing in decisions/. Rounds 1–3 also have no decisions/LEDGER-JOB-2026-11-11-round{1,2,3}.json."
+    },
+    {
+      "id": "N6",
+      "what": "No changelog row in TRIGGER-POLICY.md for §二 v2.2 or for the exit-6 rule, and no row in INC-TEMPLATE.md for §5.6. The policy's own v2.0.1 row says changes to this file must leave a trace."
+    },
+    {
+      "id": "N7",
+      "what": "Ledger line 283's file field omits TRIGGER-POLICY.md, INC-TEMPLATE.md and scripts/ledger-check-test.ps1, all modified at 16:10. LEDGER_OK only because earlier same-day rows list them (known day-granularity blind spot)."
+    },
+    {
+      "id": "N8",
+      "what": "lone=3 is not a problem (contract: LONE is not blocking). strip-lone.py rewrote file references into prose to lower LONE, which reduces traceability; do not repeat. REVIEW-BRIEF-round4 itself is 0% anchored (2 UNRESOLVED, 3 NOANCHOR)."
+    }
+  ],
+  "rework_brief": "",
+  "escalate_question": "",
+  "escalate_red_line": [],
+  "reviewer_notes": "Writes went only to %TEMP%\\review-ledgerjob-r4 (mirror of the 3 scripts, baseline, ledger and mutate script; test/mutation runs, cite-check --out, ledger-audit output). On the main tree I only read files and ran read-only commands: claude-egress-check.ps1 without -Start; ledger-audit.ps1, which needed -ExecutionPolicy Bypass; sha256sum, grep, diff. Not verified: the partner decision itself, the runner-harness 523/0 vs 207/27 discrepancy, and the never-run GRAPH.fixed.json DAG rerun; none of these is a K criterion."
+}

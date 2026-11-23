@@ -1,0 +1,74 @@
+{
+  "verdict": "pass",
+  "confidence": 0.93,
+  "readonly_enforcement": "snapshot_only",
+  "evidence_root": "%USERPROFILE%/AppData/Local/Temp/review-A-independent-whraocv1",
+  "criteria": [
+    {
+      "id": "A1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立运行 probe-review.py：9/9通过；same-size-time 返回4，diff.modified=['protected.txt']，新增及重命名亦准确记录。AST比较 check_egress/build_prompt/find_node/find_codex 均与备份一致；默认模型和effort仍为 gpt-6-astra/high。详见 evidence_root/PROBE.json。"
+    },
+    {
+      "id": "A2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "clean 返回0且diff为空；runs内新增被记录；report-write 返回4，外部机器报告记录 tasks/unit/REVIEW-raw.txt 新增，本地预写文件未被覆盖。独立复跑 out_exclusion 变异被捕获；coverage 用例核实固定排除仅根.git。"
+    },
+    {
+      "id": "A3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立复跑29例，包含正常、非零、spawn异常、超时、before/after失败及入口证据发布，全部通过。额外真实文件独占句柄测试返回5、model.status=not_started，前后扫描均明确失败；无写入超时返回3；注入清理不可验证返回5。详见 evidence_root/EXTRA.json。"
+    },
+    {
+      "id": "A4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "跨进程争用同根RootLock触发FileExistsError，原锁保留；lock变异被捕获。timeout用例验证延迟写入子进程未存活，tree_stop变异被捕获；额外清理核实失败明确返回5。scripts/review-snapshot.py:69「self.fd = os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)」。"
+    },
+    {
+      "id": "A5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立读取机器报告核对before/after、diff、模型状态及原始pass文本，违规均未被pass覆盖；bad-round 返回2且未调用假CLI，dry 返回0且未调用假CLI。29例中的dry/out_path/round通过，相应路径和dry-run变异均被捕获；发布使用 scripts/review-codex.py:226「with target.open('x', encoding='utf-8') as f:」。"
+    },
+    {
+      "id": "A6",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "在独立TEMP副本运行 mutate.py：exit=0，13/13 killed、0 VOID，基线及恢复后均29/29通过，耗时31.68秒；另独立运行9例黑盒和4项补充检查。完整变异记录位于 evidence_root/project/tasks/REVIEW-SNAPSHOT-2026-11-13/MUTATION-RESULTS.json。引用检查exit=0，但refs=0，不作为引用覆盖证明。"
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "交付文档指向的原始变异记录未包含在冻结审阅树中。",
+      "evidence": "tasks/REVIEW-SNAPSHOT-2026-11-13/DELIVERY.md:44「See MUTATION-RESULTS.json」；实际Path.exists()返回False。父代理MUTATE-A.json仅包含运行摘要。本次独立复跑已生成完整记录，因此不阻塞功能验收。",
+      "suggestion": "补齐原始记录或修正文档中的证据位置。"
+    },
+    {
+      "id": "N2",
+      "what": "PLAN仍有旧通道措辞，容易与现行说明混淆。",
+      "evidence": "PLAN.md:38「所以必须走另一个通道」后列出codex exec --approve-for-me，而验收入口也使用该模式；PLAN.md:30–31已正确说明事后快照及非硬沙箱边界。",
+      "suggestion": "将该处改为角色写入授权不同，避免暗示底层权限通道不同。"
+    }
+  ],
+  "rework_brief": "",
+  "escalate_question": "",
+  "reviewer_notes": "本次只读审阅工程，测试、夹具和新增证据均在另建TEMP副本，Python使用-B，未调用其他模型或修改账号、profile及权限。真实模型与出站链路未实测，保留行为通过源码比较和离线测试核验；历史账本35项漏记属于已披露的范围外问题，本裁决不代表全仓闸门通过或B单元通过。本次验收自身是否保持只读由外层机器快照报告证明，不在此自签保证。"
+}

@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "plan_id": "plan-b1-parallel-retry2",
+  "budget": { "max_calls": 4 },
+  "nodes": [
+    {
+      "id": "s1",
+      "kind": "scout",
+      "do": "侦察 1：前两次失败、第三次成功（retry=2）。",
+      "after": [],
+      "out": ["facts", "summary"],
+      "accept": [{ "type": "assert", "rule": "facts 非空" }],
+      "on_fail": { "retry": 2, "then": "replan" }
+    },
+    {
+      "id": "s2",
+      "kind": "scout",
+      "do": "侦察 2：前两次失败、第三次成功（retry=2）。",
+      "after": [],
+      "out": ["facts", "summary"],
+      "accept": [{ "type": "assert", "rule": "facts 非空" }],
+      "on_fail": { "retry": 2, "then": "replan" }
+    }
+  ]
+}

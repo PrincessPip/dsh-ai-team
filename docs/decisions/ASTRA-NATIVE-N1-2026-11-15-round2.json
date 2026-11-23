@@ -1,0 +1,65 @@
+{
+  "verdict": "pass",
+  "confidence": 0.98,
+  "readonly_enforcement": "snapshot_only",
+  "evidence_root": "%USERPROFILE%/AppData/Local/Temp/n1-independent-audit-j7qkvkf3",
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立 SHA 核验：3239 个包文件、3234 个复制来源、3235 个源输入全部匹配，无链接；manifest 区分 copy/adapted/generated。TEMP 重新生成的三份保护适配文件与交付字节一致，见 adapter-regeneration.json。python -B <runner>/tasks/ASTRA-NATIVE-N1-2026-11-15/selftest.py <fixed包根> 实跑 exit0、25/25；缺失依赖反例明确拒绝。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "本轮 selftest 实际执行 run-local.py proof --root <TEMP包内live绝对路径>：exit0、9/9，计数及重复ID反例各精准命中，16份镜像恢复原字节。verify-live.py 默认 exit0、53/53；复制 dry 目录 exit1、52/53，仅证据模式失败。日志位于 runner/tasks/ASTRA-NATIVE-N1-2026-11-15/selftest-1794677675175087200/；报告 networkRequests=0，执行代码无网络调用。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "上述本轮 RESULT.json：原 collector provenance 交叉SHA通过；TEMP假源缺baseline、helper SHA错误、源不可用、配置SHA错误均明确拒绝，各次恢复通过；真实新增文件仅进入added，changed为空。proof另验证错误预期SHA仅命中指定目标，恢复通过。外部配置与manifest完全一致，原collector未改。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "简报四文件 cite-check.py --files ... --strict 命令 exit0；TEMP删除ledger配置或原checker分别exit1，报N1 cite dependency missing/SHA mismatch，恢复exit0。独立非空引用实跑OK/GONE/OK、退出码0/1/0，完整命令及输出见 independent-cite.json。"
+    },
+    {
+      "id": "C5",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "FINAL-VALIDATION.json：送审树3375文件前后内容及集合一致；父级BEFORE的10338文件changed=[]、added=[]；原保护集合7078文件及3235源输入无SHA变化；恢复包3239冻结文件SHA全部匹配。保护错误SHA反例精准失败并恢复；来源与适配差异已独立核对。"
+    },
+    {
+      "id": "C6",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "FINAL-VALIDATION.json四场景实测：旧版exit1/11项/pass=true；新版exit0/25项/completed=true；第11项后注入INDEPENDENT_N1_MIDWAY_20261115，exit1/pass=false/completed=false且记录错误；恢复exit0/25项。与父级DELIVERY.md:46「全部25项结束才成功」及:48「实际只有11项」一致。两份DELIVERY与包简报均明确本机外部依赖、非硬沙箱及不扩大生产结论。"
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "指定四文件引用检查实际refs=0；本轮另做非空引用正反及恢复验证。strict成功仅证明引用形式。"
+    }
+  ],
+  "rework_brief": "",
+  "reviewer_notes": "首轮B1/B2均已通过本轮独立复现验证修复。所有写入仅在新建TEMP副本、报告及假源中，未修改送审树或真实保护源，未发送网络或模型请求；未重跑完整build.py，已核来源SHA、适配再生成及父级构建回执。正式模型退出后的父级快照与清理回执尚待父级收取，本裁决不证明写后还原或全盘树外写入可检测。"
+}

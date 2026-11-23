@@ -1,0 +1,26 @@
+{
+  "_comment": "C4-b（F11）：第 2 次 attempt 的 spec **硬要求** prompt 里出现「上一次尝试为什么失败」—— 假 worker 读不到就以 exit 9 失败，于是「runner 到底有没有把失败原因传下去」变成可执行证据，不用看代码。",
+  "nodes": {
+    "w_rr": {
+      "attempts": [
+        {
+          "result": {
+            "status": "fail",
+            "changed": [],
+            "summary": "第一次：我不知道该写什么"
+          }
+        },
+        {
+          "expect_prompt_contains": [
+            "上一次尝试为什么失败",
+            "自报 status=fail"
+          ],
+          "result": {
+            "changed": [],
+            "summary": "第二次：按失败原因改好了"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,88 @@
+﻿{
+  "verdict": "pass",
+  "confidence": 0.82,
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "源码 ledger-audit.ps1:131-152 读清单（目录递归、单文件取自身），:154 并入 $allFiles，:168-178 未被提及即报 suspect。DELIVERY 对照②：外部探针 `~/.dsh/scripts/_audit-probe.ps1`，exit=1，70 个文件（29 个外部），点名该文件。基线①：exit=0，69 个文件。观察类别有 D2（exit 码）、D3（点名文本）、D1（文件数）。反证成立：②与①只差一个未记账文件，结论翻转。清理检查贴了 ext_probe=False。这些输出是工人侧证据，我没有 shell，复现不了，只核了逻辑自洽。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "源码 :60 `$ledgerStart = CreationTime-30min`，:155 用 `LastWriteTime -ge $ledgerStart` 过滤。DELIVERY ③：同一探针只改 mtime，文件总数仍是 70，窗口内文件数 34→33，exit 0→1 翻成 0，输出 none。③与②只差 mtime，结果相反，反证成立。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "①同名文件（第 1 轮 B1 点名的缺口）：全文读源码，没有 `$f.Name -eq` 兜底，:165-172 只比较绝对路径。DELIVERY ④：`tools/ledger-audit.ps1` 与账本已记的 `scripts/ledger-audit.ps1` 同名、窗口内、未记账，结果 exit=1 并点名它，project 41→42。同名放行是 v2 的行为，这点只靠源码论证，没有在 v2 上实际跑过。②括号注释：源码 :106-107 剥全角和 ASCII 尾随括号，账本第 25 行 `tunnel-watch.ps1（工程外，新建）` 能解析。基线①在 tunnel-watch 属窗口内文件的情况下仍是 none，间接支持这一点。「v3 第一版误报→剥后不报」的对照是第 1 轮已核过的材料，本轮 DELIVERY 没有重新贴输出，这是弱点，见 N3。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "①工程内仍 OK：基线 exit=0。⑤在工程根新建未记账 `zzz-audit-probe.md`，exit=1 并点名，说明基线 none 不是什么都没扫，这是第 1 轮缺的对照。②退出码三态都有实测：0（①⑥⑦⑩）、1（②④⑤）、2（⑧ `RESULT=NO_LEDGER`、exit=2，且 `ledger_data_lines_after=18`）。我核了 ledger.md 现有数据行是第 20-37 行，共 18 行，与该数字一致。源码 :53-56 与 :189-198 的退出码逻辑未变。③清单缺失：⑦输出 `external = (none)`、`41 project + 0 external`、exit=0，与源码 :133 的 Test-Path 分支一致。「清单存在但为空」没有单独实测，只有源码直读，见 N2。"
+    },
+    {
+      "id": "C5",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "三处对得上脚本实际行为：①TRIGGER-POLICY.md:74-91，覆盖范围含外部清单、`.log` 不审计及原因、仍不覆盖项、清单自身盲区、账本自身排除。②AGENTS.md:85，含 `.log` 原因、仍不覆盖项、清单盲区、按完整路径排除账本。③账本头部 ledger.md:6-12，含只放路径、尾随括号被剥、目录 token 很宽、`~` 展开、`.log` 不审计、`.txt` 清单不在白名单。第 1 轮 B2 的两个缺口都已补上：账本头部已重写；policy:81-83 已加「清单文件自身不被审计」。有三处小数字对不上，不影响行为一致，记入 N1。"
+    },
+    {
+      "id": "C6",
+      "type": "judgment",
+      "status": "pass",
+      "claimed_strength": "E1",
+      "strength_met": true,
+      "evidence": "[判断类] DELIVERY 的 C6 答案具体到实验编号，可被反驳。「本该失败确实失败」有 ②④⑤⑦⑧。「本该不报确实不报」有 ③⑥。每组只改一个变量，并有清理验证（四个探针均为 False）和最终基线 OK。第 1 轮缺的三处（同名文件、工程内探针、清单缺失与退出码 2）现在都有对照。它承认我没有 shell、复现不了，这点诚实。"
+    },
+    {
+      "id": "C7",
+      "type": "judgment",
+      "status": "pass",
+      "claimed_strength": "E1",
+      "strength_met": true,
+      "evidence": "[判断类] 问 1：清单可被删或改空，输出只有 `[scope] external = (none)`，退出码仍是 0。这与源码 :181 一致，也已纠正第 1 轮「没有任何提示」的措辞。.txt 不在 `$auditExt`（:121），所以清单自身的改动扫不出来，已写进 policy:81-83。规则上由送审 #2 兜底（policy:91）。问 2：.log 是永久盲区，⑥是故意放过的实测，理由写在 policy:78 和 ledger-external.txt:7-10。问 3：账本自身被排除，policy:86 和脚本头部 NOTE :41-43 都写了。DELIVERY 说「写了三处」含账本头部，但账本头部没写这条，只有两处，见 N1。"
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "三处小数字或归属对不上，都不是行为错误：①AGENTS.md:85 写「反证实测 6 组」，DELIVERY 是 8 组。②DELIVERY 称账本头部「重写六条」，实际是 5 条（ledger.md:6-12）。③DELIVERY C7-3 称账本头部写了「账本自身被排除」，但账本头部没有这句，只有 policy:86 和脚本 NOTE 有。建议把「6 组」改成 8，「六条」改成五条，并在账本头部补一句账本自身被排除。"
+    },
+    {
+      "id": "N2",
+      "what": "「清单存在但为空」没有实测，只测了清单缺失（⑦）。两者在源码里走不同分支：缺失走 :133 的 Test-Path 否定分支，为空是循环里没有任何条目，最终都是 extRoots.Count=0。建议补一次清空清单的实测。"
+    },
+    {
+      "id": "N3",
+      "what": "C3② 的「v3 第一版误报 tunnel-watch、剥注释后不报」本轮没有重新贴输出，只引用第 1 轮已核过的材料。建议造一个账本行带尾随括号的探针再跑一次，让证据自含。"
+    },
+    {
+      "id": "N4",
+      "what": "实验⑧把账本临时改名再恢复。若恢复用的是副本复制，CreationTime 会变，审计窗口起点会悄悄后移。DELIVERY 只核了数据行数 18，没核 `[ledger] ... audited since` 那一行。建议最终基线贴出该行。"
+    },
+    {
+      "id": "N5",
+      "what": "`decisions/` 目录 token 过宽（该目录下任何新文件都不会被标红）只写在账本头部，policy §二 没列。清单缺失时给 WARN 行也仍未做，DELIVERY 已声明留给伙伴判断。"
+    }
+  ],
+  "rework_brief": "",
+  "escalate_question": "",
+  "reviewer_notes": "我读了 REVIEW-CONTRACT.md、TASK.md、ledger-audit.ps1 全文、ledger-external.txt、ledger.md、TRIGGER-POLICY.md:70-93、AGENTS.md:85，之后才读 DELIVERY.md；没有执行任何命令。上一轮的 B1（缺实测对照）和 B2（账本头部与清单盲区）都已修。DELIVERY 的 8 组输出是工人侧证据，我复现不了，只核了源码逻辑、文件数和窗口内数字是否自洽，没有发现矛盾。DELIVERY 称账本头部写了「账本自身被排除」，我没在头部找到这句；我也没验证最终基线的 audited since 时间。"
+}

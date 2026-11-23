@@ -1,0 +1,80 @@
+{
+  "verdict": "pass",
+  "confidence": 0.86,
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "I read scripts/ledger-external.txt in full. It has exactly 4 non-comment entries: :23 '~/.dsh/scripts', :24 '~/.dsh/cordis.patch.yml', :25 '~/.dsh/AGENTS.md' and :26 '~/.dsh/profiles/web/cordis.patch.yml'. Lines :1-22 are all comments starting with '#'. :14-20 is the clarifying comment: 'the two patch files below are DIFFERENT files', '563 B, tiny home-level patch' vs '111 KB, the PROFILE patch that holds subagent-model-selection-settings.allowedModels'. As an independent second location, Grep 'allowedModels' across both cordis.patch.yml files hits only profiles/web/cordis.patch.yml (count 1) and the home-level file has 0, which matches what the comment says. I had no shell, so I could not check the byte sizes (563 B / 111 KB) myself."
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "The run outputs are worker-side evidence; the task explicitly scopes this criterion to a structural judgment. R2-DELIVERY.md:27-34: with the 2 tokens erased, [suspect] names '~/.dsh/AGENTS.md' and '~/.dsh/profiles/web/cordis.patch.yml', and PROBE_EXIT=1. :38-43: after restoring them, '[suspect] none' and CONTROL_EXIT=0. :48-49: the ledger SHA256 before and after the restore is the same, BB1A27C1…58880. That gives D2 (exit code 1→0) plus D3 (suspect text naming the two paths), with the probe round as the counter-test. The flip is meaningful because if the roots were not scanned, erasing the tokens could not produce a suspect. I checked the structure myself with Read/Grep. ledger-audit.ps1:161 handles single-file entries with Test-Path -PathType Leaf. The :205 format '… -- never mentioned in ledger' and the :226 [scan] format both match the DELIVERY output. Ledger line 52 does contain both tokens, so 'erase' and 'restore' each have a real object. The external count of 28 before the change is independently confirmed by round 1's tasks/AGENTS-PATCH-2026-11-06/DELIVERY.md:58 '(74 project + 28 external)'. 28→30 is +2, which meets the requirement."
+    },
+    {
+      "id": "C3",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "① TRIGGER-POLICY.md:79-80 lists the 4 external roots, and :82-84 is the warning that the two cordis.patch.yml files are different. ② :86 says '仍然不覆盖：`profiles/` 下**除 `web/cordis.patch.yml` 外**的路径…'. ③ In AGENTS.md:94 (file map, ledger-audit.ps1 row), Grep -o hits '外部范围（当前 4 项：`~/.dsh/scripts` · `~/.dsh/cordis.patch.yml` · `~/.dsh/AGENTS.md` · `~/.dsh/profiles/web/cordis.patch.yml`；⚠️ 两个 `cordis.patch.yml` 不是同一个文件…）'. ④ The TRIGGER-POLICY.md:3 header is 'v1.9', and the change log at :258 has a v1.9 row covering the same three items. The counter-search came back clean: Grep '两项|两个外部|2 个外部' across TRIGGER-POLICY/AGENTS/REVIEW-CONTRACT/PLAN returned 0 hits. The only remaining '只扫工程内' (:88 and :256) describes the fallback when the list file is missing or empty, so it is not the old wording."
+    },
+    {
+      "id": "C4",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "AGENTS.md:117 to-do 2 now reads '扫描范围 = 工程根 **+** `ledger-external.txt` 声明的 4 个外部 root'. It keeps the blind spots: 'profiles/ 下其它路径、.dsh 未列清单的路径、~/.claude、依赖树/插件目录', 'mtime 可被直接改写', '账本 token 很宽' and '审计只回答「记没记过」'. It does not claim full coverage. Grep '只扫工程根' in AGENTS.md returned 0 hits. The 4-root statement matches :94 and ledger-external.txt:23-26, so the file is no longer inconsistent with itself."
+    },
+    {
+      "id": "C5",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "AGENTS.md:72 (whitelist row): '…`haiku-5.5` 于 2026-11-05 加入，**`sonnet-5.5` 于 2026-11-06 加入**；但白名单是会话级快照'. This agrees with to-do 4 at :124 ('✅ `sonnet-5.5` 已加进白名单') and with round 1's direct reading of the source, profiles/web/cordis.patch.yml:3223 'model: anthropic/claude-sonnet-5.5'. Two independent locations agree."
+    },
+    {
+      "id": "C6",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "~/.dsh/AGENTS.md:203 has the manual command 'ssh -i … -N -D 1080 -L 1081:127.0.0.1:8888 root@<VPS-IP>'. :205 reads '⚠️ **手工命令也不含 `-b`**（绑物理网卡）→ 它会走 <PROXY-CLIENT-B> 的 TUN，**20–30 分钟静默断**', and :206 reads '要长期稳就用 `-Start`（脚本自己绑网卡）；手工那条只适合临时顶一次'. The second location, the same file at :100 ('不绑 `-b` 时 ssh 走 <PROXY-CLIENT-B> 的 TUN…20–30 分钟一次'), states the same fact consistently."
+    },
+    {
+      "id": "C7",
+      "type": "judgment",
+      "status": "pass",
+      "claimed_strength": "E1",
+      "strength_met": true,
+      "evidence": "[判断类] The worker's §五.1-3 covers all three questions. My own checks add the following. Q1: ledger.md:52 already lists ~/.dsh/AGENTS.md. The audit only checks whether a file was recorded that day, not one row per edit, so it will not force a new row for every edit. The actual risk is the reverse. One row that mentions ~/.dsh/AGENTS.md covers every later change to it that day, so it becomes a pass-everything token. And if a session only touches the resident layer, the worker has to invent a 'delivery unit', which pads the sampling pool. Ledger bloat is not the main problem; the token pre-clearing changes is. Q2: the worker frames it as 'a suspect might be taken for a false positive'. The more dangerous order is the one actually used this round. The tokens were already in ledger line 52 from round 1, while those files were still out of scope, so the output is LEDGER_OK both before and after adding the roots. Without the erase probe, 'the root was never wired in' and 'it was already covered' would look exactly the same. The only other signal is the +2 in the [scan] count (28→30, which I confirmed against round 1's DELIVERY.md:58). So any future root addition should be required to show both the scan-count change and an erase probe. Q3: the benefit is that allowedModels changes now have to go through the ledger. The cost is not the stat call. It is the 111 KB file being hot-reloaded and frequently edited, which joins the pass-everything token problem from Q1. If later edits only touch other sections of the profile patch, the ledger's filename-level granularity cannot tell them apart. It becomes a burden when that file gets edited automatically by plugin installs or version bumps, which would cause bursts of suspects."
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "The C2 SHA256 only shows that the ledger after restoring matches the original. It cannot show that the probe round changed only the two tokens; there is no SHA or diff of the probe ledger itself. Next time, also record the probe ledger's SHA and the number of characters or lines that differ, so 'one variable only' is proven at both ends."
+    },
+    {
+      "id": "N2",
+      "what": "ledger.md:52 still says '`~/.dsh/AGENTS.md` 与 `~/.dsh/profiles/` 都在 mtime 审计范围外'. Since v1.9 that is out of date. The ledger is append-only, so do not rewrite it; add a correction note in this round's ledger row. There is also no ledger row yet for this round's changes to scripts/ledger-external.txt and TRIGGER-POLICY.md. They currently pass as LEDGER_OK only because row 40 (MTIME) has the same filename tokens, which is the pass-everything token problem. Add the row after the verdict is written."
+    },
+    {
+      "id": "N3",
+      "what": "The conclusion from C7 Q2 should go into TRIGGER-POLICY.md §二 or LESSONS: 'when adding an external root, you must show both the change in the [scan] external count and an erase-token probe; LEDGER_OK alone does not prove the root is in effect.' Otherwise the next time a root is added, an existing token will hide whether it is actually covered."
+    }
+  ],
+  "rework_brief": "",
+  "escalate_question": "",
+  "reviewer_notes": "I opened all of these myself with Read/Grep/Glob: REVIEW-CONTRACT.md §二-§六, R2-TASK.md, AGENTS-PATCH-2026-11-06.json, ledger-external.txt (full), TRIGGER-POLICY.md:76-91 plus Grep, ai-team/AGENTS.md (Grep :72/:94/:117/:124), ~/.dsh/AGENTS.md (Grep :97-102/:186-206), ledger-audit.ps1 (Grep :61/:156/:161/:205/:226/:234), ledger.md:52-53, the scan lines in each task's DELIVERY.md, and finally R2-DELIVERY.md. I ran no shell commands. I could not verify the actual C2 run output, the file byte sizes, or whether the probe changed only the two tokens; C2 was judged structurally, as R2-TASK §三 allows."
+}

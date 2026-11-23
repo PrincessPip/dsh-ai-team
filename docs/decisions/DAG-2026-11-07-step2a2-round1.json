@@ -1,0 +1,34 @@
+{
+  "_provenance": {
+    "note": "验收官返回体的逐字副本。除本 _provenance 字段与归档元数据外，未改动任何字段。",
+    "unit": "DAG-2026-11-07-step2a2（合并单元：Step 2 · A2-min 六项 DAG 语义 + ⑤ 三条尾巴）",
+    "round": 1,
+    "channel": "subagent_claude_code（SDK + dontAsk，天然只读；只有 Read/Grep/Glob）",
+    "date": "2026-11-07",
+    "egress": "claude-egress-check.ps1 → READY（1081 监听 / 出口 <VPS-IP> / settings OK）",
+    "prompt_style": "指路式（只给文件路径，不塞正文）——按 2026-11-06 实测的「长中文 prompt 传到验收官侧会损坏」教训",
+    "worker_side_evidence_note": "验收官明说自己没有 shell，161/0 与 12/12 这类执行结果是工人侧证据；它核的是 file:line 与产物字段。",
+    "post_review_finding": "⚠️ 送审后自跑自查流水线（selfcheck.workflow.mjs 七条）报了 4 条 blocking，验收官漏掉了其中最硬的一条（runner.py 行数 962 vs 实测 1068）与 replan 零覆盖。4 条全部核实为真，已修；C7/C8 的强度按自查意见从 E3 下调为 E2。详见 DELIVERY-step2a2.md §二·七。"
+  },
+  "verdict": "pass",
+  "confidence": 0.84,
+  "criteria": [
+    { "id": "C1", "type": "fact-consistent", "status": "pass", "claimed_strength": "E2", "strength_met": true, "evidence": "scripts/runner.py:198-242 plan_check() 逐条核对 runs/plan-20261107-003443/GRAPH.json 的 7 个节点：kind 全在 ALL_KINDS、tier 未显式覆盖、escalate=strong 在 TIERS、retry=1 为非负整数、join=any 合法、when.op=exists 合法 —— 静态推演无一条会触发 UNSUPPORTED_*；历史账本多轮记录同一张图 Gate 返回 7 节点/5 波/0 err（decisions/self/ledger.md 第 63/66 行），WAVES_MISMATCH 不会触发。未亲自执行 --dry-plan，但控制流 + 历史交叉证据支持该结论。" },
+    { "id": "C2", "type": "fact-consistent", "status": "pass", "claimed_strength": "E2", "strength_met": true, "evidence": "逐条核对 runner.py 与 dag.workflow.mjs：eval_when(:258-271)↔evalWhen(:829-833)、when_value(:274-290)↔:918-931、deps_block_reason(:308-323)↔:909-916、tiers_for(:298-305)↔:936-937、retry循环(:874-889)↔:948-963、budget(:858-866,:882-888)↔:952-964，字面逻辑一致。" },
+    { "id": "C3", "type": "executable", "status": "pass", "claimed_strength": "E3", "strength_met": true, "evidence": "runner.py:926 harm |= ...out_of_scope...readonly_violation，:959-961 elif harm: stop=\"harm\" 一旦非空立即跳出重试；fixtures/scenarios/retry-oos/spec.json 两次 attempt 分别写越界文件与诚实版本，手工推演：第1次 harm 非空→stop=harm→跳出，第2次诚实版本永不执行；runner-mutate.py 的锚点字符串与 runner.py:959-961 逐字匹配，证明变异真的命中该控制流。" },
+    { "id": "C4", "type": "executable", "status": "pass", "claimed_strength": "E3", "strength_met": true, "evidence": "直接 Read runs/escalate-live/NODES/w_live.a1.json（tier=work, argv 无 --patch）与 a3.json（tier=strong, model=deepseek-v4-pro, argv 含 --patch ...overlay-w_live-strong.yml, patch_overlay 全文含 model: deepseek-v4-pro）；RUN.json attempts=3/final_tier=strong 与 a3 吻合；runner-mutate.py 的「升档不带--patch」锚点 patch_args = [\"--patch\", ...] 与 runner.py:541 逐字匹配。这是本轮唯一一条我直接读到真实运行产物（非 fixture）的证据，强度扎实。" },
+    { "id": "C5", "type": "fact-consistent", "status": "pass", "claimed_strength": "E2", "strength_met": true, "evidence": "runner.py:217-241 确认 6 个拒收码（UNSUPPORTED_KIND/_TIER×2/_WHEN_OP/_JOIN/_RETRY_VALUE + WAVES_MISMATCH）仍在；runner-harness.py:178-196 对应 truthy 断言逐条覆盖，锚点代码与断言描述一致。" },
+    { "id": "C6", "type": "judgment", "status": "pass", "claimed_strength": "E1", "strength_met": true, "evidence": "[判断类] 亲自打开 runs/escalate-live/{RUN.json,NODES/w_live.a{1,3}.json,OVERLAYS/overlay-w_live-strong.yml} 核对：argv、patch_overlay、tier、model 字段齐全且相互吻合，证据包确实可被我独立核验，未发现 a3.json 的 argv 与实际参数矛盾之处。" },
+    { "id": "C7(⑤-1)", "type": "executable", "status": "pass", "claimed_strength": "E3", "strength_met": true, "evidence": "scripts/ledger-audit.ps1:140 $auditExt 含 *.py/*.mjs，:146 项目扫描与 :164 外部扫描均用该变量，改动在两处调用点都生效；但该脚本文件头部 :28-34 的 'EXTERNAL SCOPE (v3)' 注释块仍写旧白名单（只含 ps1/json/yml/yaml/md），未同步更新——见 N1。285→528 的扫描计数本身未亲自执行复现，按工人侧证据处理。" },
+    { "id": "C8(⑤-3)", "type": "executable", "status": "pass", "claimed_strength": "E3", "strength_met": true, "evidence": "selfcheck.workflow.mjs:41-45 verifiable 判据已收紧为「要么 file:line、要么可 Read 的产物路径+字段名、要么命令输出原文，否则报」；fixtures/selfcheck-verifiable/DELIVERY-hit.md 全文只有自述（无 file:line/路径/输出），DELIVERY-clean.md 每条都给 file:line + 产物路径+字段名，两份材料的构造与新判据的触发条件逐字吻合。实际 LLM 判定结果（0/1 failed_checks）未亲自执行，按工人侧证据处理。" }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    { "id": "N1", "what": "scripts/ledger-audit.ps1:28-34 的头部注释（'EXTERNAL SCOPE (v3)' 段）仍写外部扫描只含 *.ps1/*.json/*.yml/*.yaml/*.md，未同步 v3.3 新增的 *.py/*.mjs（实际代码 :140/:146/:164 已生效），属脚本内部文档与实现的一处漂移，建议下轮顺手改一行" },
+    { "id": "N2", "what": "DELIVERY §一表格把『员工自报 status 参与判定』的实现位置标成 runner.py:923，实际判定逻辑在 :912-915，:923 只是存值；引用行号偏移约 10 行，建议下次核对时用判定发生处而非赋值处" },
+    { "id": "N3", "what": "harm（越界/只读违规）与 on_fail.escalate 同时配置时的交互（harm 触发后 escalate 档位完全不会被尝试）是真实存在的代码行为，但 12 个变异 + 161 条断言里没有任何场景同时配置两者，这个组合路径目前零覆盖，只能靠读代码确认，没有断言能在未来回归时报警" }
+  ],
+  "rework_brief": "",
+  "escalate_question": "",
+  "reviewer_notes": "我没有 shell，K1/K2/K5-K9 等『真的跑过 161/0、12/12』的数字本身是工人侧证据，我只验证了：(a) 每条 file:line 引用打开后与控制流原文逐字对应，(b) runner-mutate.py 的变异锚点字符串与 runner.py 实际代码逐字匹配（说明变异确实命中声称的那行），(c) runs/escalate-live/ 是本轮唯一一份我亲自读过的真实（非fixture）产物，三次 attempt 的 argv/tier/model/overlay 字段内部一致、与 RUN.json 吻合。真图 --dry-plan 的『0条unsupported/5波』是基于 plan_check() 代码对真实 GRAPH.json 字段的手工推演 + 历史账本多轮交叉印证，未亲自执行命令。ledger-audit.ps1 的 285→528 扫描计数同样未亲自执行复现。"
+}

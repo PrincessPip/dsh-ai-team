@@ -1,0 +1,55 @@
+{
+  "_comment": "C1（F1）：同一个 out 声明（含 patch）下，四种做法的待遇必须不同 —— 只交 patch = ok，直接落盘 = fs_write_forbidden，交空 patch = patch_missing，patch 目标越界 = patch_out_of_scope。",
+  "nodes": {
+    "s_facts": {
+      "result": {
+        "facts": [
+          "notes.md 4 行"
+        ],
+        "summary": "读到 4 行"
+      }
+    },
+    "w_patch": {
+      "result": {
+        "patch": "--- a/x\n+++ b/x\n@@ -1 +1 @@\n-a\n+b\n",
+        "patch_targets": [
+          "tasks/DAG-2026-11-06/fixtures/sandbox/PATCH-A.md"
+        ],
+        "changed": [],
+        "summary": "只交 patch，一个字节都没落盘"
+      }
+    },
+    "w_direct": {
+      "write_files": {
+        "tasks/DAG-2026-11-06/fixtures/sandbox/PATCH-DIRECT.md": "- 我直接写了主树\n"
+      },
+      "result": {
+        "patch": "--- a/x\n+++ b/x\n",
+        "patch_targets": [
+          "tasks/DAG-2026-11-06/fixtures/sandbox/PATCH-DIRECT.md"
+        ],
+        "changed": [
+          "tasks/DAG-2026-11-06/fixtures/sandbox/PATCH-DIRECT.md"
+        ],
+        "summary": "我直接把主树写了"
+      }
+    },
+    "w_nopatch": {
+      "result": {
+        "patch": "",
+        "changed": [],
+        "summary": "没东西可交"
+      }
+    },
+    "w_oos": {
+      "result": {
+        "patch": "--- a/x\n+++ b/x\n",
+        "patch_targets": [
+          "tasks/DAG-2026-11-06/fixtures/sandbox/OFF-LIMITS.md"
+        ],
+        "changed": [],
+        "summary": "patch 目标是别人的文件"
+      }
+    }
+  }
+}

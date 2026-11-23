@@ -1,0 +1,154 @@
+{
+  "verdict": "escalate",
+  "confidence": 0.99,
+  "readonly_enforcement": "snapshot_only",
+  "evidence_root": "%USERPROFILE%/AppData/Local/Temp/constraints-r6-independent-fid8c809",
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "第四轮真正的9个反例均已独立复跑，无标签时全部exit 1；同句加E-001后exit 0。但缩进代码、引用块、划掉文本中的标签仍能传给下一条独立禁令。见probe-results.json、additional-results.json、boundary-results.json。",
+      "judgment": "[判断类，E1] 语义分类已移除，但标签归属仍未守住；误放行不需要给目标条款显式标错ID。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "自造“全程只读，不改任何文件”命中建议器但exit 1；将建议器置为恒返回None后仍exit 1。M32接入建议器后准确使7个既定用例变红。见suggest-neutral.txt、mutate.txt、m32-confirmation.json。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "未知E/I标签均exit 1/UNKNOWN-ID；proposed、空quote均exit 1/NOT-APPROVED；缺guidance及X-001、Evil、Invalid、E001、I_001均exit 3。M34准确命中T64/T64b。见probe-results.json、additional-results.json、mutate.txt。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立核得baseline为681→763，新增82、移出0；round5-plan登记0条；六份改动文档的27个baseline命中均能在前像找到同文。带标签重建登记0条，删标签后exit 1；T35/M21通过。见baseline-audit.json、baseline-probe.json。",
+      "scope": "按简报限定，仅核提供材料及本单元改动面；82条新增登记中62条对应源文件缺席，不追认其历史来源。"
+    },
+    {
+      "id": "C5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "实际版本为66例、35格：独立selftest为66/66、exit 0；完整变异机器结果35/35、void=0，所有实红集合等于预期，包括M10/M15/M26–M35。全套报告已落盘，随后外层打印发生GBK编码错误；补跑M32为1/1、子进程exit 0。见selftest.txt、mutate-summary.json、mutate.txt、m32-confirmation.json。",
+      "scope": "既定变异有效，但未覆盖本次发现的跨块标签借用。"
+    },
+    {
+      "id": "C6",
+      "type": "fact-consistent",
+      "status": "unverified",
+      "claimed_strength": "E2",
+      "strength_met": false,
+      "evidence": "前像校验exit 0、12份失败0份；独立SHA256计算12/12匹配。仅损坏临时副本中的一份前像后，校验exit 1。见preimage-hashes.json、preimages.txt、preimage-negative.txt；这些证据不能证明历史编辑顺序。",
+      "subresults": {
+        "content_integrity": "pass",
+        "strict_verification": "pass",
+        "historical_order": "unverified"
+      }
+    },
+    {
+      "id": "C7",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "--defs实跑exit 0、defs=6、violations=0；在临时副本改坏AGENTS中的I定义后exit 1、violations=1。T61/M22通过。见defs.txt、defs-negative.txt、mutate.txt。"
+    },
+    {
+      "id": "C8",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "T09–T14、T56–T59全部通过，M01–M09准确命中预期红集；独立对照抽取正则、词表、长度阈值、代码块识别及排除规则，均与前像一致。extract的差异是移除分类调用及相应返回字段。见extractor-compare.json、checker-diff.txt、mutate.txt。",
+      "scope": "抽取行为通过；跨行标签使用被排除文本的问题计入C1。"
+    },
+    {
+      "id": "C9",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立失败输出含原因、改法、原则及10项豁免；T41替换guidance后输出随之改变，M23–M25准确命中对应断言。删除I-005登记后，“门锁”反例仍被拒且suggestion=null。见probes/suggest-missing-id/result.json、selftest.txt、mutate.txt。"
+    },
+    {
+      "id": "C10",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立inventory保留原文和by，未知及未批准标签记registered=false。真实连续扫描将行尾标签E-001改为I-001后，stats为runs=2、两项用量各1，drift正确包含两种依据；--list-exemptions列10项。M26–M31及M35全部通过。见stats-real.json、probe-results.json、exemptions.txt、mutate.txt。"
+    },
+    {
+      "id": "C11",
+      "type": "fact-consistent",
+      "status": "unverified",
+      "claimed_strength": "E2",
+      "strength_met": false,
+      "evidence": "已独立生成并阅读checker-diff.txt和draft-diff.txt：最终实现移除了语义分类器，未新增针对草案的抽取例外，草案改为引用块和显式标签且未进入baseline。但三次调整期间的连续版本及同期记录未提供。",
+      "judgment": "[判断类，E1] 最终改动可追溯；不能用前后两个端点证明中间过程始终未改判据，也不能据此判断作者动机。"
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "claim": "上一轮标签归属缺陷只修了部分形态，代码示例、引用块和废止文本仍能给独立条款提供标签。",
+      "why": "违反C1；未声明出处的产品禁令仍会放行。",
+      "evidence": "boundary-results.json：输入“    示例 [C:E-001]\\n- 禁止复制任何产品副本。”，exit 0、prohibitions=1、registered=1，inventory把第二行登记为E-001；中间插入空行后exit 1。引用块后接禁令标题、划掉文本后接独立列表项也均exit 0。scripts/constraints-check.py:253「prev = lines[i - 2].strip() if i >= 2 else \"\"」保留被排除文本；:681「if not (_LIST_OR_QUOTE_RE.match(prev) and _LIST_OR_QUOTE_RE.match(text)):」不足以证明属于同一条款。"
+    },
+    {
+      "id": "B2",
+      "claim": "C6/C11的历史过程要求仍未验证，当前简报没有取消这些验收要求。",
+      "why": "契约规定未验证项不能计为通过；承认缺证据不等于该项通过。",
+      "evidence": "DELIVERY.md:79「在改任何判据之前跑过」仍作肯定断言，:121同时写「这类证据只能当时留」并保留unverified；12份前像哈希与最终diff只能支持内容核验，不能独立证明先后顺序及中间编辑过程。"
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "claim": "上一轮B2、B3已通过独立复验；B1部分修复，B4仍未验证。",
+      "evidence": "畸形ID均exit 3，真实行尾标签切换可检测漂移；相邻列表及引用块接列表的旧反例已拒绝，但boundary-results.json的新跨块反例仍通过。"
+    },
+    {
+      "id": "N2",
+      "claim": "送审材料仍有过时数字及不实的修正文案。",
+      "evidence": "REVIEW-BRIEF.md:65仍写61例/32格，实际66例/35格；EXEMPTIONS-DRAFT.md:125仍写baseline 769，实际763；DELIVERY.md:124声称删掉T79，但草案:110仍引用T79。CONSTRAINTS.json:12及:18仍描述已移除的关键词自动豁免机制。"
+    },
+    {
+      "id": "N3",
+      "claim": "豁免条目制无需退回语义分类，但82条历史文本的覆盖数字不能当作完整语义核验。",
+      "evidence": "已逐项阅读10项scope/covers/not_covers并对照82条新增登记的inventory原文；证据、评审和实验用途有明确区分，但62条缺源文件上下文，无法追认全部原分类及“78条覆盖、4条叙述”的归并。"
+    },
+    {
+      "id": "N4",
+      "claim": "其余前置检查通过，结论限于提供的送审副本。",
+      "evidence": "changed.txt：6文件、35条、0违规；all.txt：14文件、63条、0违规；cite.txt：exit 0、OK=1、LONE=2；budget.txt：正文50814、渲染51162、无省略截断、exit 0。"
+    },
+    {
+      "id": "N5",
+      "claim": "已声明边界继续保留：不核标签语义及原话真伪，抽取范围有限，历史条款依赖baseline。",
+      "evidence": "REVIEW-BRIEF.md §5、§7；本次未核18GB主树及未随包提供的其他单元。"
+    }
+  ],
+  "rework_brief": "保留C方案，修复标签归属：跨行继承必须确认属于同一条款，不能从代码块、引用块、划掉文本或其他独立块借标签；抽取阶段保留必要的块类型和缩进信息，统一扫描与baseline生成的归属规则。将本次跨块反例及合法续行对照加入断言和针对性变异。更新简报、草案、注册表说明和测试数字。C6/C11仅能补同期证据或由伙伴明确调整验收范围，不得补造历史记录。",
+  "escalate_red_line": [
+    4,
+    5
+  ],
+  "escalate_question": "[红线4、5] 标签归属经上一轮返工仍存在同类漏检，历史过程要求也仍缺证据。历史验收范围请选择：A，保留C6/C11完整要求，取得同期证据后复审；B，明确收窄为最终内容与行为核验，历史顺序永久保留unverified。两种选择均须修复B1。",
+  "reviewer_notes": "送审树前后均437个文件，新增、删除、内容及类型变化均0，重解析点0，见readonly-summary.json；仅证明采样间净状态一致，外层验收入口的机器报告仍须合并核查。所有测试、变异、夹具和报告均写在外部TEMP，测试隔离六个目录变量，未调用网络或真实模型。完整变异报告落盘后外层打印发生GBK编码错误，已直接解析35格机器结果并补核M32退出码，未改被测断言或预期。"
+}

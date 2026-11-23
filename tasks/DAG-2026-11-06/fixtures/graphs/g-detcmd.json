@@ -1,0 +1,39 @@
+{
+  "v": 1,
+  "plan_id": "plan-e2efix-detcmd",
+  "budget": {
+    "max_calls": 8
+  },
+  "nodes": [
+    {
+      "id": "w_det",
+      "kind": "work",
+      "do": "什么都不写，跑一条必败的验收命令（模拟执行策略被拦那类确定性失败）。",
+      "after": [],
+      "ctx": {
+        "read": [
+          "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+        ]
+      },
+      "writes": [
+        "tasks/DAG-2026-11-06/fixtures/sandbox/PATCH-A.md"
+      ],
+      "out": [
+        "changed",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "cmd",
+          "run": "node -e \"process.exit(1)\"",
+          "expect": "exit0"
+        }
+      ],
+      "on_fail": {
+        "retry": 1,
+        "escalate": "integrate",
+        "then": "replan"
+      }
+    }
+  ]
+}

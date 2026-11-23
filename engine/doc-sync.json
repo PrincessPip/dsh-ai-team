@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "checks": [
+    {
+      "id": "fire-artifacts",
+      "why": "「救火四件取证」是同一个事实的三份副本：模板 §五 的取证表、模板 §八 的体检清单、执行器的 ARTIFACT_FILES。副本漂移的代价已经付过一次 —— 模板点名四个名字、执行器产出的是另外一套，于是 exit 6 分不清「工人没交作业」和「契约写错」，而 §5.6 又禁止事后补件，救火链路整条卡死（DOC-SYNC-2026-11-11 修的就是它）。这条登记只防「名字再漂」；「谁写」那半由代码里的 MACHINE_ARTIFACTS / WORKER_ARTIFACTS 与断言台守着，不跨文档抽 —— 那需要文档用固定措辞，正则脆且假。",
+      "rule": "set_equal",
+      "copies": [
+        {
+          "file": "INC-TEMPLATE.md",
+          "locate": "(?ms)^\\| 文件 \\| 内容 \\|.*?\\n\\n",
+          "tokens": "table_first_col",
+          "note": "模板 §五 取证要求表（只认第一列：内容列里会再次提到同表其它文件名）"
+        },
+        {
+          "file": "INC-TEMPLATE.md",
+          "locate": "(?m)^- \\[ \\] 四件齐.*$",
+          "tokens": "artifact",
+          "note": "模板 §八 体检清单"
+        },
+        {
+          "file": "scripts/fire-chief.py",
+          "locate": "ARTIFACT_FILES = \\([^)]*\\)",
+          "tokens": "artifact",
+          "note": "执行器的四件名单"
+        }
+      ]
+    },
+    {
+      "id": "fire-round-cap",
+      "why": "救火轮上限那个数字写在两处：触发策略 §二·五·一·三 的标题、救火方案 §四 的规则正文。只改一处的话，规则说「最多 3 次」而方案仍写「2 次」，读的人各信一半 —— 而这条上限决定「什么时候停下来找伙伴」，含糊不得。",
+      "rule": "set_equal",
+      "copies": [
+        {
+          "file": "TRIGGER-POLICY.md",
+          "locate": "(?m)^#### 一·三、救火轮上限.*$",
+          "tokens": "count",
+          "note": "策略 §二·五·一·三 标题"
+        },
+        {
+          "file": "FIRE-CHIEF.md",
+          "locate": "(?m)^\\*\\*救火轮上限.*$",
+          "tokens": "count",
+          "note": "方案 §四 规则正文"
+        }
+      ]
+    }
+  ]
+}

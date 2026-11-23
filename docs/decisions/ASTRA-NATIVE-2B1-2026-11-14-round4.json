@@ -1,0 +1,108 @@
+{
+  "verdict": "pass",
+  "confidence": 0.96,
+  "readonly_enforcement": "snapshot_only",
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "按简报继承 round3 的真实服务链及严格接收器反例验证；本轮独立哈希检查输出 FROZEN 1643 drift []，实现与测试未变。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "继承 round3 的投影边界反例；本轮原73项核验器基线及恢复均73/73，包含旧opaque恰一次及retained排序检查。"
+    },
+    {
+      "id": "C3",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "继承 round3 七项事务反例；本轮73/73重算确认物理journal保留两个source、仅第二checkpoint处于active surface。"
+    },
+    {
+      "id": "C4",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "继承 round3 工具配对及恢复反例；本轮73/73重算确认真实call、args、result一致，物理call/result各一次，修正轮工具执行为零。"
+    },
+    {
+      "id": "C5",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "继承 round3 八项坏journal跨进程恢复反例；本轮73/73重算确认不同PID、producer自然退出后consumer启动及物理journal恢复证据。"
+    },
+    {
+      "id": "C6",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "本轮73/73重算确认初轮恰缺recent_marker、修正及恢复回答九字段值和类型准确、请求明文未补随机答案；原失败证据仍保留。"
+    },
+    {
+      "id": "C7",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "按简报继承 round3 的九项边界及七项事务反例；本轮冻结1643项哈希无漂移，相关实现和测试未变。"
+    },
+    {
+      "id": "C8",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "按简报继承已独立执行的43+9、16+7结果；本轮与round3快照比较未发现实现或测试变化，未重复运行完整测试链。"
+    },
+    {
+      "id": "C9",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立运行TEMP/reproduce.py：基线73/73 exit0；used由3改4后exit1，仅correction budget exactly three; total six失败；重复response ID后exit1，仅six distinct upstream response IDs失败；两次恢复均73/73 exit0。原verify-correction.py SHA256为443a5cad8c4fd4151ba087bb00ea3e4b2e708a632cda5683ddae5217a5dd9697，断言未改；D1哈希、D2解析与退出码及目标反证满足E3。"
+    },
+    {
+      "id": "C10",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "独立运行TEMP/reproduce.py：4226项保护清单、2071项历史送审清单分别完成exit0→exit1→exit0；错预期SHA时仅命中指定路径，文件存在且实际SHA仍等于正确期望。输出AST_EQUIVALENT；当前送审清单2161项的副本及原件哈希均无漂移。D1哈希、D2退出码、D3原逻辑及目标反证满足E3。"
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [],
+  "verification": {
+    "artifact_root": "%USERPROFILE%/AppData/Local/Temp/astra-r4-independent-agm0qcgi",
+    "reproduction_command": "python -B -X utf8 %USERPROFILE%/AppData/Local/Temp/astra-r4-independent-agm0qcgi/reproduce.py",
+    "reproduction_output": "ALL_11_MATCHED; MIRROR_1666_RESTORED; AST_EQUIVALENT; NEW_REQUESTS_0",
+    "reports": [
+      "REPRODUCTION.json",
+      "outputs/*.execution.json",
+      "outputs/*.report.json",
+      "CITE-CHECK.txt",
+      "FINAL-CHECK.json"
+    ],
+    "path_adaptation": "原证明脚本字节不变；仅将OUT指向新TEMP输出、REPO对齐历史源根、AUDIT和mirror指向复制目录。历史送审2071项另行复制并逐项核SHA，未用旧清单错误比较已合法更新的DELIVERY。",
+    "fire_boundary": "独立比较救火前后3595项快照，仅DELIVERY.md变化；修改限状态、C9/C10及对应解释。四件齐全，66项产物哈希匹配；META记录586秒、exit0、未超时、breach_count=0。",
+    "previous_blocking": "原E2声明、两轮裁决及契约四份留存均与原字节及SHA匹配；C9/C10现有各自实测反证，上一轮B1已解决。",
+    "citations": "在TEMP副本运行cite-check.py --strict：exit0，files=4，refs=0；未将零引用视为论断成立的证据。",
+    "readonly": "送审树前后2165文件、2544路径条目，无重解析点，diff={}；前后树SHA256均为8633e5e4eef4268d69816323a7e4646a7197168d649898058b57d0c4a07ae4e8。"
+  },
+  "rework_brief": "",
+  "reviewer_notes": "本次限定检查点可关闭，不代表完整2B或生产发布通过。C1–C8按简报在核实实现哈希后继承；C10新增反证仅证明原哈希比较，不扩大为新增路径检测或硬沙箱保证。所有复制、变异、执行产物仅写入独立TEMP目录，未修改送审工程、发起模型请求、运行--live或启动服务。"
+}

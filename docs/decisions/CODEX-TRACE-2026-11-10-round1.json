@@ -1,0 +1,33 @@
+{
+  "unit": "CODEX-TRACE-2026-11-10",
+  "round": 1,
+  "verdict": "rework",
+  "confidence": 0.85,
+  "criteria": [
+    { "id": "C1", "type": "executable", "status": "fail", "claimed_strength": "E3", "strength_met": false, "evidence": "node trace-harness.mjs -> TESTS=18 FAILED=0（我复跑）；但 TASK §三·1 第 5 子项「只有轨迹没有答案时 collectOutput 仍返回 []」在 18 个 check（trace-harness.mjs:48–223）里无对应用例，断言台只测 trace.mjs 内核。见 B2" },
+    { "id": "C2", "type": "executable", "status": "pass", "claimed_strength": "E3", "strength_met": true, "evidence": "trace-mutate.py -> defined=10 void=0 ran=10 caught=10 restored=True（我复跑）；TASK 点名的「关落盘」不在 10 个变异里（M7 是抛异常），我补跑 M11 删 fs.writeFileSync -> FAIL persist/writes-one-line-per-record、M12 只写 1 行 -> got 1 want 3，均被抓；M13 删 writeTraceFile 的 mode=off 早退存活（插件路径不可达，N3）" },
+    { "id": "C3", "type": "executable", "status": "fail", "claimed_strength": "E3", "strength_met": false, "evidence": "临时 HOME 副本跑 codex-trace-patch.py --check：H1 删 blocks.push / H2 appendTrace 挪到 agentMessage 过滤之后 / H3 return blocks 改 return [] 三者都 RESULT=READY exit=0；对照 H4 删带标记行 -> NOT-READY exit=1。根因 codex-trace-patch.py:244–261 只做 MARK 行集合比对 + 整文件 count。见 B1" },
+    { "id": "C4", "type": "fact-consistent", "status": "unverified", "claimed_strength": "E2", "strength_met": false, "evidence": "~/.dsh/logs/codex-trace/2026-11-10T01-42-45-146Z-codex-trace.jsonl 678 字节 2 行，命令/exitCode 0 与 DELIVERY §四 摘录一致；但父会话轨迹块只有手抄+省略号版本、无原始落盘，且块与 JSONL 同源于 this.trace（非独立）；TASK §三·4 要求对照 codex exec --json 的 run，被静默替换。按 BRIEF 属工人侧证据，不判 fail" },
+    { "id": "C5", "type": "fact-consistent", "status": "pass", "claimed_strength": "E2", "strength_met": true, "evidence": "BRIEF 四·1：grep -c TRACE-PATCH-v1 index.js=14 / index.js.tr4ce-orig=0；git diff --no-index 8 个 hunk、无重复插入；splitlines 908 vs 873（+35）" },
+    { "id": "C6", "type": "fact-consistent", "status": "pass", "claimed_strength": "E2", "strength_met": true, "evidence": "BRIEF 四·2：sha256 lib/trace.mjs = patch/trace.mjs = a3a34c36a9bb33ec…300c69（D1），--check 打印 A3A34C36A9BB（D2）" },
+    { "id": "C7", "type": "executable", "status": "pass", "claimed_strength": "E3", "strength_met": true, "evidence": "BRIEF 四·4：插件 index.js collectOutput 内 `if (blocks.length > 0) {`（:324）包住渲染+落盘；runTurn :285–291 `output.length === 0`。抽已装方法体实测：无答案/空白答案+轨迹 -> [] writes=0；有答案 -> 2 blocks、二次调用不重复落盘。反事实把守卫改 if (true) -> 无答案返回 1 个轨迹块 —— 守卫在判" },
+    { "id": "C8", "type": "judgment", "status": "pass", "claimed_strength": "E1", "strength_met": true, "evidence": "[判断类] DELIVERY §五·8 fileChange 路径字段未见真数据：已装插件 lib/types 无 changes 字段声明，index.js 仅 :440 处 fileChange&&declined。错字段时渲染「(未报路径)」且头部仍计「N 个文件改动」—— 可见降级而非静默假阴；作为『改过文件』信号可用，作为『改了哪些文件』证据暂按 E0（N2）" }
+  ],
+  "blocking": [
+    { "id": "B1", "what": "codex-trace-patch.py --check 不是位置锚定，三种会让补丁失效甚至让插件整体坏掉的接线改动仍报 READY", "why": "违反 TASK §三·3「锚点定位，不是『文件里出现过这个字符串』」与 §四 红线「守卫必须能证明补丁在」；codex-egress-check.ps1 的退出码 7 直接消费它，守卫随之失效。H3 情形下每次运行都会被 runTurn 判 completed without an answer", "evidence": "临时 HOME 下：H1 删 `blocks.push({ type: \"text\", text });` / H2 appendTrace 挪到 `if (item.type !== \"agentMessage\") return;` 之后 / H3 `return blocks;`→`return [];` 均 RESULT=READY exit=0；H4 删 `this.trace = []; // TRACE-PATCH-v1` -> NOT-READY exit=1。codex-trace-patch.py:244–246 只比对含 MARK 行的集合，:252–261 为整文件 count，:250 注释『必须在类体内』未实现" },
+    { "id": "B2", "what": "TASK §三·1 第 5 子项（只有轨迹没有答案时 collectOutput 仍返回 []）没有任何断言，DELIVERY 未声明缺口", "why": "TASK 原文「缺一条不算过」；这是红线「轨迹块不进 runTurn 的空答案判定」唯一的行为级保护，现只有 --check 的一处字符串计数（而 B1 表明计数挡不住 H3 这类改动）。我已实测它可测（抽方法体注入即可），不是结构性做不到", "evidence": "trace-harness.mjs 18 个 check 名（:48–223）无 collectOutput；DELIVERY §三 #1 仅写 TESTS=18 FAILED=0" }
+  ],
+  "nonblocking": [
+    { "id": "N1", "what": "没答案/turn 失败的运行轨迹完全不落盘：writeTraceFile 被同一个 blocks.length>0 守卫关住（index.js:324–333），恰好丢掉最需要证据的运行；未在 §五 披露。落盘可与『进块』解耦" },
+    { "id": "N2", "what": "fileChange 的 changes[].path 未见真数据；在拿到一条真 fileChange 之前，轨迹块里的文件路径不应作为证据引用；DELIVERY 整体『可执行类 E3』不覆盖此分支，应在强度声明里单列" },
+    { "id": "N3", "what": "变异 M13（删 writeTraceFile 的 mode=off 早退）存活；插件路径因 renderTrace 先判 off 而不可达，但内核单独使用时 off 仍会落盘" },
+    { "id": "N4", "what": "DELIVERY 规模数字与实物不符：trace.mjs 174→实 160、codex-trace-patch.py 300→346、harness 230→232、mutate 110→102、index.js 874→909→实 873→908；接线口径「11 处 / 11 个锚点 / 5 处锚点」三处打架（实物 OPS 12、MARK 行 14、--check 5 处计数）" },
+    { "id": "N5", "what": "TASK §三·3 与 patch/trace.mjs:7、:14 仍写 codex-trace-patch.ps1 -Check/-Apply，实际是 .py --check/--apply" },
+    { "id": "N6", "what": "codex-egress-check.ps1:181–182 patcher 缺失时只记 trace: SKIP、退出码不变 —— 守卫 fail-open（同 DAG rules 第 1 轮 B2 形态）" },
+    { "id": "N7", "what": "TASK §三·4 的对照对象（codex exec --json 的 run）被静默替换为『块 ↔ 同源 JSONL』；父会话轨迹块无原始落盘，只在 DELIVERY 手抄并用省略号，『逐字一致』不可核。应如实写明偏离并落一份原文" },
+    { "id": "N8", "what": "JSONL 的 at 字段是文件时间戳（trace.mjs:154，所有行相同），不是事件时间；ledger-audit 报 REVIEW-BRIEF-round1.md 未入账（exit 1）" }
+  ],
+  "rework_brief": "1) B1：codex-trace-patch.py 的 cmd_check 改为要求 read_text(INDEX) == build_patched(read_text(BASELINE))（全文相等，失败时打印第一处差异行号），保留 sha 与 node --check；删除或降为辅助的 MARK 集合比对/count。再为 --check 加一个变异对照脚本：用 USERPROFILE/HOME 指向临时目录放副本，至少覆盖 H1 删 blocks.push、H2 appendTrace 挪到 agentMessage 过滤之后、H3 return blocks→return []、H4 删带标记行，四者都必须 NOT-READY exit=1，原样副本 READY exit=0；输出由脚本直接写入 tasks/CODEX-TRACE-2026-11-10/ 下的文件。2) B2：在 trace-harness.mjs 加 collectOutput 用例 —— 从已装（或 build_patched 生成的）index.js 抽 collectOutput 方法体，注入 trace.mjs 与假 fs，断言：无答案+有轨迹 -> []、空白答案 -> []、有答案 -> 2 blocks 且二次调用不重复落盘；并在变异台加『守卫改 if (true)』必须被抓。3) 顺手：修 DELIVERY §二 数字与接线口径（N4）、TASK/trace.mjs 的 .ps1 残留（N5），在 §四 写明 TASK §三·4 的对照对象偏离（N7）。验收：重跑 BRIEF §三 六条 + 新的 --check 变异对照全绿。",
+  "escalate_question": "",
+  "reviewer_notes": "未复现 09:42 真跑与『改 config 即热加载』，二者按工人侧证据处理。动过的东西：仅在 %TEMP%\\tmp.ag1ZxnU3PK 建副本与探针脚本、以临时 USERPROFILE 跑 --check；工程与插件文件未改，未 apply/revert，未调 subagent_*。fileChange 字段名按我对 codex app-server 协议的了解大概率是 path，但本机无类型声明可证，故不据此加分。"
+}

@@ -1,0 +1,16 @@
+{
+  "_comment": "配 g4-cmdfail.json：员工诚实，但 accept 里的 cmd 真的退出 1。runner 必须因此判 fail —— 证明退出码是真跑出来的，不是模型报的。",
+  "nodes": {
+    "s_recon": {
+      "expect_prompt_contains": ["id: s_recon"],
+      "result": {"facts": "3 条", "summary": "只读侦察完成"}
+    },
+    "w_write": {
+      "expect_prompt_contains": ["id: w_write"],
+      "write_files": {
+        "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md": "# A1 fixture 基线\n\n- 第一行\n- 第二行\n- 第三行\n- A1 fixture 写入行\n"
+      },
+      "result": {"changed": ["tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"], "summary": "如实报告"}
+    }
+  }
+}

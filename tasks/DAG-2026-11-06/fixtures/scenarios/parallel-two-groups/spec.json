@@ -1,0 +1,221 @@
+{
+  "_comment": "第 3 轮 B5 的反例：同一波 8 个只读节点（--max-parallel=4 切成两组），各 retry=2、max_calls=20、都要第 3 次才成功。第一组并发吃掉 12 次调用，第二组的余量只剩 4，必须整组退回串行 —— 否则第二组每轮各分一次重试，e/f 也会失败。",
+  "nodes": {
+    "a": {
+      "expect_prompt_contains": [
+        "id: a"
+      ],
+      "attempts": [
+        {
+          "result": {
+            "status": "fail",
+            "summary": "第 1 次失败"
+          }
+        },
+        {
+          "result": {
+            "status": "fail",
+            "summary": "第 2 次失败"
+          }
+        },
+        {
+          "result": {
+            "facts": [
+              "notes.md 3 行"
+            ],
+            "summary": "第 3 次成功"
+          }
+        }
+      ]
+    },
+    "b": {
+      "expect_prompt_contains": [
+        "id: b"
+      ],
+      "attempts": [
+        {
+          "result": {
+            "status": "fail",
+            "summary": "第 1 次失败"
+          }
+        },
+        {
+          "result": {
+            "status": "fail",
+            "summary": "第 2 次失败"
+          }
+        },
+        {
+          "result": {
+            "facts": [
+              "notes.md 3 行"
+            ],
+            "summary": "第 3 次成功"
+          }
+        }
+      ]
+    },
+    "c": {
+      "expect_prompt_contains": [
+        "id: c"
+      ],
+      "attempts": [
+        {
+          "result": {
+            "status": "fail",
+            "summary": "第 1 次失败"
+          }
+        },
+        {
+          "result": {
+            "status": "fail",
+            "summary": "第 2 次失败"
+          }
+        },
+        {
+          "result": {
+            "facts": [
+              "notes.md 3 行"
+            ],
+            "summary": "第 3 次成功"
+          }
+        }
+      ]
+    },
+    "d": {
+      "expect_prompt_contains": [
+        "id: d"
+      ],
+      "attempts": [
+        {
+          "result": {
+            "status": "fail",
+            "summary": "第 1 次失败"
+          }
+        },
+        {
+          "result": {
+            "status": "fail",
+            "summary": "第 2 次失败"
+          }
+        },
+        {
+          "result": {
+            "facts": [
+              "notes.md 3 行"
+            ],
+            "summary": "第 3 次成功"
+          }
+        }
+      ]
+    },
+    "e": {
+      "expect_prompt_contains": [
+        "id: e"
+      ],
+      "attempts": [
+        {
+          "result": {
+            "status": "fail",
+            "summary": "第 1 次失败"
+          }
+        },
+        {
+          "result": {
+            "status": "fail",
+            "summary": "第 2 次失败"
+          }
+        },
+        {
+          "result": {
+            "facts": [
+              "notes.md 3 行"
+            ],
+            "summary": "第 3 次成功"
+          }
+        }
+      ]
+    },
+    "f": {
+      "expect_prompt_contains": [
+        "id: f"
+      ],
+      "attempts": [
+        {
+          "result": {
+            "status": "fail",
+            "summary": "第 1 次失败"
+          }
+        },
+        {
+          "result": {
+            "status": "fail",
+            "summary": "第 2 次失败"
+          }
+        },
+        {
+          "result": {
+            "facts": [
+              "notes.md 3 行"
+            ],
+            "summary": "第 3 次成功"
+          }
+        }
+      ]
+    },
+    "g": {
+      "expect_prompt_contains": [
+        "id: g"
+      ],
+      "attempts": [
+        {
+          "result": {
+            "status": "fail",
+            "summary": "第 1 次失败"
+          }
+        },
+        {
+          "result": {
+            "status": "fail",
+            "summary": "第 2 次失败"
+          }
+        },
+        {
+          "result": {
+            "facts": [
+              "notes.md 3 行"
+            ],
+            "summary": "第 3 次成功"
+          }
+        }
+      ]
+    },
+    "h": {
+      "expect_prompt_contains": [
+        "id: h"
+      ],
+      "attempts": [
+        {
+          "result": {
+            "status": "fail",
+            "summary": "第 1 次失败"
+          }
+        },
+        {
+          "result": {
+            "status": "fail",
+            "summary": "第 2 次失败"
+          }
+        },
+        {
+          "result": {
+            "facts": [
+              "notes.md 3 行"
+            ],
+            "summary": "第 3 次成功"
+          }
+        }
+      ]
+    }
+  }
+}

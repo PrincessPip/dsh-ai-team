@@ -1,0 +1,38 @@
+{
+  "v": 1,
+  "plan_id": "plan-e2efix-timeout",
+  "budget": {
+    "max_calls": 4
+  },
+  "nodes": [
+    {
+      "id": "w_slow",
+      "kind": "work",
+      "do": "先发两条工具调用，然后睡很久（会被 runner 的超时杀掉）。",
+      "after": [],
+      "ctx": {
+        "read": [
+          "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+        ]
+      },
+      "writes": [
+        "tasks/DAG-2026-11-06/fixtures/sandbox/PATCH-A.md"
+      ],
+      "out": [
+        "changed",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "cmd",
+          "run": "node -e \"require('fs').writeFileSync('tasks/DAG-2026-11-06/fixtures/sandbox/PATCH-A.md','CMD-RAN')\"",
+          "expect": "exit0"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "skip"
+      }
+    }
+  ]
+}

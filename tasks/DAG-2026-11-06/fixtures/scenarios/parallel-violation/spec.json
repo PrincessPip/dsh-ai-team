@@ -1,0 +1,19 @@
+{
+  "_comment": "两个 scout 同波，其中 s_bad 用 ignore_readonly 绕过沙箱写了一个文件（模拟「沙箱被绕过」）。期望：窗口内出现变化 → 组内**两个**节点都判 readonly_violation，不能栽给 s_bad 一个人（TASK-step2b K3 的连坐）。",
+  "nodes": {
+    "s_bad": {
+      "expect_prompt_contains": ["id: s_bad"],
+      "ignore_readonly": true,
+      "sleep_s": 0.6,
+      "write_files": {
+        "tasks/DAG-2026-11-06/fixtures/sandbox/OFF-LIMITS.md": "# 被绕过沙箱的侦察节点改掉了\n"
+      },
+      "result": { "facts": ["我什么都没写"], "summary": "坏的侦察" }
+    },
+    "s_ok": {
+      "expect_prompt_contains": ["id: s_ok"],
+      "sleep_s": 0.6,
+      "result": { "facts": ["OFF-LIMITS.md 有 3 行"], "summary": "好的侦察" }
+    }
+  }
+}

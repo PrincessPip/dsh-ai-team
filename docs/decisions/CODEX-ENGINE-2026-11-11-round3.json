@@ -1,0 +1,69 @@
+{
+  "verdict": "pass",
+  "confidence": 0.88,
+  "criteria": [
+    {
+      "id": "B1-r2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "宿主带 HTTPS_PROXY=<PROXY-PORT-TUNNEL>；镜像里把 runner.py:1489「env[k] = proxy_url」改 pass → --only codex-inproc 19/1，红在『子进程环境里真有 HTTPS_PROXY』；换回原件 → 19/0。修法锚：runner-harness.py:621「proxy_keys = (」+ egress-ready.ps1:11 port 18081 + 断言 :1558「http://127.0.0.1:18081」"
+    },
+    {
+      "id": "N1-r2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "runner-harness.py:520「proxy_url_for：23456」；变异台『proxy_url_for 写死 <PROXY-PORT-TUNNEL>』红在该断言；--only unit 168/0"
+    },
+    {
+      "id": "N2-r2",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "DELIVERY.md §十 B1 行「指 `runs/_harness/codex-inproc/`」；grep -o readonly_enforcement runs/_harness/codex-inproc/RUN.json = 2，runs/codex-smoke-2/RUN.json = 0"
+    },
+    {
+      "id": "N3-r2",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "runner.py:1441「只对 `headless` / `fixture` 成立」、:1443「**请求**的模式」；TASK.md:85 K11 ①「给只读节点加回 `-s read-only`」"
+    },
+    {
+      "id": "N4-r2",
+      "type": "fact-consistent",
+      "status": "fail",
+      "claimed_strength": "E2",
+      "strength_met": false,
+      "evidence": "DELIVERY.md:93「`unparsed=0`（不是解析器漏了）」仍在；§十一 N4 写『全部改成 event_lines_unparsed』不成立"
+    },
+    {
+      "id": "REGRESS",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "主树全量 523/0、unit 168/0、codex-inproc 19/0；镜像变异台 mutations=60 caught=60 restored_green=True；cite-check --strict exit 0 anchored=10/10；主树 runner.py sha256 1ea8fb50… 与工人记录一致"
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "N4 残留一处：DELIVERY.md:93「`unparsed=0`」应改为「`event_lines_unparsed=0`」；§十一 N4 的『全部改成』说满了（又一次『对自己修复的完整性说满』，LESSONS 里最顽固那条）。改完 grep -n 'unparsed=' DELIVERY.md 应只剩 event_lines_unparsed。"
+    },
+    {
+      "id": "N2",
+      "what": "REVIEW-BRIEF 第 2 步要求验收官在主树 scripts/runner.py 上改一行再还原，与『验收官只读』及 AGENTS.md『变异台一律在 %TEMP% 镜像里跑』冲突；以后 brief 直接给镜像做法（我本轮就这么做的，结果等价）。"
+    }
+  ],
+  "rework_brief": "",
+  "escalate_question": "",
+  "reviewer_notes": "反证与变异台都在 %TEMP%\\rv3-codex-mirror（只拷 scripts/ 与 tasks/DAG-2026-11-06/）里跑，主树 scripts/ 未改（sha 前后一致）；镜像全量 521 vs 主树 523 是我镜像范围所致。主树台子写了 runs/_harness/**（brief 允许）。未重审 K1–K12 主体与第 1 轮四条 blocking，按 brief 范围。",
+  "_provenance": "验收官自己写入 `tasks/CODEX-ENGINE-2026-11-11/REVIEW-round3-raw.txt`；JSON 块逐字未改。"
+}

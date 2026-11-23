@@ -1,0 +1,30 @@
+{
+  "_comment": "诚实员工：真改文件、如实报 changed。这组必须全绿。",
+  "nodes": {
+    "s_recon": {
+      "expect_prompt_contains": ["id: s_recon", "notes.md", "只读"],
+      "tool_calls": [
+        {"name": "Read", "args": {"path": "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"}}
+      ],
+      "sleep_s": 2.5,
+      "result": {"facts": "notes.md 里有 3 条以 '- ' 开头的条目", "summary": "只读侦察完成，未写文件"}
+    },
+    "w_write": {
+      "expect_prompt_contains": ["id: w_write", "允许改动的文件"],
+      "tool_calls": [
+        {"name": "Write", "args": {"path": "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"}}
+      ],
+      "write_files": {
+        "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md": "# A1 fixture 基线\n\n- 第一行\n- 第二行\n- 第三行\n- A1 fixture 写入行\n"
+      },
+      "result": {"changed": ["tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"], "summary": "末尾追加一行"}
+    },
+    "k_check": {
+      "expect_prompt_contains": ["id: k_check", "只读"],
+      "tool_calls": [
+        {"name": "Read", "args": {"path": "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"}}
+      ],
+      "result": {"verdict": "pass", "notes": "最后一行是 '- A1 fixture 写入行'"}
+    }
+  }
+}

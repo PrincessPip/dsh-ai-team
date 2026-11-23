@@ -1,0 +1,61 @@
+{
+  "verdict": "pass",
+  "confidence": 0.95,
+  "readonly_enforcement": "snapshot_only",
+  "evidence_root": "%USERPROFILE%/AppData/Local/Temp/edge-independent-3142e0e6236d4cfd8689fbd588b576fc",
+  "criteria": [
+    {
+      "id": "C1",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "亲跑 run-bounded.py edge：20/20、exit0；WindowsJob监督下运行 supervise.mjs --release-fixes：75/75、exit0、cleanup_verified=true。覆盖真实Candidate默认采集、并发实例、非法输入、调用者修改输入、强停及锁清理；环境、3080和日常根保持，ownedResidual=[]。另亲跑旧代码，复现 MISSING_SUPERVISOR_OS_DIRS、spawnAttempted=false。收据：directed-independent.json、independent-old-counterexample.json；定向报告 RELEASE-FIXES-1794850781683.json。"
+    },
+    {
+      "id": "C2",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "亲跑 run-bounded.py client：14/14、exit0、cleanup_verified=true。同一加载器下旧bundle抢占detail，新bundle无detail注册，真实安装renderer的single分支保留官方详情；实际ApprovalPanel/ApprovalFlow函数保留完整reason字段。75项定向台中的重新插入detail变体也被断言抓住。报告：parent-evidence/CLIENT-1794850715886.json。"
+    },
+    {
+      "id": "C3",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "独立逐项哈希核验：原完整portable19531项、新清单19533项均无错误；9项修改、2项新增、0项删除，与freeze一致。node_modules19509项未改、未漏、无未登记文件；嵌入manifest与新manifest相等。新manifest SHA256=7b98af58b776bd57f0360d6726ac2415d89dced5be00c6284ed7dff3f1964278。独立重建结果BUNDLE_MATCH，实际源码生成的diff与父级patch完全一致。收据：independent-manifest-audit.json、independent-final-audit.json。"
+    },
+    {
+      "id": "C4",
+      "type": "fact-consistent",
+      "status": "pass",
+      "claimed_strength": "E2",
+      "strength_met": true,
+      "evidence": "核验既有REPAIR-FULL-1794850284739.json：45项全部ok、errors=[]，16个sourceBinding全部匹配；外层收据exit0、cleanup_verified=true。实际diff确认审批身份绑定、权限规则和强停主体未扩改，R1及Remote源码SHA保持。两次失败报告仍保留，失败原因及源码绑定符合交付说明。本轮亲跑75项定向验证，未重跑45项完整回归。"
+    },
+    {
+      "id": "C5",
+      "type": "judgment",
+      "status": "pass",
+      "claimed_strength": "E1",
+      "strength_met": true,
+      "evidence": "直接核读DELIVERY-FIX.md及release/README.md；后者第25行明确“Still unverified: actual React DOM/current GUI human approval, deployment/rollback and long-running public-site use.”。DELIVERY-FIX.md第59行将HTTP<PROXY-PORT-TUNNEL>表述为本轮临时措施并注明清理待补，未将修复或机械UI验证宣称为生产发布、人审或长期稳定性证明。"
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "真实React DOM、GUI人审、生产挂载及回滚、长期稳定性仍未验证；本次pass仅覆盖两项修复范围。"
+    },
+    {
+      "id": "N2",
+      "what": "cite-check亲跑exit0，但refs=0，不构成行号引用覆盖。临时隧道最终关闭及外层正式后快照仍由调用方收尾，本裁决不代替其机器报告。"
+    }
+  ],
+  "rework_brief": "",
+  "reviewer_notes": "所有测试及新增证据均写入上述独占TEMP副本，未修改输入工程、旧候选或生产配置。结束时将输入树19591个文件与初始副本逐项比较，零差异；明确排除顶层review-output，此比较不替代外层正式快照。未调用业务模型、未发布，测试自有进程清理已确认，profile保留。"
+}

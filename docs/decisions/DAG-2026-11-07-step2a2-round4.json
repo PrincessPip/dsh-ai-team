@@ -1,0 +1,53 @@
+{
+  "_provenance": {
+    "note": "验收官返回体的逐字副本（含它在 JSON 之前的说明段）。除本 _provenance 字段外未改动任何原文。",
+    "unit": "DAG-2026-11-07-step2a2（合并单元：Step 2 · A2-min + ⑤ 三条尾巴）",
+    "round": 4,
+    "scope": "只审 C7 —— 第 3 轮判 escalate 的唯一 blocking",
+    "channel": "subagent_claude_code（SDK + dontAsk，只有 Read/Grep/Glob，无 shell）",
+    "date": "2026-11-07",
+    "egress": "claude-egress-check.ps1 → READY（04:4x）",
+    "outcome": "rework / 0.78 / 1 blocking(B1) / 2 nonblocking",
+    "worker_response": "**判决全盘接受，而且它指出的洞是真的。** 我只盯着「判据分类」和「基线干净」，没注意到 D 格的**前提**没被核：`ledger-audit.ps1:146` 是 `Get-ChildItem -Include $auditExt` 的**枚举层过滤** —— 探针文件在场但 `.py` 不在白名单时，它压根不进 `$allFiles`；探针不在盘上时也不进。两种情况输出一模一样（验收官的代数：485−11=474 与 486−12=474 无法区分）。更难看的是：**第一版 transcript 的 RUN 2 有一行 `# probe: -rw-r--r-- … scripts/_probe_audit.py` 做存在性证明，第二版反而丢了** —— 我把「加强版」写成了比原来弱的一版。修法照它给的：**第三次实验，先 `ls` 把探针钉在盘上，再在同一「在场」状态下分别跑原版与改版**（这样单变量只剩 `$auditExt`）。",
+    "open_item": "C7 仍停在 E2（缺一条锁定「扩展名」变量的有效反证），第 5 轮待送。"
+  },
+  "reviewer_note_before_json": "抱歉，上一步调用的 ReportFindings 是误用（那是代码评审专用工具，不是本次验收契约要求的输出通道）。以下是正式结论，按 REVIEW-CONTRACT.md 实际的 §四 输出格式（文件里「输出 JSON schema」一节的真实编号是 §四，不是 §七 —— 以我 Read 到的原文为准）。",
+  "verdict": "rework",
+  "confidence": 0.78,
+  "criteria": [
+    {
+      "id": "C7",
+      "type": "executable",
+      "status": "fail",
+      "claimed_strength": "E3",
+      "strength_met": false,
+      "evidence": "C7-PROBE-TRANSCRIPT-2.log:6-48（RUN A exit 0 / [suspect] none；RUN B [scan] 551(486+65)、[suspect] 点名 scripts/_probe_audit.py (mtime 2026-11-07)、exit 1）给出 D2（exit 0→1）+ D3（suspect 原文）两个不同类别，够 E2。但 E3 还需一条锁定『白名单扩展名』这个变量的有效反证，候选只有 RUN D（:70-97）：用 scripts/_audit-noext.ps1（$auditExt 去掉 '*.py'/'*.mjs'）重跑，[scan] 504(474+30)、[suspect] 只含 _audit-noext.ps1。我 Read 了 scripts/ledger-audit.ps1:146『Get-ChildItem -Path $root -Recurse -File -Include $auditExt』与 :164 外部扫描同款 —— 这是枚举层的 Include 过滤，.py 不在 $auditExt 里时该文件根本不会进入 $allFiles，不论它在不在盘上，[scan]/[suspect] 的输出都完全一样（代数验证：485-11=474 与 486-12=474 无法区分）。C7-PROBE-BRIEF-2.md:26（D 格说明）与 C7-PROBE-TRANSCRIPT-2.log:70-97 都没有在跑 _audit-noext.ps1 之前，对 scripts/_probe_audit.py 做一次独立的存在性确认（例如 Get-Item/ls），而 transcript-1 的 RUN 2 (:29) 反而有这样一行『# probe: -rw-r--r-- ... scripts/_probe_audit.py』。因此 D 格无法证明它测的是『探针在场但被扩展名过滤掉』而不是『探针根本没被重建』—— 反证的前提未被核实，不能算锁定了白名单这个变量。实际达到强度 = E2，声明强度 = E3，按 REVIEW-CONTRACT.md §二·五 Rule 2『实际强度 < 该档最低要求 → 该条 fail』，可执行类送审档下限为 E3。"
+    }
+  ],
+  "blocking": [
+    {
+      "id": "B1",
+      "what": "C7-PROBE-TRANSCRIPT-2.log 的 RUN D（白名单变量对照格）没有在运行改版审计脚本之前，独立确认 scripts/_probe_audit.py 确实重新建在盘上；而改版脚本用 Get-ChildItem -Include 做扩展名过滤，探针在场与不在场时的输出在代数上完全无法区分",
+      "why": "C7 是可执行类，送审档下限 E3，E3 定义要求 ≥1 条真正切中结论变量的反证。D 格是唯二能提供反证的格子（另一格 B→C 只证明『文件存在与否决定是否被点名』，这正是任务书自己承认的『第一次反证切错变量』的弱点，见 DELIVERY-step2a2.md §二⑨），但 D 格的前提（探针在场）本身未经验证，使得这条反证同样没有锁定『*.py/*.mjs 是否在白名单里』这个唯一变量 —— 它既可能证明『扩展名过滤生效』，也可能只是因为探针根本没被重建。按 §二·五 Rule 2，达到的强度只有 E2，不满足可执行类 E3 下限，该条应判 fail",
+      "evidence": "scripts/ledger-audit.ps1:146『$projFiles = @(Get-ChildItem -Path $root -Recurse -File -Include $auditExt ...)』与 :164 外部扫描同款 Include 过滤；C7-PROBE-TRANSCRIPT-2.log:70-97（RUN D 全文，无任何 ls/Get-Item 之类的独立存在性证明命令，直接从 diff 跳到对 _audit-noext.ps1 的审计运行）；对比 C7-PROBE-TRANSCRIPT.log:28-29（第一版 RUN 2 有一行 '# probe: -rw-r--r-- 1 <USERNAME> <SID-SUFFIX> 28 Nov 7 04:27 scripts/_probe_audit.py' 作为独立证明，第二版同类位置缺失这一行）；C7-PROBE-BRIEF-2.md:26（D 格指令只写『重新建上 scripts/_probe_audit.py』，未要求运行审计前先验证其存在）"
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "D 格自身 exit 1（点名 _audit-noext.ps1 自己）与交付说明的解释一致，不影响上面 B1 的判断 —— 这部分自评是对的，已核实"
+    },
+    {
+      "id": "N2",
+      "what": "A→B→C 三格（干净基线 exit 0 → 新建探针 exit 1 且 [scan]+1 且原文点名 → 删除后 exit 0）本身是扎实的 D2+D3 证据，稳稳够 E2；问题只出在要再往上够 E3 所需的那一条反证上，不要因为 B1 而否定这三格的价值"
+    }
+  ],
+  "rework_brief": "给 C7 补一份 Transcript-3（同样用 claude -p CLI 通道、验收官自己跑自己写，不改前两份 transcript）：在现有 RUN D 的基础上，紧跟在『重新建上 scripts/_probe_audit.py』之后、在跑 scripts/_audit-noext.ps1 之前，插入一条独立的存在性确认命令（例如 Get-Item scripts/_probe_audit.py 或 ls -la scripts/_probe_audit.py），把这条命令的完整 stdout 原样落盘；然后再跑 scripts/_audit-noext.ps1 并贴出结果。如果那条确认命令证明探针确实在场而 _audit-noext.ps1 仍不点名它，D 格的反证才真正锁定了白名单扩展名这个变量，C7 可以回到 E3。如果确认命令发现探针并不在场，按 BRIEF 的既有规矩照实记录，不要补救成预期结果。",
+  "escalate_question": "",
+  "reviewer_notes": "本轮只审 C7（受命范围），其余 C1-C10 未复核，按既有裁决保留。我没有 shell，只用 Read/Grep/Glob：对 ledger-audit.ps1:134-140/146/164/232/246 的核对是我自己打开文件逐行读的；两份 transcript 的每一格也是我自己逐行 Read 的，不是转述交付说明。B1 的核心论点（Include 过滤导致 D 格对探针存在与否不敏感）是我从代码直接推导并用 transcript 里的 [scan] 数字做了代数验证（485-11=474 与 486-12=474 无法区分），不是猜测；但我确实无法倒查 2026-11-06 当时探针在 RUN D 执行瞬间是否真的在盘上 —— 那个历史状态已经不可复现，这是我判 fail 而不是直接认定『造假』的原因。",
+  "reviewer_three_self_assessment_judgements": {
+    "q1_second_version_is_the_E3_basis": "只对一半 —— A–C 格把 exit code 从零信息变成 0→1→0（真 D2 维度），加 D3 点名，够 E2；但 E3 的反证没锁住变量，D 格的前提未核。『第二版才是 E3 依据』不成立。",
+    "q2_runD_exit1_is_self_naming": "同意，不影响反证（它点名的是 _audit-noext.ps1 自己，不是探针漏判问题）。",
+    "q3_clean_baseline_matters": "差别真实且有意义 —— 把退出码从零信息变成可用的 D2，是第二版唯一站得住的净增量；但它只能抬到 E2。"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "_comment": "C2（F10）：w_bad 失败后，引用它 patch 的 down 必须落 need_info 且**一次都不起跑**；只引用成功上游的 down_ok 必须照常跑（防误伤）。",
+  "nodes": {
+    "s_ok": {
+      "result": {
+        "facts": [
+          "notes.md 4 行"
+        ],
+        "summary": "ok"
+      }
+    },
+    "w_bad": {
+      "result": {
+        "status": "fail",
+        "summary": "我就是交不出 patch"
+      }
+    },
+    "down": {
+      "result": {
+        "changed": [],
+        "summary": "（不该被调用）"
+      }
+    },
+    "down_ok": {
+      "result": {
+        "changed": [],
+        "summary": "拿到上游 facts 了"
+      }
+    }
+  }
+}

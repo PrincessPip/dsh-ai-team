@@ -1,0 +1,68 @@
+{
+  "v": 1,
+  "plan_id": "plan-a1-fixture-g4-cmdfail",
+  "budget": {
+    "max_calls": 8
+  },
+  "nodes": [
+    {
+      "id": "s_recon",
+      "kind": "scout",
+      "do": "读 notes.md，数条目数写进 facts。不写任何文件。",
+      "after": [],
+      "ctx": {
+        "read": [
+          "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+        ]
+      },
+      "out": [
+        "facts",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "facts 里必须写清条目数"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "abort"
+      }
+    },
+    {
+      "id": "w_write",
+      "kind": "work",
+      "do": "往 notes.md 末尾追加一行 '- A1 fixture 写入行'。",
+      "after": [
+        "s_recon"
+      ],
+      "ctx": {
+        "read": [
+          "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+        ],
+        "from": [
+          "s_recon.facts"
+        ]
+      },
+      "writes": [
+        "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+      ],
+      "out": [
+        "changed",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "cmd",
+          "run": "node -e \"process.exit(1)\"",
+          "expect": "exit0"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "skip"
+      }
+    }
+  ]
+}

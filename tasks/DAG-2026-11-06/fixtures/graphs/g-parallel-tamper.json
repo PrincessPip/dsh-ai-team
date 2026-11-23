@@ -1,0 +1,59 @@
+{
+  "v": 1,
+  "plan_id": "plan-parallel-tamper-fixture",
+  "budget": {
+    "max_calls": 6
+  },
+  "nodes": [
+    {
+      "id": "s_a",
+      "kind": "scout",
+      "do": "只读侦察 A：数 notes.md 里以 '- ' 开头的条目数。不写任何文件。",
+      "after": [],
+      "ctx": {
+        "read": [
+          "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+        ]
+      },
+      "out": [
+        "facts",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "facts 里必须写清 '- ' 条目数"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "replan"
+      }
+    },
+    {
+      "id": "s_b",
+      "kind": "scout",
+      "do": "只读侦察 B：读 notes.md 首行内容。不写任何文件。",
+      "after": [],
+      "ctx": {
+        "read": [
+          "tasks/DAG-2026-11-06/fixtures/sandbox/notes.md"
+        ]
+      },
+      "out": [
+        "facts",
+        "summary"
+      ],
+      "accept": [
+        {
+          "type": "assert",
+          "rule": "facts 里必须写出首行内容"
+        }
+      ],
+      "on_fail": {
+        "retry": 0,
+        "then": "replan"
+      }
+    }
+  ]
+}

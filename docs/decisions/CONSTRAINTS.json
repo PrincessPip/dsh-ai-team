@@ -1,0 +1,273 @@
+{
+  "schema": "constraints-v1",
+  "updated": "2026-11-23",
+  "_authority": "本文件是『自限条款』的唯一真值。规范文档里写 [C:P-xxx] 引用之；未登记且不在 baseline 的 P 类条款，一律按『无出处的建议』处理，不得据此拒绝执行。",
+  "_origin": "2026-11-17 排查发现 11-12～11-17 新增 133 条自限条文，其中 25 条属『预先取消可选路径』但仅 1 条有伙伴批准出处，直接造成 8 页资料 5 天读不到、B 线停摆 36 小时。",
+  "_classes_note": "definition 是**唯一权威措辞**，AGENTS.md 与 TRIGGER-POLICY.md 必须逐字引用（python scripts/constraints-check.py --defs 机器核）；desc 只是给读的人补上下文，不参与一致性判定。",
+  "classes": {
+    "E": {
+      "name": "evidence-integrity",
+      "auto_pass": true,
+      "definition": "证据完整性：不冒称通过 / 不猜 / 不伪造裁决 / 不补签凑绿",
+      "desc": "自动成立，无需伙伴批准。典型例：不把 HTTP200 当 UI 通过、不把进程终止当断电 fsync 保证。第 5 轮（豁免条目制）起检查器不再读句子：条款行尾写 [C:E-00x]，闸门只核「标签在表里、且已批准、quote 非空」；没标签就看 baseline 登记。"
+    },
+    "I": {
+      "name": "experiment-isolation",
+      "auto_pass": true,
+      "definition": "隔离实验边界：评审树只读 / 不复制 / 不删锁 / 不导入旧 live / 不占用生产端口 —— 只约束实验进程，不得外溢成产品能力边界",
+      "desc": "自动成立，但边界硬：只约束实验进程。外溢成产品能力边界（「产品永久禁用复制功能」这类）即降为 P，要出处。第 5 轮起同样只认行尾标签 [C:I-00x]：判定不读句子，建议器只出提示、不参与放行。"
+    },
+    "P": {
+      "name": "path-limiting",
+      "auto_pass": false,
+      "definition": "限制潜在技术路径：禁这禁那、预先取消可选动作 —— 无伙伴原话出处者仅作建议，只阻塞送审",
+      "desc": "必须带伙伴原话出处，否则仅作『建议』，不得据此拒绝执行。fail-closed：判不出的形态一律算 P。"
+    }
+  },
+  "fail_open_policy": "无出处的 P 类条款不阻塞工作，只阻塞送审。检查器只判『这句话伙伴说过没有』，不判条款内容好坏 —— 内容好坏是伙伴的判断。",
+  "exemption_policy": "第 5 轮（2026-11-18 伙伴批准 C 方案）起，E/I **不再由检查器猜语义**，改成查下面的 exemptions 表：条款行尾写 [C:E-00x] / [C:I-00x]，检查器只核『有标签 → 表里在不在 → 批准了没』，不读句子。豁免也是要登记的 —— 前 4 轮的病根是「闸门自己给自己发豁免」，现在是「豁免清单由伙伴批准」。新增条目才需要再找伙伴。",
+  "exemptions": [
+    {
+      "id": "E-001",
+      "class": "E",
+      "name": "不冒称通过",
+      "status": "approved",
+      "definition": "判决只能来自实际跑过的验证：没跑的记 unverified，不把间接信号、监听器、HTTP200 之类当成功。",
+      "scope": "全仓 · 证据面",
+      "covers": ["unverified 不许算 pass", "不冒称通过", "不猜 pass", "不把有 flush 监听器当成功", "不把 HTTP200 当 UI 通过"],
+      "not_covers": ["产品功能是否合格（那属 P）"],
+      "approved_by": "伙伴",
+      "approved_at": "2026-11-18",
+      "quote": "就先按这个开工吧。",
+      "refs": ["tasks/CONSTRAINTS-2026-11-17/round5-plan/EXEMPTIONS-DRAFT.md"]
+    },
+    {
+      "id": "E-002",
+      "class": "E",
+      "name": "不伪造裁决",
+      "status": "approved",
+      "definition": "裁决只能由有资格的人或程序出：不补签、不把自测/父级建议/旧状态当正式终裁。",
+      "scope": "全仓 · 证据面",
+      "covers": ["不伪造裁决", "不补签", "不得把本文件当作正式独立终裁", "不得把原简报的历史状态当作本轮新裁决", "不许被当成契约意义的验收裁决"],
+      "not_covers": ["谁来验收这种分工问题（那属 P）"],
+      "approved_by": "伙伴",
+      "approved_at": "2026-11-18",
+      "quote": "就先按这个开工吧。",
+      "refs": ["tasks/CONSTRAINTS-2026-11-17/round5-plan/EXEMPTIONS-DRAFT.md"]
+    },
+    {
+      "id": "E-003",
+      "class": "E",
+      "name": "不删断言凑绿",
+      "status": "approved",
+      "definition": "台子红了先判真回归还是断言过期；改的是断言去咬新行为，不是改结论把红变绿。",
+      "scope": "全仓 · 证据面",
+      "covers": ["不许删断言凑绿", "不允许改SDK或放开网络来凑绿", "不得把全部非目标禁掉制造假绿", "不许改判据凑绿"],
+      "not_covers": ["判据内容要不要改（那属伙伴的决定）"],
+      "approved_by": "伙伴",
+      "approved_at": "2026-11-18",
+      "quote": "就先按这个开工吧。",
+      "refs": ["tasks/CONSTRAINTS-2026-11-17/round5-plan/EXEMPTIONS-DRAFT.md"]
+    },
+    {
+      "id": "I-001",
+      "class": "I",
+      "name": "评审只读",
+      "status": "approved",
+      "definition": "验收官这个角色只读文件、只跑只读命令；要造夹具就放 %TEMP%，用完清掉。",
+      "scope": "评审进程 · 验收官角色",
+      "covers": ["只读：不改文件、不跑命令", "只读：不要改仓库里任何文件"],
+      "not_covers": ["实现工人是否只读（工人就是要写）"],
+      "approved_by": "伙伴",
+      "approved_at": "2026-11-18",
+      "quote": "就先按这个开工吧。",
+      "refs": ["tasks/CONSTRAINTS-2026-11-17/round5-plan/EXEMPTIONS-DRAFT.md"]
+    },
+    {
+      "id": "I-002",
+      "class": "I",
+      "name": "判据类文件禁改",
+      "status": "approved",
+      "definition": "契约、模板、判据脚本是被审对象，验的人不能顺手改它们。",
+      "scope": "评审进程 · 评审树内",
+      "covers": ["不要改 scripts/ 下任何文件", "不许改 scripts/ledger-audit.ps1 / REVIEW-CONTRACT.md", "不动 TRIGGER-POLICY.md"],
+      "not_covers": ["产品代码能不能改（那属 P）"],
+      "approved_by": "伙伴",
+      "approved_at": "2026-11-18",
+      "quote": "就先按这个开工吧。",
+      "refs": ["tasks/CONSTRAINTS-2026-11-17/round5-plan/EXEMPTIONS-DRAFT.md"]
+    },
+    {
+      "id": "I-003",
+      "class": "I",
+      "name": "实验在副本里做",
+      "status": "approved",
+      "definition": "会落盘的动作挪到独占副本 / %TEMP%，主树与工程根保持原样。",
+      "scope": "评审与实验进程 · 落盘动作",
+      "covers": ["不要改本工程任何文件", "不许改主树任何文件", "两套都在 %TEMP% 建镜像，不动主树", "不得修改送审树包括新增 pycache"],
+      "not_covers": ["产品要不要支持导入导出（那属 P）"],
+      "approved_by": "伙伴",
+      "approved_at": "2026-11-18",
+      "quote": "就先按这个开工吧。",
+      "refs": ["tasks/CONSTRAINTS-2026-11-17/round5-plan/EXEMPTIONS-DRAFT.md"]
+    },
+    {
+      "id": "I-004",
+      "class": "I",
+      "name": "不复制大件产物",
+      "status": "approved",
+      "definition": "复制输入 SHA、只复制必要代码；海量历史产物与 profile 不整包搬运。",
+      "scope": "实验进程 · 复制动作",
+      "covers": ["不复制旧 artifacts/candidate 海量产物", "不复制 TEMP profile"],
+      "not_covers": ["产品能不能复制文件（那属 P）"],
+      "approved_by": "伙伴",
+      "approved_at": "2026-11-18",
+      "quote": "就先按这个开工吧。",
+      "refs": ["tasks/CONSTRAINTS-2026-11-17/round5-plan/EXEMPTIONS-DRAFT.md"]
+    },
+    {
+      "id": "I-005",
+      "class": "I",
+      "name": "不删锁 / 不删交付目录",
+      "status": "approved",
+      "definition": "真测锁、交付目录、历史归档属于证据，只追加、不清理。",
+      "scope": "实验进程 · 删除动作",
+      "covers": ["不得删除真测锁", "不删任何交付目录"],
+      "not_covers": ["产品是否清理临时文件（那属 P）"],
+      "approved_by": "伙伴",
+      "approved_at": "2026-11-18",
+      "quote": "就先按这个开工吧。",
+      "refs": ["tasks/CONSTRAINTS-2026-11-17/round5-plan/EXEMPTIONS-DRAFT.md"]
+    },
+    {
+      "id": "I-006",
+      "class": "I",
+      "name": "不碰生产与 live",
+      "status": "approved",
+      "definition": "实验进程只在离线面演练：不进 live 入口、不调网关推理、不拿 live 文件试语法。",
+      "scope": "实验进程 · 生产资源",
+      "covers": ["不允许运行旧 live 脚本", "禁止写手调用 live、旧 live、网关推理", "不运行任何 live 命令"],
+      "not_covers": ["产品要不要接生产环境（那属 P）"],
+      "approved_by": "伙伴",
+      "approved_at": "2026-11-18",
+      "quote": "就先按这个开工吧。",
+      "refs": ["tasks/CONSTRAINTS-2026-11-17/round5-plan/EXEMPTIONS-DRAFT.md"]
+    },
+    {
+      "id": "I-007",
+      "class": "I",
+      "name": "账本与历史产物只追加",
+      "status": "approved",
+      "definition": "更正靠追加行、原文保持；runs/ 是证据包，保持原样。",
+      "scope": "评审与交付进程 · 账本 / runs",
+      "covers": ["账本追加更正行（不改原文…）", "不动 runs/fire/…（历史归档）", "硬规矩 2 不得覆盖送审清单"],
+      "not_covers": ["账本格式要不要改（那属 P）"],
+      "approved_by": "伙伴",
+      "approved_at": "2026-11-18",
+      "quote": "就先按这个开工吧。",
+      "refs": ["tasks/CONSTRAINTS-2026-11-17/round5-plan/EXEMPTIONS-DRAFT.md"]
+    }
+  ],
+  "entries": [
+    {
+      "id": "P-001",
+      "class": "P",
+      "status": "approved",
+      "text": "新增可能限制技术路径或伙伴可选动作的自限条款，必须取得伙伴明确批准并记录其原话；无出处者仅作建议，不得据此拒绝执行。",
+      "approved_by": "伙伴",
+      "approved_at": "2026-11-17",
+      "quote": "尽可能不增加会限制潜在技术路径的自限条款。如果必须增加，必须得到我的明确批准。",
+      "guidance": "自限条款不应当封锁潜在技术路径。",
+      "guidance_at": "2026-11-18",
+      "refs": [
+        "decisions/CONSTRAINTS.json",
+        "AGENTS.md",
+        "TRIGGER-POLICY.md"
+      ]
+    },
+    {
+      "id": "P-002",
+      "class": "P",
+      "status": "approved",
+      "text": "不改系统代理 / DNS / 证书；确需改动以解除已知阻塞时，先给方案与回滚并取得伙伴明确许可。",
+      "approved_by": "伙伴",
+      "approved_at": "2026-11-17",
+      "quote": "废止清单就按照你的方案改。",
+      "refs": [
+        "tasks/EDGE-CDP-BROWSER-2026-11-16/HANDOVER.md"
+      ]
+    },
+    {
+      "id": "P-003",
+      "class": "P",
+      "status": "approved",
+      "text": "自动修复的通用止损线：任何自动修复路径（救火队长出动 / DAG 内客观断言自动重试 / 未来的多模态验收返工）三次不成就停止自动修复，向伙伴报告现状与卡点。保留自动重试权本身，不设 token/成本预算闸。",
+      "approved_by": "伙伴",
+      "approved_at": "2026-11-23",
+      "quote": "成本护栏，我们保留一些让他们自动重试的权利，防止过于频繁的呼叫真人来进行操作。",
+      "guidance": "追问：「以后出现某种错误没有救火队长介入，比如视频生成，那该怎么做？」→ 结论是三类错误里只有 A 类（生成脚本本身有 bug）适用救火队长，B 类（产物客观不达标）走自动重试、C 类（主观不达标）只能找人；于是统一成「哪个口子都是三次」。2026-11-23 伙伴在 DAG-MIXED-MODEL 收口时选定「统一为 3 次」，覆盖 v3.0 的「救火轮上限 2 次」。",
+      "refs": [
+        "TRIGGER-POLICY.md",
+        "tasks/DAG-MIXED-MODEL-2026-11-23/DESIGN.md"
+      ]
+    }
+  ],
+  "revoked": [
+    {
+      "id": "RX-01",
+      "class": "P",
+      "text": "不把浏览器当作绕过工具非公网地址检查、网站访问控制、验证码或服务商限制的替代通道。",
+      "source": "tasks/EDGE-CDP-BROWSER-2026-11-16/HANDOVER.md",
+      "revoked_at": "2026-11-17",
+      "reason": "伙伴裁定从未批准，属子代理擅自添加。代价：8 页资料 5 天未得。"
+    },
+    {
+      "id": "RX-02",
+      "class": "P",
+      "text": "不申请 Daybreak，不换模型/通道重投原受限任务。",
+      "source": "tasks/EDGE-CDP-BROWSER-2026-11-16/HANDOVER.md",
+      "revoked_at": "2026-11-17",
+      "reason": "把『换一条路再试』提前判成违规，B 线因此停摆 36 小时。保留的只有『不得伪造裁决』。"
+    },
+    {
+      "id": "RX-03",
+      "class": "P",
+      "text": "失败…不换模型/通道绕过拒绝。",
+      "source": "tasks/EDGE-CDP-BROWSER-2026-11-16/official-real-model/TASK.md",
+      "revoked_at": "2026-11-17",
+      "reason": "同上；改为『须声明并留痕』。"
+    },
+    {
+      "id": "RX-04",
+      "class": "P",
+      "text": "不动网络或日常登录态。",
+      "source": "tasks/EDGE-CDP-BROWSER-2026-11-16/HANDOVER.md",
+      "revoked_at": "2026-11-17",
+      "reason": "过宽，直接禁掉了修 DNS 这条路；改为 P-002。"
+    },
+    {
+      "id": "RX-05",
+      "class": "P",
+      "text": "不开放公网导航、点击提交、上传下载、任意 evaluate（被当作永久边界）。",
+      "source": "tasks/EDGE-CDP-BROWSER-2026-11-16/implementation/README.md",
+      "revoked_at": "2026-11-17",
+      "reason": "检查点分期边界被误当永久产品边界；改为随检查点解锁。"
+    },
+    {
+      "id": "RX-06",
+      "class": "P",
+      "text": "不让自动化替用户点击人审。",
+      "source": "tasks/EDGE-CDP-BROWSER-2026-11-16/official-gui-plan/PLAN.md",
+      "revoked_at": "2026-11-17",
+      "reason": "把验收门槛压成『必须本人亲点』，而伙伴作息碎片化 → 每轮停在『人审 0 次』；改为可由伙伴指定代理方式或超时按机械证据裁决。"
+    },
+    {
+      "id": "RX-07",
+      "class": "P",
+      "text": "不自动重试（作为通则）。",
+      "source": "tasks/CODEX-GW-CACHE-2026-11-13/TASK.md",
+      "revoked_at": "2026-11-17",
+      "reason": "限定为『不原地重放已发出请求』；上层为新 HTTP 请求重试不受此限。"
+    }
+  ]
+}

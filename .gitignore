@@ -1,0 +1,27 @@
+# 依赖与构建产物
+node_modules/
+pnpm-lock.yaml
+package-lock.json
+
+# 运行产物（每次跑 ai_team_plan/run 会在工作区生成，不进仓库）
+.ai-team/
+runs/
+*.log
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 密钥与本地覆盖（绝不入库）
+.env
+.env.*
+!.env.example
+*.local

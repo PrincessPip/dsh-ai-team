@@ -1,0 +1,41 @@
+{
+  "_provenance": {
+    "note": "验收官返回体的逐字副本（含 JSON 之前的说明段）。除本 _provenance 字段外未改动任何原文。",
+    "unit": "DAG-2026-11-07-step2a2（合并单元：Step 2 · A2-min + ⑤ 三条尾巴）",
+    "round": 5,
+    "scope": "只审 C7 —— 第 4 轮 blocking B1 的返工（第三版 transcript）",
+    "channel": "subagent_claude_code（SDK + dontAsk，只有 Read/Grep/Glob，无 shell）",
+    "date": "2026-11-07",
+    "egress": "claude-egress-check.ps1 → READY（04:57）",
+    "outcome": "pass / 0.85 / 0 blocking / 2 nonblocking",
+    "worker_response": "**这条判据从第 1 轮一路卡到第 5 轮，第一次拿到 pass。** 值得记的是它通过的方式：不是「解释得更圆」，而是把反证的**前提**补成可核的 —— 两次 `ls` 的 mtime 逐字相同，加上同一状态下改版/原版的配对。验收官还自己排除了「审计窗口漂移」这个我没想到的 confound（`$ledgerStart` 取自账本 CreationTime，C/D 相隔几秒不影响窗口）。",
+    "open_item": "C7 已过。两个 nonblocking：N1（别把 E 格拔高成第二重反证）、N2（只读通道核不了「证物本身是否真实」，与第 4 轮同一个结构性限制）。"
+  },
+  "reviewer_note_before_json": "读完全部材料后，我自己核了代数（RUN B/B2 的 mtime、RUN C/D 的 [suspect] 差集、[scan] 差值拆解）与脚本逻辑（枚举层过滤、$ledgerStart 是否可能被运行时刻污染）。给出结论。",
+  "verdict": "pass",
+  "confidence": 0.85,
+  "criteria": [
+    {
+      "id": "C7",
+      "type": "executable",
+      "status": "pass",
+      "claimed_strength": "E3",
+      "strength_met": true,
+      "evidence": "三件事我自己核过，都对得上：(1) mtime 钉死 —— C7-PROBE-TRANSCRIPT-3.log:20 (RUN B) 与 :48 (RUN B2) 的探针行逐字相同：`-rw-r--r-- 1 <USERNAME> <SID-SUFFIX> 63 2026-11-07 04:54:26.683544200 +0800 scripts/_probe_audit.py`，纳秒位都一致，说明 RUN C 执行前后探针确实在盘上且未被重建/改写；transcript 头部自称的『B..D 在一次 bash 调用内、C 与 D 之间除 ls 外无文件操作』与正文吻合（:17-51 之间只有 ls/date，没有 echo/rm/cp）。(2) C/D 的 [suspect] 差集只多探针一项 —— RUN C (:40-42) 名单 = {_audit-noext.ps1}；RUN D (:70-73) 名单 = {_audit-noext.ps1, scripts/_probe_audit.py}。两边脚本的唯一差异是 ledger-audit.ps1:140 这一行（RUN A 的 diff，:12-15，`140c140` 单行），且 :146/:164 的 `Get-ChildItem -Include $auditExt` 是纯枚举层过滤、脚本本身不按文件名自我排除（:239-248 只按 $ledgerPath 排除账本文件本身）—— 所以这条 +1 差异唯一能归因于 $auditExt 这一行。(3) [scan] 差值解释得干净：RUN C 506(476+30) → RUN D 554(489+65)，project 489-476=13、external 65-30=35，13-1=12（探针之外的工程内 .py/.mjs）、35 与第二版 A/D 对照（C7-PROBE-TRANSCRIPT-2.log:11 vs :81，65-30 同样是 35）一致，没有残余解释不了的数字。另外确认了 $ledgerStart 取自 decisions/self/ledger.md 的 CreationTime 常量（ledger-audit.ps1:72-73），C/D 相隔几秒不会改变审计窗口，排除了『窗口漂移』这个潜在 confound。"
+    }
+  ],
+  "blocking": [],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "what": "第三版 E 格（删除两个临时文件后原版脚本回到 [suspect] none / LEDGER_OK / exit 0，C7-PROBE-TRANSCRIPT-3.log:75-99）是合法的收尾/复原检查，内部一致、没有破绽，但它验证的是『文件在不在盘上』这条轴（v1/v2 的 A→B→C 已经做过），不是『$auditExt 里有没有那两个扩展名』这条轴 —— 它不构成对白名单变量的第二条锁定，E3 的达成单靠 C/D 这一对配对就够了。DELIVERY §二⑨ 的表格没有把 E 格错标成第二条反证，这条只是给下一轮提个醒：别在后续文档里把 E 格拔高成『第二重反证』。"
+    },
+    {
+      "id": "N2",
+      "what": "我没有 shell，只能核 C7-PROBE-TRANSCRIPT-3.log 文本本身的内部一致性（diff / mtime / 名单 / 计数算得通），无法重新执行 claude -p CLI 通道去验证这些命令真的被跑过、输出没被转写。这与第 4 轮 reviewer_notes 承认的同一结构性限制一样 —— 伙伴已经在 2026-11-07 04:2x 拍板承担这个风险（路线 ③，写面钉死成白名单）。我核验的是『这份证物如果是真的，它是否锁住了变量』，答案是真的锁住了；但『这份证物本身是否真实』不是只读验收官能独立确认的，这一点如实报备，不升级为 blocking，因为它不是本轮新出现的信息、也不是第 4 轮判 rework 的理由。"
+    }
+  ],
+  "rework_brief": "",
+  "escalate_question": "",
+  "reviewer_notes": "本轮只审 C7（受命范围），C1-C6/C8-C10 未复核，按既有裁决保留。第 4 轮的 blocking（B1：D 格没有在跑改版脚本前证明探针在场，导致『扩展名过滤』与『探针没建上』两种解释代数上不可区分）已被第三版的 B/B2 两次独立 ls 补上 —— 我自己验证了两次 ls 的 mtime 字符串逐字相同，以及 C/D 之间 transcript 里确实没有除 ls/date 外的命令。三份 transcript 合起来给出 D1（B/B2 的 ls 文件状态）+ D2（第二版 A→B→C 的 exit 0→1→0，第三版 E 格再回 0）+ D3（[scan]/[suspect] 原文，跨两版一致）三个不同观察类别，外加一条前提已核实、确实锁在 $auditExt 单变量上的反证（第三版 C/D 配对）—— 够 E3，可执行类送审/返工后档下限满足。未独立验证项：① 我没有重新枚举『工程内 12 个 .py/.mjs』这个具体文件清单，只核了算术（13−1=12）自洽，这个 12 的具体构成来自更早轮次的归因，本轮未重新点数；② 无 shell，不能重跑 claude -p 通道，细节见上面 N2。"
+}
