@@ -13,3 +13,4 @@
         pythonPath: python
         nodePath: node
         outDirName: .ai-team
+        swarmMode: false

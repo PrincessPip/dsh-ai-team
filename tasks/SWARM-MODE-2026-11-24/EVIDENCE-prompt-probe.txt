@@ -1,0 +1,18 @@
+﻿== generated 2026-11-24 04:47:53 by make-evidence (pwsh) · after single-slot fix ==
+
+--- probe-prompt ---
+
+── 蜂群模式装配探针 ──────────────────────────────
+开：prompt 398 字符 / 4 段
+关：prompt 48 字符 / 4 段
+开：section 名 = harness:identity, deployment:persona-prefix, ai-team:swarm-mode, deployment:persona-suffix
+
+  ok   开启：prompt 里有蜂群段
+  ok   开启：三个工具名都在
+  ok   开启：section 已注册
+  ok   关闭：prompt 里没有蜂群段（空文本被装配器丢弃）
+  ok   关闭：prompt 就是原生的身份段
+  ok   两态差值 = 段落长度 + 连接符（350 vs 350）
+
+PASS 全部符合预期
+

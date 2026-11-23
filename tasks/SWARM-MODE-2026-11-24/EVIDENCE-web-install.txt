@@ -1,0 +1,51 @@
+== generated 2026-11-24 04:40:22 by make-evidence (pwsh) ==
+== 已脱敏：本机绝对路径替换为 %USERPROFILE% / <repo>，其余逐字保留 ==
+
+--- 1) junction (node_modules/dsh-ai-team) ---
+
+
+FullName : %USERPROFILE%\.dsh\profiles\web\node_modules\dsh-ai-team
+LinkType : Junction
+Target   : {<repo>}
+
+
+
+
+--- 2) @openai/codex 版本（装机前记录 0.167.2，不得被 pnpm 重解析降级）---
+0.167.2
+--- 3) profile bundles ---
+@deepseek-ai/dsh-base, @deepseek-ai/dsh-web-app, dsh-voice-local, dsh-workspace-write-plus, dsh-doctor, @deepseek-ai/dsh-experimental-voice-input-bundle, dsh-gsv-tts, dsh-backlog, @deepseek-ai/dsh-subagent-claude-code, @deepseek-ai/dsh-experimental-agent-team-profile, dsh-ai-team
+--- 4) cordis.patch.yml 里的 dsh-ai-team 条目 ---
+
+> cordis.patch.yml:3613:- id: dsh-ai-team
+  cordis.patch.yml:3614:  name: dsh-ai-team
+  cordis.patch.yml:3615:  config:
+  cordis.patch.yml:3616:    backend: codex
+  cordis.patch.yml:3617:    model: ""
+  cordis.patch.yml:3618:    codexPath: codex
+  cordis.patch.yml:3619:    codexSandbox: workspace-write
+  cordis.patch.yml:3620:    openaiBaseUrl: https://api.openai.com/v1
+  cordis.patch.yml:3621:    openaiApiKeyEnv: OPENAI_API_KEY
+  cordis.patch.yml:3622:    timeoutMs: 3600000
+  cordis.patch.yml:3623:    engineDir: ""
+  cordis.patch.yml:3624:    pythonPath: python
+  cordis.patch.yml:3625:    nodePath: node
+  cordis.patch.yml:3626:    outDirName: .ai-team
+  cordis.patch.yml:3627:    swarmMode: false
+
+
+
+--- 5) dsh --profile web --dump-config 里的组合结果（exit code 见下）---
+exit=0
+
+  # == dsh-ai-team
+> - id: dsh-ai-team
+    name: dsh-ai-team
+    config:
+      backend: codex
+      model: ''
+      codexPath: codex
+      codexSandbox: workspace-write
+
+
+

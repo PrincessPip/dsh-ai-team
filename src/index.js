@@ -15,6 +15,7 @@
  * @module
  */
 import Schema from '@deepseek-ai/schemastery';
+import { SWARM_SECTION_NAME, SWARM_SECTION_ORDER, readSwarmMode, swarmSectionText } from './swarm.js';
 import { createGateTool } from './tools/gate.js';
 import { createInitTool } from './tools/init.js';
 import { createPlanTool } from './tools/plan.js';
@@ -46,6 +47,7 @@ export const DEFAULTS = Object.freeze({
   pythonPath: 'python',
   nodePath: 'node',
   outDirName: '.ai-team',
+  swarmMode: false,
 });
 
 /**
@@ -80,6 +82,13 @@ export const Config = Schema.object({
   pythonPath: Schema.string().default(DEFAULTS.pythonPath).description('Python 可执行文件'),
   nodePath: Schema.string().default(DEFAULTS.nodePath).description('Node 可执行文件'),
   outDirName: Schema.string().default(DEFAULTS.outDirName).description('运行产物目录名'),
+  // volatile：开关必须能在**会话进行中**热改。loader 对 volatile-only 变更不重挂插件，
+  // 只把新值写进运行中的引用（`_commitVolatile`），所以任何一处读到 `config.swarmMode`
+  // 都拿到当前值；客户端（`src/client.js`）就是通过 configForms 写这个字段的。
+  swarmMode: Schema.boolean()
+    .default(DEFAULTS.swarmMode)
+    .volatile()
+    .description('蜂群模式：开启后把 Lead 降为调度员，实现类任务必须走 ai_team_plan → gate → run'),
 });
 
 /** 五个工具工厂，顺序 = 注册顺序（也是推荐使用顺序：init → review / plan → gate → run）。 */
@@ -96,4 +105,20 @@ export function apply(ctx, config) {
   for (const createTool of TOOL_FACTORIES) {
     ctx.tools.register(createTool(ctx, resolved));
   }
+
+  // 蜂群模式：一段**每轮重新调用**的 system prompt section。
+  // 开关值来自原始 `config`（volatile 引用），不能用 `resolved` —— 展开会把引用固定成
+  // apply 那一刻的布尔值，之后热改就看不见了。
+  // `systemPrompt` 按需注入：profile 没装它时，五个工具照常可用。
+  ctx.inject(['systemPrompt'], (spCtx) => {
+    spCtx.effect(
+      () =>
+        spCtx.systemPrompt.section({
+          name: SWARM_SECTION_NAME,
+          order: SWARM_SECTION_ORDER,
+          text: () => swarmSectionText(readSwarmMode(config)),
+        }),
+      `${name}: swarm-mode prompt section`,
+    );
+  });
 }

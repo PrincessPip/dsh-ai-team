@@ -1,0 +1,20 @@
+﻿== generated 2026-11-24 04:52:29 by make-evidence (pwsh) · order=-200 (权限→蜂群→语音) ==
+
+--- probe-client ---
+
+── 蜂群模式 · 浏览器半边探针 ──────────────────────
+  ok   模块被 __ModuleLoader__ 以 id=dsh-ai-team 加载
+  ok   导出形状：name / inject / apply
+  ok   声明的服务齐全：slots / locale / configForms
+  ok   apply 能跑完（不抛错）
+  ok   注册到 list 型槽 conversation.input.left（不是 single 型权限槽）
+  ok   绝不注册到 kind=single 的槽（会顶掉官方控件）
+  ok   order 为负（list 槽的第一位才紧贴权限控件）
+  ok   inject 提供了 form，且给的是插件行 id
+  ok   locale 字典带了 on / off 两态文案
+  ok   样式注入一次，且用的是语义/静态色变量
+  ok   package.json 的 client 入口与插件行 id 对得上
+
+────────────────────────────────────────────────────────────
+PASS 11 / 11
+

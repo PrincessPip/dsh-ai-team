@@ -1,0 +1,42 @@
+﻿== generated 2026-11-24 04:52:29 by make-evidence (pwsh) · order=-200 (权限→蜂群→语音) ==
+
+--- npm run check ---
+
+> dsh-ai-team@0.1.0 check
+> node --check src/index.js && node --check src/client.js && node --check src/swarm.js
+
+
+--- node src/swarm.test.mjs ---
+
+── readSwarmMode ──────────────────────────────────────────
+  ok   缺省（undefined / 空对象）算关闭
+  ok   普通布尔照原样读
+  ok   volatile 引用走 get()（运行时就是这种形状）
+  ok   非布尔垃圾值不算开启
+
+── swarmSectionText / SWARM_PROMPT ────────────────────────
+  ok   关闭时是空串（不是空段落）
+  ok   开启时就是提示词正文
+  ok   三个工具名都在（模型要照着调）
+  ok   例外通道写法固定，事后可机检
+  ok   说清了只读不受限与关闭方式
+  ok   section 名与顺序是模块内唯一真值
+
+── Config ────────────────────────────────────────────────
+  ok   swarmMode 默认 false 且是 volatile 引用
+  ok   swarmMode 显式给值能读回
+
+── apply ─────────────────────────────────────────────────
+  ok   apply 注册 5 个工具 + 1 段蜂群 section
+  ok   section.text() 每轮重读开关（中途切立刻反映）
+  ok   apply 对空 config 也稳（cordis 之外的直接调用）
+
+────────────────────────────────────────────────────────────
+PASS 15 / 15
+
+--- node src/lib/verdict.test.mjs (tail) ---
+  ok   历史文件里的 rework（blocking 非空）不会漏成 pass
+
+────────────────────────────────────────────────────────────
+PASS 23 / 23
+
