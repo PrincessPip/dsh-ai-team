@@ -5,6 +5,25 @@
 
 ---
 
+## [0.2.1] — 2026-11-24
+
+本版为文档与已知坑更新版：**包行为无变化**（`src/`、`engine/`、工具与裁决逻辑均未改动，升级后行为与 `0.2.0` 一致；已装用户无需重装、无需改 profile）。
+
+### 新增
+
+- **`templates/LEAD-PLAYBOOK.md`** —— Lead 派活清单：哪些形状的活必须先交给工人 / 验收官，
+  以及不派时必须怎么留痕（蜂群例外通道）。
+
+### 变更
+
+- **`README.md`**（`README.en.md` 同步）—— 安装方式改用 GitHub tag 安装：
+  `dsh plugin --profile web add github:PrincessPip/dsh-ai-team#v0.2.1`，
+  不再以 npm registry 发布为前提（包名在 npm 上已被同类竞品占用）。
+- **`AGENTS.md`** —— 已知坑与当前状态更新：补记「蜂群把出图绑死在 codex 隧道上」（坑 14），
+  以及 npm 发布路线放弃、改用 git tag + GitHub Release 发布。
+
+---
+
 ## [0.2.0] — 2026-11-24
 
 ### 新增

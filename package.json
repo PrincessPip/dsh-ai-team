@@ -1,6 +1,6 @@
 {
   "name": "dsh-ai-team",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Give DeepSeek Harness an independent reviewer and a DAG orchestrator: separation of powers, three-state verdicts, and no evidence means no pass. 给 DSH 装上独立验收官与 DAG 编排：三权分立、三态裁决、无证据不算通过。与官方 agent-team 互补——官方管「谁来干」，本插件管「干得对不对」。",
   "type": "module",
   "main": "./src/index.js",

@@ -103,13 +103,16 @@ npm install /path/to/dsh-ai-team
 #### Then install the plugin
 
 ```powershell
-# Route A: from a registry (if the package is published to npm or your private registry as dsh-ai-team)
-dsh plugin --profile web add dsh-ai-team
+# Route A: install from a GitHub tag (the public install path — always pin the tag; no bare package name, no default branch)
+dsh plugin --profile web add github:PrincessPip/dsh-ai-team#v0.2.1
 
-# Route B: from this repo directory (not published, or you want to modify the source)
+# Route B: from this repo directory (use this when you want to modify the source)
 dsh plugin --profile web add /path/to/dsh-ai-team
 ```
 
+> Public releases are cut as **git tags + GitHub Releases**: each version has a matching tag (e.g. `v0.2.1`) and is **not published to npm**.
+> Two reasons we do not use npm: (1) the `dsh-ai-team` package name is already taken by a similar project; (2) the current egress to `npmjs.com` is blocked by DataDome.
+> So install via the `github:` spec above and **pin the tag explicitly** (e.g. `#v0.2.1`); without a ref you get the latest commit on the default branch.
 > `--profile` is mandatory; replace `web` with the profile you mount it into.
 > `dsh plugin add` also resolves dependencies — if it goes to the registry for `dsh-tools` and complains about the range,
 > put the dependency in place with one of the routes above first, then re-run this command.

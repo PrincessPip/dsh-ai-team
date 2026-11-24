@@ -83,6 +83,29 @@ python engine/runner.py tasks/DAG-2026-11-06/fixtures/graphs/g3.json \
 11. **system prompt 是每个模型步重组装，不是每轮**：改 volatile 配置后下一次工具调用/下一次生成就生效，**不需要重启 `dsh web`、不需要新开会话**；只有 client 半边要刷新浏览器页面才取到新模块。
 12. **插槽有 `kind`，`single` 型不能挂第二个控件**：`conversation.input.permission` / `.plan` / `.model` / `.attachments` / `.activity` / `composer.bar` 都是 `kind: 'single'`（契约在 `dsh-client-ui-conversation/lib/types/client/contract/slots.d.ts`），渲染器对 single 只取 `entriesOfSlot(key)[0]` —— 注册进去会**把官方控件整颗顶掉**（蜂群开关首版就踩了：权限选择器消失）。要加控件请挑 `kind: 'list'` 的槽（输入框附近：`conversation.input.left` / `.right` / `.dock` / `.overlay` / `composer.dock`），其中 `.left` 紧随 `div.modes` 之后渲染、视觉上就在权限控件右边。**要挤到最前面得用负 order**：`dsh-voice-local` 占着 `-100`，蜂群开关取 `-200` 才落在「权限」与「语音」之间；list 槽里 order 更小者只是往右挪，不挤人。
 13. **profile patch 里的覆盖条目会被 settings 写入「按需删除」**：`ConfigEditor.edit()` 在「下一份 config 深度等于继承值」时删掉 `config` 键，条目只剩 `id+name` 就整条删（`dsh-config-editor/lib/index.js:99-104`，AST 编辑、保留别处的注释）。所以 `swarmMode: false`（= bundle 默认）时 patch 里没有 `dsh-ai-team` 是**正确状态**，点 ON 才会出现 `swarmMode: true`。⇒ 别把说明注释写在该条目旁边（会跟着消失），也别手工把它补回去。
+14. **蜂群把「出图」绑死在 codex 隧道上 ⇒ 通道一挂，纪律就死锁（2026-11-24 首次真用实测，未修）**：
+    `ai_team_plan` → `engine/manager.py` → **无条件**跑 `codex-egress-check.ps1`，非 0 就 `exit 4` 不产出图；
+    该脚本要求 `127.0.0.1:11081` 隧道活着（→ VPS `186.241.76.152`）。VPS 侧封了出口 IP，整条出图链就不可用，
+    **且没有降级路径**：`manager.py:419` 明写「没有跳过开关」，并且加固过「`--egress-check` 指个 `exit 0` 空脚本冒充就绪」。
+    结果 = 「纪律要求先出图，而出图物理不可用」。
+    本次现场：VPS 的 22 与 8888 都是「TCP 连上 → **0 字节直接关**」（服务没起会是 refused，不是这种）⇒ 防火墙 REJECT；
+    ssh 报 `kex_exchange_identification: Connection reset` = **fail2ban 签名，封禁持久化在 `/var/lib/fail2ban/fail2ban.sqlite3`，
+    `dbpurgeage` 默认 1 天 → 重启 VPS 不解除**（绑物理网卡换源 IP 也一样被封；伙伴 2026-11-24 重启过一次，确实无效）。
+    ✅ 关键边界：**`ai_team_run` 的 worker 通道不依赖 11081**（`strong` 走本地网关 `codex-gw 127.0.0.1:18765`、flash 走 deepseek 官方），
+    **只有 plan / review 两步卡** ⇒ 图一旦有，跑得动。
+    候选对策（未实施，仅登记）：manager 支持本地网关（`api.openai.com` 经 matrix `21081` 实测 **401 = 网络通**，`chatgpt.com` 200），
+    或给 egress 失败开一条**显式**降级通道（不能是静默跳过）。
+15. **`check` 节点在 `headless` 下自己跑不了命令 ⇒ 产物全对也可能被判红（2026-11-24 实测，未修）**：
+    `headless` / `fixture` 的只读执法是**沙箱硬拦**（`runner.py:170` 的 `READONLY_ENFORCEMENT`），
+    所以 `kind: check` 的 agent 一旦自己发起 shell，在启动前就被拒：
+    `sandbox escalation to "workspace-write" requires approval, but no approval channel is available`。
+    它的诚实反应是「拿不到实测结果 ⇒ 不签 pass」⇒ `RUN.json.result=fail`，**哪怕文档一个字都没错**
+    （本次两轮都这样：`runs/release-03` 的 `k_release`、`runs/release-03-rework` 的 `k_verify`）。
+    边界：**runner 自己的 `cmd_accept` 层跑得动**（`NODES/<id>.json` 里 `cmd_accept[].exit_code` 是真读数），
+    白掉的只是「希望 agent 亲手再跑一遍」这一步。
+    处置：① 给 check 节点写 `cmd` accept 时，`do` 里明说「命令由 runner 执行，你不要自己跑，按 `cmd_accept` 与文件内容判」；
+    ② 或把要跑命令的核实放进 `integrate`（它是 workspace-write）；
+    ③ 最重要 —— **`result=fail` 必须人核产物**：它可能只是流程红而非产物错，正如 `pass` 不代表产物对。
 
 ---
 
@@ -103,8 +126,20 @@ python engine/runner.py tasks/DAG-2026-11-06/fixtures/graphs/g3.json \
 
 - `0.1.0` → `0.2.0`：蜂群模式（`src/swarm.js` + `src/client.js` + `src/swarm.test.mjs`）已落地并装入生产 profile，
   UI 人工验收通过（权限控件与开关共存、两态点击、暗色主题、位置 `权限 → 蜂群 → 语音`）。
-- **仍未验的一条**：开启后让 Lead 做一件实现类小事，观察它是否先调 `ai_team_plan`。
-  探针只能证明「文本进了 system prompt」，证明不了「行为被改变」。
+- **行为验收：已取到样本（2026-11-24 第二轮 · 网络恢复后）**：开关 ON 后**同一会话里**，Lead 对「改文档」这类实现类活
+  **第一步就是 `ai_team_plan`**（`plan-20261124-205441`），随后 `ai_team_gate` → `ai_team_run` 两轮全走完，
+  全程**没有自己写过任何交付文件**；当时 system prompt 里确有「## 蜂群模式 · 已开启」五条。
+  首次真用（11-24 早）的失败价值已沉淀为「已知坑 14」——把出图绑在 codex 隧道上就是纪律的死锁点。
+- **npm 发布路线已放弃（2026-11-24 伙伴拍板）**：`dsh-ai-team` 包名在 npm 上被同类竞品占用（`waynew`，1.7.0，8 月首发）；
+  且 `www.npmjs.com` **全站**对当前出口被 DataDome 拦（换节点 / 直连 / 手机流量三条路全失败）。
+  改走 **git tag + GitHub Release + `dsh plugin --profile web add github:PrincessPip/dsh-ai-team#vX.Y.Z`**。
+  好处：**包名不改 ⇒ 生产 junction / `dsh.profile.bundles` / 重启全都不用动**（详见对应 Hindsight 记录）。
+- **收尾单元 `RELEASE-0.3` 已收口（2026-11-24）**：README 中英 §2.2 补 `github:` 装法 + npm 放弃的两条原因、
+  CHANGELOG 补 `[0.2.1]`、新建 `templates/LEAD-PLAYBOOK.md`（143 行 / 9128 字节，含**真跑通**的 PowerShell 核验实例，
+  正例 6 节 / 9128 字节、反证「期望 7」按预期失败）。三件全部由 DAG 出图产出
+  （`runs/release-03` 5 节点 + `runs/release-03-rework` 4 节点），**Lead 未亲自写任何交付文件**；
+  两轮 `RUN.json.result` 都是 `fail`、都 fail 在 check 节点（见「已知坑 15」），产物经人工复核合格。
+  `v0.1.0` / `v0.2.0` / `v0.2.1` 三个 tag 已补齐，发布走 **git tag + GitHub Release**。
 - 发布件：`README.md`（中文）/ `README.en.md`（英文）/ `ROADMAP.md`（中英双语）/ `CHANGELOG.md`。
 - 生产挂载示例（作者本机）：`profiles/web` 里用 junction + `dsh.profile.bundles` + `cordis.patch.yml` 条目，
   **不走 `dsh plugin add`**（见「已知坑 10」）。

@@ -103,13 +103,16 @@ npm install /path/to/dsh-ai-team
 #### 再装插件
 
 ```powershell
-# 方式 A：从 registry 装（前提是该包已发布到 npm 或你的私有 registry，包名 dsh-ai-team）
-dsh plugin --profile web add dsh-ai-team
+# 方式 A：从 GitHub tag 装（公开安装用这条，必须带 tag；不要用裸包名或默认分支）
+dsh plugin --profile web add github:PrincessPip/dsh-ai-team#v0.2.1
 
-# 方式 B：从本仓库目录装（未发布、或要改源码时用这条）
+# 方式 B：从本仓库目录装（要改源码时用这条）
 dsh plugin --profile web add /path/to/dsh-ai-team
 ```
 
+> 公开发布走 **git tag + GitHub Release**：每个版本对应仓库里的同名 tag（如 `v0.2.1`），**不发布到 npm**。
+> 放弃 npm 的两个原因：① `dsh-ai-team` 这个包名已被同类项目占用；② 当前出口访问 `npmjs.com` 被 DataDome 拦截。
+> 所以公开安装请用上面的 `github:` spec，并**显式带上 tag**（写成 `#v0.2.1`）；不带 ref 时拿到的是默认分支的最新提交。
 > `--profile` 是必填参数，把 `web` 换成你要挂的那个 profile。
 > `dsh plugin add` 会顺带解析依赖 —— 如果它去 registry 找 `dsh-tools` 并报版本不满足，
 > 就先用上面任一条路线把依赖就位，再重跑这条命令。
